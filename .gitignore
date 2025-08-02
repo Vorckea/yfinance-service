@@ -1,0 +1,24 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Poetry / Virtual Environments
+.venv/
+poetry.lock
+
+# IDE / OS
+.vscode/
+.idea/
+*.DS_Store
+
+# Secrets
+.env
+
+# Ruff
+.ruff_cache/
+
+# Logs
+*.log
+logs/
