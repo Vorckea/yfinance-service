@@ -7,12 +7,12 @@ on:
 
 jobs:
     lint:
-        uses: ./.github/workflows/pylint.yml
+        uses: ./.github/workflows/lint.yml
         with:
             python-version: '3.13'
 
     test:
-        uses: ./.github/workflows/pytest.yml
+        uses: ./.github/workflows/test.yml
         with:
             python-version: '3.13'
 
