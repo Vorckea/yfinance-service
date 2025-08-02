@@ -1,0 +1,23 @@
+name: CI Pipeline
+
+on: 
+    push:
+        branches: [main]
+    pull_request:
+
+jobs:
+    lint:
+        uses: ./.github/workflows/pylint.yml
+        with:
+            python-version: '3.13'
+
+    test:
+        uses: ./.github/workflows/pytest.yml
+        with:
+            python-version: '3.13'
+
+    build:
+        uses: ./.github/workflows/build.yml
+        with:
+            python-version: '3.13'
+        needs: [lint, test]

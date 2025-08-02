@@ -1,9 +1,11 @@
 name: Docker Build
 
 on:
-    push:
-        branches: [main]
-    pull_request:
+  workflow_call:
+    inputs:
+      python-version:
+        required: true
+        type: string
 
 jobs:
     build:
