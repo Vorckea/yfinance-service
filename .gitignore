@@ -22,3 +22,6 @@ poetry.lock
 # Logs
 *.log
 logs/
+
+# pytest
+.pytest_cache/
