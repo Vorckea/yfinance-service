@@ -1,5 +1,4 @@
 import pandas as pd
-from datetime import date
 
 VALID_SYMBOLS = "AAPL"
 INVALID_SYMBOLS = "!!!"
@@ -42,6 +41,6 @@ def test_historical_not_found(client, mocker):
     mock_instance = mock_ticker.return_value
     # Return empty DataFrame to simulate no data
     mock_instance.history.return_value = pd.DataFrame()
-    response = client.get(f"/historical/ZZZZZZZZZZ")
+    response = client.get("/historical/ZZZZZZZZZZ")
     assert response.status_code == 404
     assert "No historical data for symbol" in response.json()["detail"]
