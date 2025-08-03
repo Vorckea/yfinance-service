@@ -2,6 +2,7 @@ import logging
 
 from fastapi import FastAPI
 
+from app.features.debug.router import router as debug_router
 from app.features.health.router import router as health_router
 from app.features.historical.routes import router as historical_router
 from app.features.quote.routes import router as quote_router
@@ -25,5 +26,6 @@ app.include_router(historical_router, prefix="/historical", tags=["historical"])
 
 # Health check endpoint
 app.include_router(health_router, tags=["health"])
+app.include_router(debug_router, prefix="/debug", tags=["debug"])
 
 logging.basicConfig(level=logging.INFO)
