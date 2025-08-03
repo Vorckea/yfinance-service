@@ -1,5 +1,6 @@
 from fastapi import APIRouter
-from log_store import log_store
+
+from .log_store import log_store
 
 router = APIRouter()
 
