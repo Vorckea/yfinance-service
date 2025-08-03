@@ -1,7 +1,9 @@
-from fastapi import APIRouter
 import time
+
+from fastapi import APIRouter
+
+from ...state import service_start_time
 from .log_store import log_store
-from ...main import service_start_time
 
 router = APIRouter()
 
