@@ -20,8 +20,8 @@ jobs:
             - name: Setup & Install
               uses: ./.github/actions/setup-python-deps
               with:
-                  python-version: ${{ inputs.python-version }}
-                  with_pylint: true
+                  python_version: ${{ inputs.python-version }}
+                  install_pylint: true
 
             # Run Pylint
             - name: Analysing code with Pylint

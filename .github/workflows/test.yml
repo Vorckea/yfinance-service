@@ -16,7 +16,7 @@ jobs:
       - name: Setup & Install
         uses: ./.github/actions/setup-python-deps
         with:
-          python-version: ${{ inputs.python-version }}
+          python_version: ${{ inputs.python-version }}
       - name: Run tests
         run: poetry run pytest --maxfail=1 --disable-warnings --tb=short
       - name: Upload Pytest report

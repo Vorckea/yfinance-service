@@ -1,11 +1,11 @@
 name: "Setup Python & Install Dependencies"
 description: "Sets up Python environment and installs dependencies using Poetry"
 inputs:
-    python-version:
+    python_version:
         description: "Python version to use for the setup"
         required: true
         type: string
-    with_pylint:
+    install_pylint:
         description: "Whether to install Pylint"
         required: false
         default: 'false'
@@ -13,11 +13,10 @@ inputs:
 runs:
     using: "composite"
     steps:
-        # Setup the requested Python version
-        - uses: actions/setup-python@v4
+        - name: Setup Python
+          uses: actions/setup-python@v4
           with:
-              python-version: ${{ inputs.python-version }}
-        # Cache Poetry downloads for faster installs
+              python_version: ${{ inputs.python_version }}
         - name: Cache Poetry
           uses: actions/cache@v4
           with:
@@ -25,22 +24,25 @@ runs:
               key: poetry-${{ runner.os }}-${{ hashFiles('**/poetry.lock') }}
               restore-keys: |
                 poetry-${{ runner.os }}-
-        # Install Poetry package manager
-        - run: pip install --no-cache-dir poetry || { echo "Poetry install failed"; exit 1; }
+        - name: Install Poetry
+          run: pip install --no-cache-dir poetry || { echo "Poetry install failed"; exit 1; }
           shell: bash
-        # Use global environment (no virtualenv)
-        - run: poetry config virtualenvs.create false
-          shell: bash  
-        # Install dependencies from pyproject.toml
-        - run: poetry install --no-root || { echo "Dependency install failed"; exit 1; }
+        - name: Configure Poetry
+          run: poetry config virtualenvs.create false
           shell: bash
-        # Optionally install Pylint if requested
-        - run: |
-            if [ "${{ inputs.with_pylint }}" = "true" ]; then
-                pip install --no-cache-dir pylint
-            fi
+        - name: Install Dependencies
+          run: poetry install --no-root || { echo "Dependency install failed"; exit 1; }
           shell: bash
-outputs: {}
+        - name: Install Pylint
+          run: |
+              if [ "${{ inputs.install_pylint }}" = "true" ]; then
+                  pip install --no-cache-dir pylint
+              fi
+          shell: bash
+outputs: 
+    python_version:
+        description: "The Python version used"
+        value: ${{ inputs.python_version }}
 branding:
     icon: "package"
     color: "blue"
