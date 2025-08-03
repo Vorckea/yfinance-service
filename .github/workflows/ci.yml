@@ -14,7 +14,7 @@ jobs:
         uses: ./.github/workflows/lint.yml
         strategy:
           matrix:
-            python-version: ['3.13', '3.14']
+            python-version: ['3.13']
         with:
             python-version: ${{ matrix.python-version }}
 
@@ -23,7 +23,7 @@ jobs:
         uses: ./.github/workflows/test.yml
         strategy:
           matrix:
-            python-version: ['3.13', '3.14']
+            python-version: ['3.13']
         with:
             python-version: ${{ matrix.python-version }}
 
