@@ -6,23 +6,16 @@ on:
       python-version:
         required: true
         type: string
+        description: 'Python version to use for testing'
 
 jobs:
   test:
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        python-version: [3.13]
     steps:
       - uses: actions/checkout@v4
-      - name: Set up Python
-        uses: actions/setup-python@v4
+      - name: Setup & Install
+        uses: ./.github/actions/setup-python-deps
         with:
-          python-version: ${{ matrix.python-version }}
-      - name: Install dependencies
-        run: |
-          pip install --no-cache-dir poetry
-          poetry config virtualenvs.create false
-          poetry install --no-root
+          python-version: ${{ inputs.python-version }}
       - name: Run tests
         run: poetry run pytest --maxfail=1 --disable-warnings --tb=short

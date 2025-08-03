@@ -1,0 +1,29 @@
+name: "Setup Python & Install Dependencies"
+description: "Sets up Python environment and installs dependencies using Poetry"
+inputs:
+    python-version:
+        description: "Python version to use for the setup"
+        required: true
+        type: string
+    with_pylint:
+        description: "Whether to install Pylint"
+        required: false
+        default: 'false'
+        type: boolean
+runs:
+    using: "composite"
+    steps:
+        - uses: actions/checkout@v4
+          with:
+              python-version: ${{ inputs.python-version }}
+        - run: pip install --no-cache-dir poetry
+          shell: bash
+        - run: poetry config virtualenvs.create false
+          shell: bash  
+        - run: poetry install --no-root
+          shell: bash
+        # Install Pylint if specified
+        - run: |
+            if [ "${{ inputs.with_pylint }}" = "true" ]; then
+                pip install --no-cache-dir pylint
+            fi
