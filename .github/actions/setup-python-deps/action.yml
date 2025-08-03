@@ -16,7 +16,7 @@ runs:
         - name: Setup Python
           uses: actions/setup-python@v4
           with:
-              python_version: ${{ inputs.python_version }}
+              python-version: ${{ inputs.python_version }}
         - name: Cache Poetry
           uses: actions/cache@v4
           with:
