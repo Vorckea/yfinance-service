@@ -1,5 +1,8 @@
 name: CI Pipeline
 
+permissions:
+  contents: read
+
 on: 
     push:
         branches: [main]
@@ -9,14 +12,20 @@ jobs:
     lint:
         name: Lint Code
         uses: ./.github/workflows/lint.yml
+        strategy:
+          matrix:
+            python-version: ['3.13', '3.14']
         with:
-            python-version: '3.13'
+            python-version: ${{ matrix.python-version }}
 
     test:
         name: Run Tests
         uses: ./.github/workflows/test.yml
+        strategy:
+          matrix:
+            python-version: ['3.13', '3.14']
         with:
-            python-version: '3.13'
+            python-version: ${{ matrix.python-version }}
 
     build:
         name: Build Docker Image
