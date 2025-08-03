@@ -13,9 +13,6 @@ on:
 jobs: 
     lint:
         runs-on: ubuntu-latest
-        strategy:
-            matrix:
-                python-version: [3.13]
         steps:
             - uses: actions/checkout@v4
 
