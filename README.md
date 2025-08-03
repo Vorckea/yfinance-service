@@ -47,6 +47,3 @@ curl http://localhost:8000/quote/AAPL
 
 ## License
 MIT License. See [LICENSE](LICENSE) for details.
-
-## Author
-Aksel Heggland Schrader (@Vorckea)
