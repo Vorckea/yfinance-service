@@ -26,4 +26,18 @@ package-mode = false
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^8.4.1"
+ruff = "^0.12.7"
+black = "^25.1.0"
 
+[tool.black]
+line-length = 100
+
+[tool.ruff]
+line-length = 100
+
+[tool.ruff.lint]
+# Enable Pyflakes, pycodestyle, isort, flake8-docstrings, and more
+select = ["E", "F", "W", "I", "N", "D"] 
+
+[tool.ruff.format]
+quote-style = "double"
