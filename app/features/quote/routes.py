@@ -1,5 +1,5 @@
 from fastapi import APIRouter, HTTPException
-from fastapi.params import Query
+from fastapi.params import Path
 
 from .models import QuoteResponse
 from .service import fetch_quote
@@ -14,7 +14,7 @@ router = APIRouter()
     description="Returns the latest market quote for the given ticker symbol.",
 )
 async def get_quote(
-    symbol: str = Query(..., description="Ticker symbol", example="AAPL"),
+    symbol: str = Path(..., description="Ticker symbol", example="AAPL"),
 ) -> QuoteResponse:
     """Get the latest market quote for a given ticker symbol."""
     try:

@@ -1,7 +1,7 @@
 from datetime import date
 
 from fastapi import APIRouter, HTTPException
-from fastapi.params import Query
+from fastapi.params import Path, Query
 
 from .models import HistoricalResponse
 from .service import fetch_historical
@@ -17,7 +17,7 @@ router = APIRouter()
     "date range.",
 )
 async def get_historical(
-    symbol: str = Query(..., description="Ticker symbol", example="AAPL"),
+    symbol: str = Path(..., description="Ticker symbol", example="AAPL"),
     start: date | None = Query(
         None, description="Start date in YYYY-MM-DD format", example="2023-01-01"
     ),
