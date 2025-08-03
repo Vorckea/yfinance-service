@@ -13,18 +13,45 @@ inputs:
 runs:
     using: "composite"
     steps:
+        # Setup the requested Python version
         - uses: actions/setup-python@v4
           with:
               python-version: ${{ inputs.python-version }}
+        # Cache Poetry downloads for faster installs
+        - name: Cache Poetry
+          uses: actions/cache@v4
+          with:
+              path: ~/.cache/pypoetry
+              key: poetry-${{ runner.os }}-${{ hashFiles('**/poetry.lock') }}
+              restore-keys: |
+                poetry-${{ runner.os }}-
+        # Install Poetry package manager
         - run: pip install --no-cache-dir poetry
           shell: bash
+        # Use global environment (no virtualenv)
         - run: poetry config virtualenvs.create false
           shell: bash  
+        # Install dependencies from pyproject.toml
         - run: poetry install --no-root
           shell: bash
-        # Install Pylint if specified
+        # Optionally install Pylint if requested
         - run: |
             if [ "${{ inputs.with_pylint }}" = "true" ]; then
                 pip install --no-cache-dir pylint
             fi
           shell: bash
+outputs: {}
+branding:
+    icon: "package"
+    color: "blue"
+
+# Example usage:
+# jobs:
+#   setup:
+#     runs-on: ubuntu-latest
+#     steps:
+#       - uses: actions/checkout@v4
+#       - uses: ./.github/actions/setup-python-deps
+#         with:
+#           python-version: '3.12'
+#           with_pylint: true
