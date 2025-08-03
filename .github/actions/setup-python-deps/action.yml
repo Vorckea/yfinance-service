@@ -27,3 +27,4 @@ runs:
             if [ "${{ inputs.with_pylint }}" = "true" ]; then
                 pip install --no-cache-dir pylint
             fi
+          shell: bash
