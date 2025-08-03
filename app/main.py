@@ -1,4 +1,5 @@
 import logging
+import time
 
 from fastapi import FastAPI
 
@@ -29,3 +30,5 @@ app.include_router(health_router, tags=["health"])
 app.include_router(debug_router, prefix="/debug", tags=["debug"])
 
 logging.basicConfig(level=logging.INFO)
+
+service_start_time = time.time()
