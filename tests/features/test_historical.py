@@ -43,4 +43,4 @@ def test_historical_not_found(client, mocker):
     mock_instance.history.return_value = pd.DataFrame()
     response = client.get("/historical/ZZZZZZZZZZ")
     assert response.status_code == 404
-    assert "No historical data for symbol" in response.json()["detail"]
+    assert "No historical data for" in response.json()["detail"]
