@@ -1,12 +1,19 @@
 import logging
-import time
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Response
+from prometheus_client import generate_latest
 
-from app.features.debug.router import router as debug_router
 from app.features.health.router import router as health_router
-from app.features.historical.routes import router as historical_router
+from app.features.historical.router import router as historical_router
 from app.features.quote.routes import router as quote_router
+from app.monitoring.middleware import prometheus_middleware
+
+# Configure logging
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s %(levelname)s %(name)s %(message)s",
+)
+
 
 app = FastAPI(
     title="YFinance Proxy Service",
@@ -22,11 +29,18 @@ app = FastAPI(
         "url": "https://opensource.org/license/MIT",
     },
 )
+
+
+app.middleware("http")(prometheus_middleware)
+
+
+@app.get("/metrics")
+def metrics():
+    return Response(generate_latest(), media_type="text/plain")
+
+
 app.include_router(quote_router, prefix="/quote", tags=["quote"])
 app.include_router(historical_router, prefix="/historical", tags=["historical"])
 
 # Health check endpoint
 app.include_router(health_router, tags=["health"])
-app.include_router(debug_router, prefix="/debug", tags=["debug"])
-
-logging.basicConfig(level=logging.INFO)

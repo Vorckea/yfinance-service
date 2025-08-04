@@ -4,15 +4,15 @@ import re
 import yfinance as yf
 from fastapi import HTTPException
 
-from ..debug.log_store import log_store
 from .models import QuoteResponse
+from ...utils.logger import logger
 
 SYMBOL_PATTERN = re.compile(r"^[A-Za-z0-9\.\-]{1,10}$")
 
 
 async def fetch_quote(symbol: str) -> QuoteResponse:
     if not SYMBOL_PATTERN.match(symbol):
-        log_store.add("ERROR", f"Invalid symbol format: {symbol}")
+        logger.error("Invalid symbol format: %s", symbol)
         raise HTTPException(
             status_code=400,
             detail="Symbol must be 1-10 chars, alphanumeric, dot or dash.",
@@ -24,9 +24,9 @@ async def fetch_quote(symbol: str) -> QuoteResponse:
 
     info = await asyncio.to_thread(fetch_info, symbol)
     if not info:
-        log_store.add("ERROR", f"No data for symbol {symbol}")
-        raise HTTPException(status_code=404, detail=f"No data for symbol {symbol}")
-    log_store.add("INFO", f"Quote fetched for symbol: {symbol}")
+        logger.error("No data for %s", symbol)
+        raise HTTPException(status_code=404, detail=f"No data for {symbol}")
+    logger.info("Fetched quote for %s", symbol)
     return QuoteResponse(
         symbol=symbol.upper(),
         current_price=info.get("regularMarketPrice"),

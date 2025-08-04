@@ -1,0 +1,17 @@
+version: '3.8'
+
+services:
+  yfinance-service:
+    build: .
+    ports:
+      - "8000:8000"
+    image: yfinance-service:latest
+
+  prometheus:
+    image: prom/prometheus:latest
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+    depends_on:
+      - yfinance-service
