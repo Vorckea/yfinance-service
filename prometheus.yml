@@ -2,9 +2,9 @@ global:
   scrape_interval: 15s
   evaluation_interval: 15s
 
-external_labels:
-  environment: 'dev'
-  service: 'yfinance-service'
+  external_labels:
+    environment: 'dev'
+    service: 'yfinance-service'
 
 rule_files:
   - 'alert.rules.yml'

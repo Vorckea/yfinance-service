@@ -1,0 +1,72 @@
+{
+    "id": null,
+    "title": "YFinance Service Overview",
+    "tags": [
+        "yfinance",
+        "service",
+        "monitoring"
+    ],
+    "timezone": "browser",
+    "schemaVersion": 38,
+    "version": 1,
+    "refresh": "10s",
+    "panels": [
+        {
+            "type": "timeseries",
+            "title": "Request Count (per endpoint)",
+            "datasource": "Prometheus",
+            "targets": [
+                {
+                    "expr": "sum by (endpoint) (rate(request_count_total[1m]))",
+                    "legendFormat": "{{endpoint}}",
+                    "interval": ""
+                }
+            ],
+            "id": 1,
+            "gridPos": {
+                "h": 8,
+                "w": 24,
+                "x": 0,
+                "y": 0
+            }
+        },
+        {
+            "type": "timeseries",
+            "title": "Error Count (per endpoint)",
+            "datasource": "Prometheus",
+            "targets": [
+                {
+                    "expr": "sum by (endpoint) (rate(error_count_total[1m]))",
+                    "legendFormat": "{{endpoint}}",
+                    "interval": ""
+                }
+            ],
+            "id": 2,
+            "gridPos": {
+                "h": 8,
+                "w": 24,
+                "x": 0,
+                "y": 8
+            }
+        },
+        {
+            "type": "timeseries",
+            "title": "Request Latency (95th percentile)",
+            "datasource": "Prometheus",
+            "targets": [
+                {
+                    "expr": "histogram_quantile(0.95, sum(rate(request_latency_seconds_bucket[5m])) by (le, endpoint))",
+                    "legendFormat": "{{endpoint}}",
+                    "interval": ""
+                }
+            ],
+            "id": 3,
+            "gridPos": {
+                "h": 8,
+                "w": 24,
+                "x": 0,
+                "y": 16
+            }
+        }
+    ]
+}
