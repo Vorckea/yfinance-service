@@ -9,13 +9,6 @@ from app.features.quote.routes import router as quote_router
 from app.monitoring.logging_middleware import LoggingMiddleware
 from app.monitoring.middleware import prometheus_middleware
 
-# Configure logging
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s %(levelname)s %(name)s %(message)s",
-)
-
-
 app = FastAPI(
     title="YFinance Proxy Service",
     version="1.0.0",
