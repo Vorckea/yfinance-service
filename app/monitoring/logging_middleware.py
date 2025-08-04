@@ -1,4 +1,7 @@
+"""Logging middleware for Starlette/FastAPI applications."""
+
 import time
+
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.requests import Request
 from starlette.responses import Response
@@ -7,14 +10,17 @@ from ..utils.logger import logger
 
 
 class LoggingMiddleware(BaseHTTPMiddleware):
-    async def dispatch(self, request: Request, call_next):
+    """Middleware to log requests and responses."""
+
+    async def dispatch(self, request: Request, call_next) -> Response:
+        """Log requests and responses."""
         start_time = time.time()
         logger.info(
             f"Request: {request.method} {request.url.path}",
             extra={"method": request.method, "path": request.url.path},
         )
         try:
-            response = await call_next(request)
+            response: Response = await call_next(request)
         except Exception as e:
             logger.exception(
                 "Unhandled exception occurred during request",
