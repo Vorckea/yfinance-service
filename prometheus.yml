@@ -1,7 +1,25 @@
 global:
-  scrape_interval: 5s
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+external_labels:
+  environment: 'dev'
+  service: 'yfinance-service'
+
+rule_files:
+  - 'alert.rules.yml'
 
 scrape_configs:
   - job_name: 'yfinance-service'
+    metrics_path: '/metrics'
+    scrape_timeout: 10s
+    honor_labels: true
     static_configs:
       - targets: ['yfinance-service:8000']
+        labels:
+          instance: 'main'
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: instance
+        regex: '(.*):.*'
+        replacement: '$1'

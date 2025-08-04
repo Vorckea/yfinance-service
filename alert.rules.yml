@@ -1,0 +1,10 @@
+groups:
+  - name: yfinance-service-alerts
+    rules:
+      - alert: HighErrorRate
+          expr: increase(error_count[5m]) > 10
+          for: 5m
+          labels:
+            severity: warning
+        annotations:
+          summary: "High error rate detected in yfinance-service"
