@@ -6,6 +6,12 @@ services:
     ports:
       - "8000:8000"
     image: yfinance-service:latest
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:8000/health" ]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
 
   prometheus:
     image: prom/prometheus:latest

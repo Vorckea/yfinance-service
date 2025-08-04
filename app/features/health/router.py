@@ -1,4 +1,5 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, Response
+import yfinance as yf
 
 router = APIRouter()
 
@@ -18,3 +19,43 @@ router = APIRouter()
 async def get_health():
     """Health check endpoint to verify service is running."""
     return {"status": "ok"}
+
+
+@router.get(
+    "/ready",
+    summary="Readiness Check",
+    description="Checks if the service can reach yfinance.",
+    operation_id="getReadinessStatus",
+    responses={
+        200: {
+            "description": "Service is ready",
+            "content": {"application/json": {"example": {"status": "ready"}}},
+        },
+        503: {
+            "description": "Service is not ready",
+            "content": {"application/json": {"example": {"status": "not ready"}}},
+        },
+    },
+)
+async def get_ready():
+    """Readiness check endpoint to verify yfinance is reachable."""
+    try:
+        ticker = yf.Ticker("AAPL")
+        info = ticker.info
+        if not info:
+            return Response(
+                content='{"status": "not ready"}',
+                status_code=503,
+                media_type="application/json",
+            )
+    except Exception:
+        return Response(
+            content='{"status": "not ready"}',
+            status_code=503,
+            media_type="application/json",
+        )
+    return Response(
+        content='{"status": "ready"}',
+        status_code=200,
+        media_type="application/json",
+    )
