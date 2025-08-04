@@ -11,8 +11,9 @@ SYMBOL_PATTERN = re.compile(r"^[A-Za-z0-9\.\-]{1,10}$")
 
 
 async def fetch_quote(symbol: str) -> QuoteResponse:
+    logger.info("Quote request received", extra={"symbol": symbol})
     if not SYMBOL_PATTERN.match(symbol):
-        logger.error("Invalid symbol format: %s", symbol)
+        logger.error("Invalid symbol format", extra={"symbol": symbol})
         raise HTTPException(
             status_code=400,
             detail="Symbol must be 1-10 chars, alphanumeric, dot or dash.",
@@ -22,11 +23,16 @@ async def fetch_quote(symbol: str) -> QuoteResponse:
         ticker = yf.Ticker(symbol)
         return ticker.info
 
-    info = await asyncio.to_thread(fetch_info, symbol)
+    try:
+        info = await asyncio.to_thread(fetch_info, symbol)
+    except Exception as e:
+        logger.exception("Exception fetching quote data", extra={"symbol": symbol})
+        raise HTTPException(status_code=500, detail="Internal error fetching quote data")
+
     if not info:
-        logger.error("No data for %s", symbol)
+        logger.error("No data found", extra={"symbol": symbol})
         raise HTTPException(status_code=404, detail=f"No data for {symbol}")
-    logger.info("Fetched quote for %s", symbol)
+    logger.info("Quote data fetched", extra={"symbol": symbol})
     return QuoteResponse(
         symbol=symbol.upper(),
         current_price=info.get("regularMarketPrice"),

@@ -13,8 +13,9 @@ SYMBOL_PATTERN = re.compile(r"^[A-Za-z0-9\.\-]{1,10}$")
 
 
 async def fetch_historical(symbol: str, start: date | None, end: date | None) -> HistoricalResponse:
+    logger.info("Historical request received", extra={"symbol": symbol, "start": start, "end": end})
     if not SYMBOL_PATTERN.match(symbol):
-        logger.error("Invalid symbol format: %s", symbol)
+        logger.warning("Invalid symbol format", extra={"symbol": symbol})
         raise HTTPException(
             status_code=400,
             detail="Symbol must be 1-10 chars, alphanumeric, dot or dash.",
@@ -24,12 +25,22 @@ async def fetch_historical(symbol: str, start: date | None, end: date | None) ->
         ticker = yf.Ticker(symbol)
         return ticker.history(start=start, end=end)
 
-    df = await asyncio.to_thread(get_history, symbol, start, end)
+    try:
+        df = await asyncio.to_thread(get_history, symbol, start, end)
+    except Exception as e:
+        logger.exception(
+            "Exception fetching historical data",
+            extra={"symbol": symbol, "start": start, "end": end},
+        )
+        raise HTTPException(status_code=500, detail="Internal error fetching historical data")
+
     if df.empty:
-        logger.error("No historical data for %s", symbol)
+        logger.info(
+            "No historical data found", extra={"symbol": symbol, "start": start, "end": end}
+        )
         raise HTTPException(status_code=404, detail=f"No historical data for {symbol}")
 
-    logger.info("Fetched historical data for %s", symbol)
+    logger.info("Historical data fetched", extra={"symbol": symbol, "rows": len(df)})
 
     prices = [
         HistoricalPrice(

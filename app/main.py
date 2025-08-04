@@ -6,6 +6,7 @@ from prometheus_client import generate_latest
 from app.features.health.router import router as health_router
 from app.features.historical.router import router as historical_router
 from app.features.quote.routes import router as quote_router
+from app.monitoring.logging_middleware import LoggingMiddleware
 from app.monitoring.middleware import prometheus_middleware
 
 # Configure logging
@@ -30,7 +31,7 @@ app = FastAPI(
     },
 )
 
-
+app.add_middleware(LoggingMiddleware)
 app.middleware("http")(prometheus_middleware)
 
 
