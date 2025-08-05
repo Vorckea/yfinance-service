@@ -32,6 +32,7 @@ ruff = "^0.12.7"
 black = "^25.1.0"
 pytest-mock = "^3.14.1"
 pylint = "^3.3.7"
+pytest-cov = "^6.2.1"
 
 [tool.black]
 line-length = 100
