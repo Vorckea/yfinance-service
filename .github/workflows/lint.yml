@@ -21,20 +21,24 @@ jobs:
               uses: ./.github/actions/setup-python-deps
               with:
                   python_version: ${{ inputs.python-version }}
-                  install_pylint: true
+                  development: true
 
-            # Run Pylint
-            - name: Analysing code with Pylint
+            # Run Ruff (lint)
+            - name: Lint with Ruff
               continue-on-error: true
               run: |
-                pylint app tests --output-format=parseable > pylint-report.txt
-            # Upload Pylint report
-            - name: Upload Pylint report
+                poetry run ruff check app tests --output-format=github > ruff-report.txt
+            - name: Upload Ruff report
               uses: actions/upload-artifact@v4
               with:
-                name: pylint-report
-                path: pylint-report.txt
-            # Show Pylint report
-            - name: Show Pylint report
+                name: ruff-report
+                path: ruff-report.txt
+            - name: Show Ruff report
               if: always()
-              run: cat pylint-report.txt || echo "No Pylint report found"
+              run: cat ruff-report.txt || echo "No Ruff report found"
+
+            # Run Ruff (format)
+            - name: Check formatting with Ruff
+              continue-on-error: true
+              run: |
+                poetry run ruff format --check app tests

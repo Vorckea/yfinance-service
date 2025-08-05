@@ -20,6 +20,7 @@ jobs:
         uses: ./.github/actions/setup-python-deps
         with:
           python_version: ${{ inputs.python-version }}
+          development: true
       - name: Run tests
         run: poetry run pytest --maxfail=1 --disable-warnings --tb=short
       - name: Upload Pytest report

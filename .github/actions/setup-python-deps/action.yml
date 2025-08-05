@@ -10,6 +10,11 @@ inputs:
         required: false
         default: 'false'
         type: boolean
+    development:
+        description: "Whether to install development dependencies"
+        required: false
+        default: 'false'
+        type: boolean
 runs:
     using: "composite"
     steps:
@@ -30,14 +35,14 @@ runs:
         - name: Configure Poetry
           run: poetry config virtualenvs.create false
           shell: bash
+        # Install dependencies based on the development flag
         - name: Install Dependencies
-          run: poetry install --no-root || { echo "Dependency install failed"; exit 1; }
+          if: ${{ inputs.development != 'true' }}
+          run: poetry install --no-root --only main || { echo "Dependency install failed"; exit 1; }
           shell: bash
-        - name: Install Pylint
-          run: |
-              if [ "${{ inputs.install_pylint }}" = "true" ]; then
-                  pip install --no-cache-dir pylint
-              fi
+        - name: Install Dev Dependencies
+          if: ${{ inputs.development == 'true' }}
+          run: poetry install --no-root --with dev || { echo "Dev dependency install failed"; exit 1; }
           shell: bash
 outputs: 
     python_version:
