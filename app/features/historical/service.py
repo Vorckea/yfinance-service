@@ -13,6 +13,7 @@ SYMBOL_PATTERN = re.compile(r"^[A-Za-z0-9\.\-]{1,10}$")
 
 
 async def fetch_historical(symbol: str, start: date | None, end: date | None) -> HistoricalResponse:
+    """Fetch historical stock data for a given symbol."""
     logger.info("Historical request received", extra={"symbol": symbol, "start": start, "end": end})
     if not SYMBOL_PATTERN.match(symbol):
         logger.warning("Invalid symbol format", extra={"symbol": symbol})
@@ -27,7 +28,7 @@ async def fetch_historical(symbol: str, start: date | None, end: date | None) ->
 
     try:
         df = await asyncio.to_thread(get_history, symbol, start, end)
-    except Exception as e:
+    except Exception:
         logger.exception(
             "Exception fetching historical data",
             extra={"symbol": symbol, "start": start, "end": end},
