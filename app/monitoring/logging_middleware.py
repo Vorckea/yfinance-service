@@ -13,7 +13,10 @@ class LoggingMiddleware(BaseHTTPMiddleware):
     """Middleware to log requests and responses."""
 
     async def dispatch(self, request: Request, call_next) -> Response:
-        """Log requests and responses."""
+        """Log the request and response details.
+
+        Exceptions during request processing are logged before being re-raised.
+        """
         start_time = time.time()
         logger.info(
             f"Request: {request.method} {request.url.path}",
@@ -26,7 +29,7 @@ class LoggingMiddleware(BaseHTTPMiddleware):
                 "Unhandled exception occurred during request",
                 extra={"method": request.method, "path": request.url.path},
             )
-            raise e
+            raise
         process_time = time.time() - start_time
         logger.info(
             f"Response: {request.method} {request.url.path} {response.status_code} ({process_time:.3f}s)",

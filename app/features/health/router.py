@@ -1,5 +1,6 @@
-from fastapi import APIRouter, Response
 import yfinance as yf
+from fastapi import APIRouter, Response
+from ...utils.logger import logger
 
 router = APIRouter()
 
@@ -48,7 +49,12 @@ async def get_ready():
                 status_code=503,
                 media_type="application/json",
             )
-    except Exception:
+    except Exception as e:
+        logger.error(
+            f"YFinance is not reachable ({type(e).__name__}): {e}",
+            exc_info=True,
+            extra={"ticker": "AAPL"},
+        )
         return Response(
             content='{"status": "not ready"}',
             status_code=503,

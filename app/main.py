@@ -30,6 +30,7 @@ app.middleware("http")(prometheus_middleware)
 
 @app.get("/metrics")
 def metrics():
+    """Endpoint to expose Prometheus metrics."""
     return Response(generate_latest(), media_type="text/plain")
 
 

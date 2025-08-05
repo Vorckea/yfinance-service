@@ -2,6 +2,8 @@ from pydantic import BaseModel, Field
 
 
 class QuoteResponse(BaseModel):
+    """Response model for stock quote data."""
+
     symbol: str = Field(..., description="Ticker symbol (e.g., AAPL)")
     current_price: float | None = Field(None, description="Current market price")
     previous_close: float | None = Field(None, description="Previous closing price")

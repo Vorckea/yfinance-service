@@ -38,7 +38,4 @@ async def get_quote(
     symbol: str = Path(..., description="Ticker symbol", example="AAPL"),
 ) -> QuoteResponse:
     """Get the latest market quote for a given ticker symbol."""
-    try:
-        return await fetch_quote(symbol)
-    except HTTPException as e:
-        raise e
+    return await fetch_quote(symbol)
