@@ -1,5 +1,6 @@
 import yfinance as yf
 from fastapi import APIRouter, Response
+
 from ...utils.logger import logger
 
 router = APIRouter()

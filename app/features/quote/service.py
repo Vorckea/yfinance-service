@@ -26,7 +26,9 @@ async def fetch_quote(symbol: str) -> QuoteResponse:
     try:
         info = await asyncio.to_thread(fetch_info, symbol)
     except Exception as e:
-        logger.exception("Exception fetching quote data", extra={"symbol": symbol})
+        logger.exception(
+            f"Exception fetching quote data. ({type(e).__name__}): {e}", extra={"symbol": symbol}
+        )
         raise HTTPException(status_code=500, detail="Internal error fetching quote data")
 
     if not info:

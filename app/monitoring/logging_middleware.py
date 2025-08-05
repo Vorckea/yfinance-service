@@ -26,7 +26,7 @@ class LoggingMiddleware(BaseHTTPMiddleware):
             response: Response = await call_next(request)
         except Exception as e:
             logger.exception(
-                "Unhandled exception occurred during request",
+                f"Exception during request: {type(e).__name__}: {e}",
                 extra={"method": request.method, "path": request.url.path},
             )
             raise
