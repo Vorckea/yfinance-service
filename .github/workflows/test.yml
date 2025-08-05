@@ -22,9 +22,21 @@ jobs:
           python_version: ${{ inputs.python-version }}
           development: true
       - name: Run tests
-        run: poetry run pytest --maxfail=1 --disable-warnings --tb=short
+        run: poetry run pytest --maxfail=1 --disable-warnings --tb=short --cov=app --cov=features --cov-report=term-missing --cov-report=xml --cov-report=html
       - name: Upload Pytest report
         uses: actions/upload-artifact@v4
         with:
           name: pytest-report
           path: pytest-report.xml
+
+      - name: Upload Coverage XML
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-xml
+          path: coverage.xml
+
+      - name: Upload Coverage HTML
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-html
+          path: htmlcov/
