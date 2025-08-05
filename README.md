@@ -26,7 +26,7 @@ A FastAPI-based service that acts as a proxy for the [yfinance](https://github.c
 ## Monitoring with Prometheus
 
 This service exposes metrics at `/metrics` in Prometheus format.  
-To use with Prometheus, see the provided `docker-compose.yml` and `prometheus.yml` for a quick setup.
+To use with Prometheus and Grafana, see the provided `docker-compose.yml` and the configs in `monitoring/infra/` and `monitoring/dashboards/` for a quick setup.
 
 **Example Prometheus Query for Latency:**
 ```
@@ -53,6 +53,12 @@ docker compose up --build
 ```
 - Access the API at [http://localhost:8000](http://localhost:8000)
 - Access Prometheus at [http://localhost:9090](http://localhost:9090)
+- Access Grafana at [http://localhost:3000](http://localhost:3000)
+
+Prometheus config: `monitoring/infra/prometheus.yml`
+Prometheus alert rules: `monitoring/infra/alert.rules.yml`
+Grafana dashboards: `monitoring/dashboards/`
+Grafana datasources: `monitoring/datasources/`
 
 ## Usage Example
 Fetch the latest quote for Apple:
