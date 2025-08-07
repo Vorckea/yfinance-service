@@ -15,6 +15,9 @@ COPY . /app
 
 EXPOSE 8000
 
+HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
+    CMD curl --fail http://localhost:8000/health || exit 1
+
 RUN adduser --home /home/appuser --disabled-password --gecos "" appuser
 USER appuser
 
