@@ -1,5 +1,5 @@
 # --- Stage 1: Builder ---
-FROM python:3.13-alpine AS builder
+FROM python:3.13-slim-bookworm AS builder
 
 ENV PYTHONUNBUFFERED=1 \
     PYTHONFAULTHANDLER=1 \
