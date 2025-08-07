@@ -10,6 +10,7 @@ A FastAPI-based service that acts as a proxy for the [yfinance](https://github.c
 
 - **Quote API**: Fetch latest market quotes for ticker symbols.
 - **Historical API**: Retrieve historical market data for symbols over a date range.
+- **Info API**: Retrieve detailed company information for a ticker symbol.
 - **Health Check**: Simple endpoint to verify service status.
 - **Prometheus Metrics**: `/metrics` endpoint for monitoring request count, errors, and latency.
 
@@ -20,6 +21,9 @@ A FastAPI-based service that acts as a proxy for the [yfinance](https://github.c
 
 ### Historical
 - `GET /historical/{symbol}?start=YYYY-MM-DD&end=YYYY-MM-DD`: Get historical data for a symbol within a date range.
+
+### Info
+- `GET /info/{symbol}`: Get detailed company information for a symbol (e.g., company name, sector, industry, market cap, price, etc.).
 
 ### Health
 - `GET /health`: Service health check.
@@ -68,6 +72,10 @@ Grafana datasources: `monitoring/datasources/`
 Fetch the latest quote for Apple:
 ```sh
 curl http://localhost:8000/quote/AAPL
+```
+Fetch company info for Apple:
+```sh
+curl http://localhost:8000/info/AAPL
 ```
 
 ## License
