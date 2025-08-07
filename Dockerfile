@@ -1,4 +1,4 @@
-FROM python:3.13-slim
+FROM python:3.13-slim AS builder
 
 ENV PYTHONUNBUFFERED=1 \
     PYTHONFAULTHANDLER=1 \
@@ -19,6 +19,17 @@ COPY pyproject.toml poetry.lock* /app/
 RUN poetry install --no-root --only main
 
 COPY . /app
+
+FROM python:3.13-slim
+
+ENV PYTHONUNBUFFERED=1 \
+    PYTHONFAULTHANDLER=1
+
+WORKDIR /app
+
+COPY --from=builder /usr/local/lib/python3.13 /usr/local/lib/python3.13
+COPY --from=builder /usr/local/bin /usr/local/bin
+COPY --from=builder /app /app
 
 RUN adduser --home /home/appuser --disabled-password --gecos "" appuser
 USER appuser
