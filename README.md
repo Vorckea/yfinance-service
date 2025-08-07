@@ -18,11 +18,11 @@ A FastAPI-based service that acts as a proxy for the [yfinance](https://github.c
 
 ### Quote
 
-- `GET /quote/{symbol}`: Get the latest quote for a symbol.
+- `GET /quote/{symbol}`: Get the latest quote (OHLCV) for a symbol .
 
 ### Historical
 
-- `GET /historical/{symbol}?start=YYYY-MM-DD&end=YYYY-MM-DD`: Get historical data for a symbol within a date range.
+- `GET /historical/{symbol}?start=YYYY-MM-DD&end=YYYY-MM-DD`: Get historical data (OHLCV) for a symbol within a date range.
 
 ### Info
 
