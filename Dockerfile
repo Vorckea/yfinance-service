@@ -1,4 +1,5 @@
-FROM python:3.13-slim AS builder
+# --- Stage 1: Builder ---
+FROM python:3.13-alpine AS builder
 
 ENV PYTHONUNBUFFERED=1 \
     PYTHONFAULTHANDLER=1 \
@@ -7,29 +8,27 @@ ENV PYTHONUNBUFFERED=1 \
 WORKDIR /app
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    build-essential \
-    curl \
     && rm -rf /var/lib/apt/lists/*
 
-RUN pip install --no-cache-dir "poetry==$POETRY_VERSION" && \
+RUN pip install --no-cache-dir "poetry==$POETRY_VERSION" "poetry-plugin-export" && \
     poetry config virtualenvs.create false
 
 COPY pyproject.toml poetry.lock* /app/
 
-RUN poetry install --no-root --only main
+RUN poetry export --without-hashes --only main -f requirements.txt -o requirements.txt
 
-COPY . /app
-
-FROM python:3.13-slim
+# --- Stage 2: Runtime ---
+FROM python:3.13-slim-bookworm AS runtime
 
 ENV PYTHONUNBUFFERED=1 \
     PYTHONFAULTHANDLER=1
 
 WORKDIR /app
 
-COPY --from=builder /usr/local/lib/python3.13 /usr/local/lib/python3.13
-COPY --from=builder /usr/local/bin /usr/local/bin
-COPY --from=builder /app /app
+COPY --from=builder /app/requirements.txt /app/
+RUN pip install --no-cache-dir --no-compile -r requirements.txt
+
+COPY . /app
 
 RUN adduser --home /home/appuser --disabled-password --gecos "" appuser
 USER appuser

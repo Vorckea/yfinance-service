@@ -1,7 +1,5 @@
 __pycache__/
-*.pyc
-*.pyo
-*.pyd
+*.py[cod]
 .env
 .env.*
 .git
