@@ -1,27 +1,41 @@
 services:
   yfinance-service:
     build: .
+    image: yfinance-service:latest
+    restart: unless-stopped
     ports:
       - "8000:8000"
-    image: yfinance-service:latest
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:8000/health" ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
 
   prometheus:
     image: prom/prometheus:latest
+    restart: unless-stopped
     ports:
       - "9090:9090"
     volumes:
+      - prometheus_data:/prometheus
       - ./monitoring/infra/prometheus.yml:/etc/prometheus/prometheus.yml
     depends_on:
       - yfinance-service
 
   grafana:
     image: grafana/grafana:latest
-    ports:
-      - "3000:3000"
+    restart: unless-stopped
     environment:
       - GF_SECURITY_ADMIN_PASSWORD=admin
+    ports:
+      - "3000:3000"
     volumes:
+      - grafana_data:/var/lib/grafana
       - ./monitoring/grafana/datasources:/etc/grafana/provisioning/datasources
       - ./monitoring/grafana/dashboards:/etc/grafana/provisioning/dashboards
     depends_on:
       - prometheus
+
+volumes:
+  prometheus_data:
+  grafana_data:
