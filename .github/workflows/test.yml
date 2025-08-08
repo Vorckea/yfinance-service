@@ -27,7 +27,7 @@ jobs:
         run: > 
           poetry run pytest 
           --maxfail=1 --disable-warnings --tb=short
-          --cov=app --cov=features 
+          --cov=app
           --cov-report=term-missing 
           --cov-report=xml 
           --cov-report=html
