@@ -1,23 +1,13 @@
 from datetime import date
-from typing import Annotated
 
 from fastapi import APIRouter, HTTPException
-from fastapi.params import Path, Query
+from fastapi.params import Query
 
+from ...common.validation import SymbolParam
 from .models import HistoricalResponse
 from .service import fetch_historical
 
 router = APIRouter()
-
-SymbolParam = Annotated[
-    str,
-    Path(
-        ...,
-        description="Ticker symbol",
-        example="AAPL",
-        pattern=r"^[A-Za-z0-9\.\-]{1,10}$",
-    ),
-]
 
 
 @router.get(

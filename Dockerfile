@@ -25,6 +25,8 @@ ENV PYTHONUNBUFFERED=1 \
 
 WORKDIR /app
 
+RUN apt-get install -y curl ca-certificates
+
 COPY --from=builder /app/requirements.txt /app/
 RUN pip install --no-cache-dir --no-compile -r requirements.txt
 

@@ -1,21 +1,10 @@
-from typing import Annotated
 from fastapi import APIRouter
-from fastapi.params import Path
 
+from ...common.validation import SymbolParam
 from .models import InfoResponse
 from .service import fetch_info
 
 router = APIRouter()
-
-SymbolParam = Annotated[
-    str,
-    Path(
-        ...,
-        description="Ticker symbol",
-        example="AAPL",
-        pattern=r"^[A-Za-z0-9\.\-]{1,10}$",
-    ),
-]
 
 
 @router.get(
