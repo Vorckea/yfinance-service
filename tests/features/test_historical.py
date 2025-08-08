@@ -32,8 +32,9 @@ def test_historical_valid_symbol(client, mocker):
 
 def test_historical_invalid_symbol(client):
     response = client.get(f"/historical/{INVALID_SYMBOLS}?start=2024-08-01&end=2024-08-02")
-    assert response.status_code == 400
-    assert "Symbol must be" in response.json()["detail"]
+    assert response.status_code == 422
+    body = response.json()
+    assert "detail" in body and isinstance(body["detail"], list)
 
 
 def test_historical_not_found(client, mocker):

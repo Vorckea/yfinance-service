@@ -1,9 +1,11 @@
 import datetime
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class HistoricalPrice(BaseModel):
+    model_config = ConfigDict(frozen=True)
+
     date: datetime.date = Field(..., description="Date of the price")
     open: float = Field(..., description="Opening price")
     high: float = Field(..., description="Highest price")
@@ -13,5 +15,7 @@ class HistoricalPrice(BaseModel):
 
 
 class HistoricalResponse(BaseModel):
+    model_config = ConfigDict(frozen=True)
+
     symbol: str = Field(..., description="Ticker symbol (e.g., AAPL)")
     prices: list[HistoricalPrice] = Field(..., description="List of historical prices")

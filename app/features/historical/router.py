@@ -1,4 +1,5 @@
 from datetime import date
+from typing import Annotated
 
 from fastapi import APIRouter, HTTPException
 from fastapi.params import Path, Query
@@ -8,13 +9,26 @@ from .service import fetch_historical
 
 router = APIRouter()
 
+SymbolParam = Annotated[
+    str,
+    Path(
+        ...,
+        description="Ticker symbol",
+        example="AAPL",
+        pattern=r"^[A-Za-z0-9\.\-]{1,10}$",
+    ),
+]
+
 
 @router.get(
     "/{symbol}",
     response_model=HistoricalResponse,
+    response_model_exclude_none=True,
     summary="Get historical data for a symbol",
-    description="Returns historical market data for the given ticker symbol within the specified "
-    "date range.",
+    description=(
+        "Returns historical market data for the given ticker symbol within the specified date "
+        "range."
+    ),
     operation_id="getHistoricalDataBySymbol",
     responses={
         200: {
@@ -23,7 +37,7 @@ router = APIRouter()
                 "application/json": {
                     "example": {
                         "symbol": "AAPL",
-                        "historical_data": [
+                        "prices": [
                             {
                                 "date": "2023-01-01",
                                 "open": 150.0,
@@ -50,15 +64,10 @@ router = APIRouter()
     },
 )
 async def get_historical(
-    symbol: str = Path(..., description="Ticker symbol", example="AAPL"),
-    start: date | None = Query(
-        None, description="Start date in YYYY-MM-DD format", example="2023-01-01"
-    ),
-    end: date | None = Query(
-        None, description="End date in YYYY-MM-DD format", example="2023-12-31"
-    ),
+    symbol: SymbolParam,
+    start: date | None = Query(None, description="Start date (YYYY-MM-DD)", example="2023-01-01"),
+    end: date | None = Query(None, description="End date (YYYY-MM-DD)", example="2023-12-31"),
 ) -> HistoricalResponse:
-    try:
-        return await fetch_historical(symbol, start, end)
-    except HTTPException as e:
-        raise e
+    if start and end and start > end:
+        raise HTTPException(status_code=400, detail="start must be before or equal to end")
+    return await fetch_historical(symbol, start, end)

@@ -1,6 +1,7 @@
 import asyncio
 import re
 from datetime import date
+from functools import lru_cache
 
 import pandas as pd
 import yfinance as yf
@@ -10,6 +11,12 @@ from ...utils.logger import logger
 from .models import HistoricalPrice, HistoricalResponse
 
 SYMBOL_PATTERN = re.compile(r"^[A-Za-z0-9\.\-]{1,10}$")
+
+
+@lru_cache(maxsize=512)
+def _get_ticker(symbol: str) -> yf.Ticker:
+    # Lightweight cache to avoid recreating Ticker objects repeatedly
+    return yf.Ticker(symbol)
 
 
 async def fetch_historical(symbol: str, start: date | None, end: date | None) -> HistoricalResponse:
@@ -23,14 +30,18 @@ async def fetch_historical(symbol: str, start: date | None, end: date | None) ->
         )
 
     def get_history(symbol: str, start: date | None, end: date | None) -> pd.DataFrame:
-        ticker = yf.Ticker(symbol)
-        return ticker.history(start=start, end=end)
+        ticker = _get_ticker(symbol)
+        df = ticker.history(start=start, end=end)
+        if getattr(df.index, "tz", None) is not None:
+            df = df.tz_convert(None)
+        cols = ["Open", "High", "Low", "Close", "Volume"]
+        return df[cols] if not df.empty else df
 
     try:
         df = await asyncio.to_thread(get_history, symbol, start, end)
-    except Exception:
+    except Exception as e:
         logger.exception(
-            "Exception fetching historical data",
+            f"Exception fetching historical data ({type(e).__name__})",
             extra={"symbol": symbol, "start": start, "end": end},
         )
         raise HTTPException(status_code=500, detail="Internal error fetching historical data")
@@ -45,16 +56,14 @@ async def fetch_historical(symbol: str, start: date | None, end: date | None) ->
 
     prices = [
         HistoricalPrice(
-            date=row.name.date(),
-            open=row["Open"],
-            high=row["High"],
-            low=row["Low"],
-            close=row["Close"],
-            volume=int(row["Volume"]) if not pd.isna(row["Volume"]) else 0,
+            date=ts.date(),
+            open=float(o),
+            high=float(h),
+            low=float(l),
+            close=float(c),
+            volume=int(v) if pd.notna(v) else 0,
         )
-        for index, row in df.iterrows()
+        for ts, o, h, l, c, v in df.itertuples(index=True, name=None)
     ]
-    return HistoricalResponse(
-        symbol=symbol.upper(),
-        prices=prices,
-    )
+
+    return HistoricalResponse(symbol=symbol.upper(), prices=prices)
