@@ -1,5 +1,3 @@
-import pytest
-
 VALID_SYMBOL = "AAPL"
 INVALID_SYMBOL = "!!!"
 
