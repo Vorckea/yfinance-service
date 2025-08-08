@@ -8,13 +8,13 @@ inputs:
     development:
         description: "Whether to install development dependencies"
         required: false
-        default: 'false'
+        default: false
         type: boolean
 runs:
     using: "composite"
     steps:
         - name: Setup Python
-          uses: actions/setup-python@v4
+          uses: actions/setup-python@v5
           with:
               python-version: ${{ inputs.python_version }}
 
@@ -35,12 +35,12 @@ runs:
           shell: bash
 
         - name: Install Dependencies
-          if: ${{ inputs.development != 'true' }}
+          if: ${{ inputs.development }}
           run: poetry install --no-root --only main || { echo "Dependency install failed"; exit 1; }
           shell: bash
 
         - name: Install Dev Dependencies
-          if: ${{ inputs.development == 'true' }}
+          if: ${{ !inputs.development }}
           run: poetry install --no-root --with dev || { echo "Dev dependency install failed"; exit 1; }
           shell: bash
 outputs: 
