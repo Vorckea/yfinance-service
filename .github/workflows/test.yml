@@ -16,26 +16,39 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+
       - name: Setup & Install
         uses: ./.github/actions/setup-python-deps
         with:
           python_version: ${{ inputs.python-version }}
           development: true
+
       - name: Run tests
-        run: poetry run pytest --maxfail=1 --disable-warnings --tb=short --cov=app --cov=features --cov-report=term-missing --cov-report=xml --cov-report=html
-      - name: Upload Pytest report
+        run: > 
+          poetry run pytest 
+          --maxfail=1 --disable-warnings --tb=short
+          --cov=app --cov=features 
+          --cov-report=term-missing 
+          --cov-report=xml 
+          --cov-report=html
+          --junitxml=pytest-report.xml
+
+      - name: Upload Pytest JUnit report
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: pytest-report
           path: pytest-report.xml
 
       - name: Upload Coverage XML
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: coverage-xml
           path: coverage.xml
 
       - name: Upload Coverage HTML
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: coverage-html

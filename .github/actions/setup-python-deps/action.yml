@@ -5,11 +5,6 @@ inputs:
         description: "Python version to use for the setup"
         required: true
         type: string
-    install_pylint:
-        description: "Whether to install Pylint"
-        required: false
-        default: 'false'
-        type: boolean
     development:
         description: "Whether to install development dependencies"
         required: false
@@ -22,6 +17,7 @@ runs:
           uses: actions/setup-python@v4
           with:
               python-version: ${{ inputs.python_version }}
+
         - name: Cache Poetry
           uses: actions/cache@v4
           with:
@@ -29,17 +25,20 @@ runs:
               key: poetry-${{ runner.os }}-${{ hashFiles('**/poetry.lock') }}
               restore-keys: |
                 poetry-${{ runner.os }}-
+
         - name: Install Poetry
           run: pip install --no-cache-dir poetry || { echo "Poetry install failed"; exit 1; }
           shell: bash
+
         - name: Configure Poetry
           run: poetry config virtualenvs.create false
           shell: bash
-        # Install dependencies based on the development flag
+
         - name: Install Dependencies
           if: ${{ inputs.development != 'true' }}
           run: poetry install --no-root --only main || { echo "Dependency install failed"; exit 1; }
           shell: bash
+
         - name: Install Dev Dependencies
           if: ${{ inputs.development == 'true' }}
           run: poetry install --no-root --with dev || { echo "Dev dependency install failed"; exit 1; }
