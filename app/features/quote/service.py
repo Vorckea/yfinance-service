@@ -1,26 +1,33 @@
 import asyncio
 import re
+from functools import lru_cache
 
 import yfinance as yf
 from fastapi import HTTPException
 
-from .models import QuoteResponse
 from ...utils.logger import logger
+from .models import QuoteResponse
 
 SYMBOL_PATTERN = re.compile(r"^[A-Za-z0-9\.\-]{1,10}$")
+
+
+@lru_cache(maxsize=512)
+def _get_ticker(symbol: str) -> yf.Ticker:
+    ticker = yf.Ticker(symbol)
+    return ticker
 
 
 async def fetch_quote(symbol: str) -> QuoteResponse:
     logger.info("Quote request received", extra={"symbol": symbol})
     if not SYMBOL_PATTERN.match(symbol):
-        logger.error("Invalid symbol format", extra={"symbol": symbol})
+        logger.warning("Invalid symbol format", extra={"symbol": symbol})
         raise HTTPException(
             status_code=400,
             detail="Symbol must be 1-10 chars, alphanumeric, dot or dash.",
         )
 
     def fetch_info(symbol: str):
-        ticker = yf.Ticker(symbol)
+        ticker = _get_ticker(symbol)
         return ticker.info
 
     try:

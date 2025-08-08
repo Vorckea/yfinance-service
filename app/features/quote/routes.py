@@ -1,3 +1,5 @@
+from typing import Annotated
+
 from fastapi import APIRouter
 from fastapi.params import Path
 
@@ -6,10 +8,21 @@ from .service import fetch_quote
 
 router = APIRouter()
 
+SymbolParam = Annotated[
+    str,
+    Path(
+        ...,
+        description="Ticker symbol",
+        example="AAPL",
+        pattern=r"^[A-Za-z0-9\.\-]{1,10}$",
+    ),
+]
+
 
 @router.get(
     "/{symbol}",
     response_model=QuoteResponse,
+    response_model_exclude_none=True,
     summary="Get latest quote for a symbol",
     description="Returns the latest market quote for the given ticker symbol.",
     operation_id="getQuoteBySymbol",
@@ -35,7 +48,7 @@ router = APIRouter()
     },
 )
 async def get_quote(
-    symbol: str = Path(..., description="Ticker symbol", example="AAPL"),
+    symbol: SymbolParam,
 ) -> QuoteResponse:
     """Get the latest market quote for a given ticker symbol."""
     return await fetch_quote(symbol)

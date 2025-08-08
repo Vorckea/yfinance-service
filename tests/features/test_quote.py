@@ -25,5 +25,6 @@ def test_quote_valid_symbol(client, mocker):
 
 def test_quote_invalid_symbol(client):
     response = client.get(f"/quote/{INVALID_SYMBOL}")
-    assert response.status_code == 400
-    assert "Symbol must be" in response.json()["detail"]
+    assert response.status_code == 422
+    body = response.json()
+    assert "detail" in body and isinstance(body["detail"], list)

@@ -1,13 +1,15 @@
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ConfigDict
 
 
 class QuoteResponse(BaseModel):
     """Response model for stock quote data."""
 
+    model_config = ConfigDict(frozen=True)
+
     symbol: str = Field(..., description="Ticker symbol (e.g., AAPL)")
-    current_price: float | None = Field(None, description="Current market price")
-    previous_close: float | None = Field(None, description="Previous closing price")
-    open: float | None = Field(None, description="Opening price")
-    high: float | None = Field(None, description="Highest price of the day")
-    low: float | None = Field(None, description="Lowest price of the day")
-    volume: int | None = Field(None, description="Trading volume")
+    current_price: float = Field(..., description="Current market price")
+    previous_close: float = Field(..., description="Previous closing price")
+    open: float = Field(..., description="Opening price")
+    high: float = Field(..., description="Highest price of the day")
+    low: float = Field(..., description="Lowest price of the day")
+    volume: int = Field(..., description="Trading volume")
