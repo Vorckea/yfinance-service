@@ -1,5 +1,6 @@
 import asyncio
 import re
+from functools import lru_cache
 
 import yfinance as yf
 from fastapi import HTTPException
@@ -8,6 +9,12 @@ from ...utils.logger import logger
 from .models import InfoResponse
 
 SYMBOL_PATTERN = re.compile(r"^[A-Za-z0-9\.\-]{1,10}$")
+
+
+@lru_cache(maxsize=512)
+def _get_ticker(symbol: str) -> yf.Ticker:
+    ticker = yf.Ticker(symbol)
+    return ticker
 
 
 async def fetch_info(symbol: str) -> InfoResponse:
@@ -20,7 +27,7 @@ async def fetch_info(symbol: str) -> InfoResponse:
         )
 
     def fetch_info_data(symbol: str):
-        ticker = yf.Ticker(symbol)
+        ticker = _get_ticker(symbol)
         return ticker.info
 
     try:

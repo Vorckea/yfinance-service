@@ -45,6 +45,7 @@ SymbolParam = Annotated[
         },
         400: {"description": "Invalid symbol"},
         404: {"description": "Symbol not found"},
+        422: {"description": "Unprocessable Entity"},
     },
 )
 async def get_quote(

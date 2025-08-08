@@ -1,3 +1,4 @@
+from typing import Annotated
 from fastapi import APIRouter
 from fastapi.params import Path
 
@@ -5,6 +6,16 @@ from .models import InfoResponse
 from .service import fetch_info
 
 router = APIRouter()
+
+SymbolParam = Annotated[
+    str,
+    Path(
+        ...,
+        description="Ticker symbol",
+        example="AAPL",
+        pattern=r"^[A-Za-z0-9\.\-]{1,10}$",
+    ),
+]
 
 
 @router.get(
@@ -43,11 +54,10 @@ router = APIRouter()
             },
             400: {"description": "Invalid symbol"},
             404: {"description": "Symbol not found"},
+            422: {"description": "Unprocessable Entity"},
         },
     },
 )
-async def get_info(
-    symbol: str = Path(..., description="Ticker symbol", example="AAPL"),
-) -> InfoResponse:
+async def get_info(symbol: SymbolParam) -> InfoResponse:
     """Get detailed information about a company for a given ticker symbol."""
     return await fetch_info(symbol)

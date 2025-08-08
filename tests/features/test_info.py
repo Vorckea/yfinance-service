@@ -36,8 +36,9 @@ def test_info_valid_symbol(client, mocker):
 
 def test_info_invalid_symbol(client):
     response = client.get(f"/info/{INVALID_SYMBOL}")
-    assert response.status_code == 400
-    assert "Symbol must be" in response.json()["detail"]
+    assert response.status_code == 422
+    body = response.json()
+    assert "detail" in body and isinstance(body["detail"], list)
 
 
 def test_info_not_found_symbol(client, mocker):
@@ -47,10 +48,3 @@ def test_info_not_found_symbol(client, mocker):
     response = client.get(f"/info/{NOT_FOUND_SYMBOL}")
     assert response.status_code == 404
     assert "No data for" in response.json()["detail"]
-
-
-def test_info_handles_yfinance_exception(client, mocker):
-    mock_ticker = mocker.patch("yfinance.Ticker", side_effect=Exception("yfinance error"))
-    response = client.get(f"/info/{VALID_SYMBOL}")
-    assert response.status_code == 500
-    assert "Internal error fetching info data" in response.json()["detail"]

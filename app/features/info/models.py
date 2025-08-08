@@ -1,8 +1,10 @@
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class InfoResponse(BaseModel):
     """Model for storing information about the application."""
+
+    model_config = ConfigDict(frozen=True)
 
     symbol: str = Field(..., description="Ticker symbol (e.g., AAPL)")
     short_name: str | None = Field(None, description="Short company name")
