@@ -35,12 +35,12 @@ runs:
           shell: bash
 
         - name: Install Dependencies
-          if: ${{ inputs.development }}
+          if: ${{ !inputs.development }}
           run: poetry install --no-root --only main || { echo "Dependency install failed"; exit 1; }
           shell: bash
 
         - name: Install Dev Dependencies
-          if: ${{ !inputs.development }}
+          if: ${{ inputs.development }}
           run: poetry install --no-root --with dev || { echo "Dev dependency install failed"; exit 1; }
           shell: bash
 outputs: 
