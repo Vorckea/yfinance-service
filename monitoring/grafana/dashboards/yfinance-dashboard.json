@@ -17,8 +17,8 @@
             "datasource": "Prometheus",
             "targets": [
                 {
-                    "expr": "sum by (endpoint) (rate(request_count_total[1m]))",
-                    "legendFormat": "{{endpoint}}",
+                    "expr": "sum by (endpoint, method) (rate(request_count_total[1m]))",
+                    "legendFormat": "{{endpoint}} [{{method}}]",
                     "interval": ""
                 }
             ],
@@ -32,21 +32,21 @@
         },
         {
             "type": "timeseries",
-            "title": "Error Count (per endpoint)",
+            "title": "Error Count (per endpoint, status)",
             "datasource": "Prometheus",
             "targets": [
                 {
-                    "expr": "sum by (endpoint) (rate(error_count_total[1m]))",
-                    "legendFormat": "{{endpoint}}",
+                    "expr": "sum by (endpoint, method, status) (rate(error_count_total[1m]))",
+                    "legendFormat": "{{endpoint}} [{{method}}] ({{status}})",
                     "interval": ""
                 }
             ],
-            "id": 2,
+            "id": 4,
             "gridPos": {
                 "h": 8,
                 "w": 24,
                 "x": 0,
-                "y": 8
+                "y": 24
             }
         },
         {
