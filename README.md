@@ -1,7 +1,7 @@
 # YFinance Proxy Service
 
 ![Build Status](https://img.shields.io/github/actions/workflow/status/Vorckea/yfinance-service/ci.yml?branch=main)
-![Coverage](https://img.shields.io/badge/coverage-90%25-brightgreen)
+![Coverage](https://img.shields.io/badge/coverage-87%25-brightgreen)
 ![License](https://img.shields.io/github/license/Vorckea/yfinance-service)
 
 A FastAPI-based service that acts as a proxy for the [yfinance](https://github.com/ranaroussi/yfinance) Python library, enabling non-Python projects to access financial market data via HTTP endpoints.
