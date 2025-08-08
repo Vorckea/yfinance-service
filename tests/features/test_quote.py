@@ -1,5 +1,6 @@
 VALID_SYMBOL = "AAPL"
 INVALID_SYMBOL = "!!!"
+NOT_FOUND_SYMBOL = "ZZZZZZZZZZ"
 
 
 def test_quote_valid_symbol(client, mocker):
@@ -26,3 +27,12 @@ def test_quote_invalid_symbol(client):
     assert response.status_code == 422
     body = response.json()
     assert "detail" in body and isinstance(body["detail"], list)
+
+
+def test_quote_not_found_symbol(client, mocker):
+    mock_ticker = mocker.patch("yfinance.Ticker")
+    mock_instance = mock_ticker.return_value
+    mock_instance.info = {}
+    response = client.get(f"/quote/{NOT_FOUND_SYMBOL}")
+    assert response.status_code == 404
+    assert "No data for" in response.json()["detail"]
