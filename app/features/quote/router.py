@@ -40,4 +40,4 @@ async def get_quote(
     symbol: SymbolParam,
 ) -> QuoteResponse:
     """Get the latest market quote for a given ticker symbol."""
-    return await fetch_quote(symbol)
+    return await fetch_quote(symbol.upper().strip())

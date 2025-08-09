@@ -4,7 +4,7 @@ from pydantic import BaseModel, ConfigDict, Field
 class QuoteResponse(BaseModel):
     """Response model for stock quote data."""
 
-    model_config = ConfigDict(frozen=True)
+    model_config = ConfigDict(frozen=True, extra="ignore")
 
     symbol: str = Field(..., description="Ticker symbol (e.g., AAPL)")
     current_price: float = Field(..., description="Current market price")
