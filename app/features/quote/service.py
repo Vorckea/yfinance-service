@@ -1,5 +1,6 @@
 import asyncio
 from functools import lru_cache
+from typing import Any
 
 import yfinance as yf
 from fastapi import HTTPException
@@ -14,7 +15,12 @@ def _get_ticker(symbol: str) -> yf.Ticker:
     return ticker
 
 
-def _map_info(symbol: str, info: dict) -> QuoteResponse:
+def _fetch_info(symbol: str) -> dict[str, Any]:
+    ticker = _get_ticker(symbol)
+    return ticker.info
+
+
+def _map_info(symbol: str, info: dict[str, Any]) -> QuoteResponse:
     return QuoteResponse(
         symbol=symbol,
         current_price=info.get("regularMarketPrice"),
@@ -27,22 +33,23 @@ def _map_info(symbol: str, info: dict) -> QuoteResponse:
 
 
 async def fetch_quote(symbol: str) -> QuoteResponse:
-    logger.info("Quote request received", extra={"symbol": symbol})
-
-    def fetch_info(symbol: str):
-        ticker = _get_ticker(symbol)
-        return ticker.info
+    symbol = symbol.upper().strip()
+    logger.info("quote.fetch.start", extra={"symbol": symbol})
 
     try:
-        info = await asyncio.to_thread(fetch_info, symbol)
-    except Exception as e:
-        logger.exception(
-            f"Exception fetching quote data. ({type(e).__name__}): {e}", extra={"symbol": symbol}
-        )
+        info = await asyncio.to_thread(_fetch_info, symbol)
+    except (ConnectionError, TimeoutError) as e:
+        logger.warning("quote.fetch.timeout", extra={"symbol": symbol, "error": str(e)})
+        raise HTTPException(status_code=503, detail="Upstream timeout")
+    except asyncio.CancelledError:
+        logger.error("quote.fetch.cancelled", extra={"symbol": symbol})
         raise HTTPException(status_code=500, detail="Internal error fetching quote data")
-
+    except Exception:
+        logger.exception("quote.fetch.unexpected", extra={"symbol": symbol})
+        raise HTTPException(status_code=500, detail="Internal error fetching quote data")
     if not info:
-        logger.error("No data found", extra={"symbol": symbol})
+        logger.error("quote.fetch.no_data", extra={"symbol": symbol})
         raise HTTPException(status_code=404, detail=f"No data for {symbol}")
-    logger.info("Quote data fetched", extra={"symbol": symbol})
+
+    logger.info("quote.fetch.success", extra={"symbol": symbol})
     return _map_info(symbol, info)
