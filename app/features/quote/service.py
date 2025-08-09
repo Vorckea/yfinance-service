@@ -52,7 +52,7 @@ async def fetch_quote(symbol: str) -> QuoteResponse:
     logger.info("quote.fetch.start", extra={"symbol": symbol})
 
     try:
-        info = await asyncio.to_thread(_fetch_info, symbol)
+        info = await asyncio.wait_for(asyncio.to_thread(_fetch_info, symbol), timeout=30)
     except (ConnectionError, TimeoutError) as e:
         logger.warning("quote.fetch.timeout", extra={"symbol": symbol, "error": str(e)})
         raise HTTPException(status_code=503, detail="Upstream timeout")
