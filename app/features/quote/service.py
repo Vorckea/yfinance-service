@@ -33,6 +33,21 @@ def _map_info(symbol: str, info: dict[str, Any]) -> QuoteResponse:
 
 
 async def fetch_quote(symbol: str) -> QuoteResponse:
+    """Fetch stock quote information.
+
+    Args:
+        symbol (str): The stock symbol to fetch.
+
+    Raises:
+        HTTPException: If the symbol is invalid or not found.
+        HTTPException: If there is a timeout or connection error.
+        HTTPException: If the request is cancelled.
+        HTTPException: If there is an unexpected error.
+
+    Returns:
+        QuoteResponse: The stock quote information.
+
+    """
     symbol = symbol.upper().strip()
     logger.info("quote.fetch.start", extra={"symbol": symbol})
 
