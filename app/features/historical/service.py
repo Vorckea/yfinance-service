@@ -18,9 +18,6 @@ def _get_ticker(symbol: str) -> yf.Ticker:
 async def fetch_historical(symbol: str, start: date | None, end: date | None) -> HistoricalResponse:
     """Fetch historical stock data for a given symbol."""
     logger.info("Historical request received", extra={"symbol": symbol, "start": start, "end": end})
-    # Symbol format validation is enforced at the router layer via Path(pattern=...), which
-    # returns a 422 validation error before reaching this service. Redundant in-service
-    # validation was removed to avoid inconsistent status codes.
 
     def get_history(symbol: str, start: date | None, end: date | None) -> pd.DataFrame:
         ticker = _get_ticker(symbol)
