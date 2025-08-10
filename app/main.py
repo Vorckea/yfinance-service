@@ -33,6 +33,7 @@ app = FastAPI(
         "name": "MIT License",
         "url": "https://opensource.org/license/MIT",
     },
+    lifespan=lifespan,
 )
 
 app.add_middleware(LoggingMiddleware)

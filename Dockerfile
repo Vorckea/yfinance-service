@@ -3,7 +3,8 @@ FROM python:3.13-slim-bookworm AS builder
 
 ENV PYTHONUNBUFFERED=1 \
     PYTHONFAULTHANDLER=1 \
-    POETRY_VERSION=2.1.3
+    POETRY_VERSION=2.1.3 \
+    PYTHONPATH=/app
 
 WORKDIR /app
 
@@ -21,7 +22,8 @@ RUN poetry export --without-hashes --only main -f requirements.txt -o requiremen
 FROM python:3.13-slim-bookworm AS runtime
 
 ENV PYTHONUNBUFFERED=1 \
-    PYTHONFAULTHANDLER=1
+    PYTHONFAULTHANDLER=1 \
+    PYTHONPATH=/app
 
 WORKDIR /app
 
@@ -29,8 +31,6 @@ COPY --from=builder /app/requirements.txt /app/
 RUN pip install --no-cache-dir --no-compile -r requirements.txt
 
 COPY app ./app
-COPY monitoring ./monitoring
-COPY pyproject.toml .
 
 RUN useradd --create-home --shell /usr/sbin/nologin appuser \
     && chown -R appuser:appuser /app
