@@ -2,9 +2,25 @@ groups:
   - name: yfinance-service-alerts
     rules:
       - alert: HighErrorRate
-          expr: increase(error_count[5m]) > 10
-          for: 5m
-          labels:
-            severity: warning
+        expr: |
+          (
+            sum(increase(error_count_total[5m])) by () 
+            /
+            sum(increase(request_count_total[5m])) by ()
+          ) > 0.05
+        for: 5m
+        labels:
+          severity: warning
         annotations:
-          summary: "High error rate detected in yfinance-service"
+          summary: "High HTTP error rate (>5%) in yfinance-service (5m window)"
+      - alert: HighP95Latency
+        expr: |
+          histogram_quantile(
+            0.95,
+            sum(rate(request_latency_seconds_bucket[5m])) by (le)
+          ) > 1
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "P95 latency > 1s over 10m"

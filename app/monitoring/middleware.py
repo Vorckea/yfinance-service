@@ -12,23 +12,27 @@ async def prometheus_middleware(request: Request, call_next: callable) -> Respon
     - Add method label for all metrics and status for error counter only.
     - Avoid high-cardinality labels by never using the raw request URL path.
     """
+    if request.url.path == "/metrics":
+        return await call_next(request)
+
     method = request.method
-    status_code: int | None = None
     start = time.perf_counter()
+    status_code: int | None = None
     try:
         response = await call_next(request)
         status_code = response.status_code
         return response
     except Exception:
-        # Count unhandled exceptions as 500s
         status_code = 500
         raise
     finally:
         duration = time.perf_counter() - start
         route = request.scope.get("route")
-        endpoint = getattr(route, "path_format", getattr(route, "path", request.url.path))
+        if route is None:
+            endpoint = "__unmatched__"
+        else:
+            endpoint = getattr(route, "path_format", getattr(route, "path", request.url.path))
 
-        # Counters and histograms aligned to route templates
         REQUEST_COUNT.labels(endpoint=endpoint, method=method).inc()
         REQUEST_LATENCY.labels(endpoint=endpoint, method=method).observe(duration)
 

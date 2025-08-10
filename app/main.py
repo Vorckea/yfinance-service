@@ -1,4 +1,5 @@
-import logging
+import time
+from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, Response
 from prometheus_client import generate_latest
@@ -9,6 +10,15 @@ from app.features.info.router import router as info_router
 from app.features.quote.router import router as quote_router
 from app.monitoring.logging_middleware import LoggingMiddleware
 from app.monitoring.middleware import prometheus_middleware
+
+from .monitoring.metrics import SERVICE_UPTIME
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    app.state.start_time = time.time()
+    yield
+
 
 app = FastAPI(
     title="YFinance Proxy Service",
@@ -32,6 +42,7 @@ app.middleware("http")(prometheus_middleware)
 @app.get("/metrics")
 def metrics():
     """Endpoint to expose Prometheus metrics."""
+    SERVICE_UPTIME.set(time.time() - getattr(app.state, "start_time", time.time()))
     return Response(generate_latest(), media_type="text/plain")
 
 
