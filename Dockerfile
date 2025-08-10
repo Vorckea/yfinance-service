@@ -28,6 +28,16 @@ ENV PYTHONUNBUFFERED=1 \
 WORKDIR /app
 
 COPY --from=builder /app/requirements.txt /app/
+
+# Install CA certificates and libcurl runtime so curl_cffi/OpenSSL have a proper trust store
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends ca-certificates libcurl4 \
+    && rm -rf /var/lib/apt/lists/*
+
+# Explicitly point Python/curl to the system cert bundle (belt-and-suspenders)
+ENV SSL_CERT_FILE=/etc/ssl/certs/ca-certificates.crt \
+    CURL_CA_BUNDLE=/etc/ssl/certs/ca-certificates.crt
+
 RUN pip install --no-cache-dir --no-compile -r requirements.txt
 
 COPY app ./app

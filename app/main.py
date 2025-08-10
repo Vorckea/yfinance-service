@@ -1,3 +1,4 @@
+import sys
 import time
 from contextlib import asynccontextmanager
 
@@ -8,15 +9,26 @@ from app.features.health.router import router as health_router
 from app.features.historical.router import router as historical_router
 from app.features.info.router import router as info_router
 from app.features.quote.router import router as quote_router
-from app.monitoring.logging_middleware import LoggingMiddleware
-from app.monitoring.middleware import prometheus_middleware
-
-from .monitoring.metrics import SERVICE_UPTIME
+from app.monitoring.http_middleware import http_metrics_middleware
+from app.monitoring.metrics import BUILD_INFO, SERVICE_UPTIME
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     app.state.start_time = time.time()
+    contact_name = None
+    contact_email = None
+    if isinstance(app.contact, dict):  # FastAPI stores contact metadata
+        contact_name = app.contact.get("name")
+        contact_email = app.contact.get("email")
+    BUILD_INFO.info(
+        {
+            "version": "1.0.0",
+            "python_version": sys.version.split()[0],
+            "contact_name": contact_name or "unknown",
+            "contact_email": contact_email or "unknown",
+        }
+    )
     yield
 
 
@@ -36,14 +48,14 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
-app.add_middleware(LoggingMiddleware)
-app.middleware("http")(prometheus_middleware)
+# Unified logging + metrics middleware
+app.middleware("http")(http_metrics_middleware)
 
 
 @app.get("/metrics")
 def metrics():
     """Endpoint to expose Prometheus metrics."""
-    SERVICE_UPTIME.set(time.time() - getattr(app.state, "start_time", time.time()))
+    SERVICE_UPTIME.set(time.time() - app.state.start_time)
     return Response(generate_latest(), media_type="text/plain")
 
 

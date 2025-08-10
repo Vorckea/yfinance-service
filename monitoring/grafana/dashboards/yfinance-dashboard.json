@@ -8,7 +8,7 @@
     ],
     "timezone": "browser",
     "schemaVersion": 38,
-    "version": 2,
+    "version": 3,
     "refresh": "10s",
     "panels": [
         {
@@ -24,7 +24,7 @@
             },
             "targets": [
                 {
-                    "expr": "service_uptime_seconds / 3600",
+                    "expr": "process_uptime_seconds / 3600",
                     "instant": true,
                     "legendFormat": "uptime_hours"
                 }
@@ -50,7 +50,7 @@
             },
             "targets": [
                 {
-                    "expr": "sum(rate(request_count_total[1m]))",
+                    "expr": "sum(rate(http_requests_total[1m]))",
                     "instant": true,
                     "legendFormat": "req_s"
                 }
@@ -76,7 +76,7 @@
             },
             "targets": [
                 {
-                    "expr": "100 * (sum(rate(error_count_total[5m])) / sum(rate(request_count_total[5m])))",
+                    "expr": "100 * (sum(rate(http_requests_total{status_class=\"5xx\"}[5m])) / sum(rate(http_requests_total[5m])))",
                     "instant": true,
                     "legendFormat": "error_rate_pct"
                 }
@@ -109,7 +109,7 @@
         {
             "id": 1,
             "type": "timeseries",
-            "title": "Request Rate per Endpoint (req/s)",
+            "title": "Request Rate per Route (req/s)",
             "datasource": "Prometheus",
             "gridPos": {
                 "h": 8,
@@ -119,8 +119,8 @@
             },
             "targets": [
                 {
-                    "expr": "sum by (endpoint, method) (rate(request_count_total[1m]))",
-                    "legendFormat": "{{endpoint}} [{{method}}]"
+                    "expr": "sum by (route, method) (rate(http_requests_total[1m]))",
+                    "legendFormat": "{{route}} [{{method}}]"
                 }
             ],
             "fieldConfig": {
@@ -133,7 +133,7 @@
         {
             "id": 2,
             "type": "timeseries",
-            "title": "Error Rate per Endpoint (%)",
+            "title": "Error Rate per Route (%)",
             "datasource": "Prometheus",
             "gridPos": {
                 "h": 8,
@@ -143,8 +143,8 @@
             },
             "targets": [
                 {
-                    "expr": "100 * (sum by (endpoint) (rate(error_count_total[5m])) / sum by (endpoint) (rate(request_count_total[5m])))",
-                    "legendFormat": "{{endpoint}}"
+                    "expr": "100 * (sum by (route) (rate(http_requests_total{status_class=\"5xx\"}[5m])) / sum by (route) (rate(http_requests_total[5m])))",
+                    "legendFormat": "{{route}}"
                 }
             ],
             "fieldConfig": {
@@ -174,7 +174,7 @@
         {
             "id": 3,
             "type": "timeseries",
-            "title": "P95 Latency per Endpoint (s)",
+            "title": "P95 Latency per Route (s)",
             "datasource": "Prometheus",
             "gridPos": {
                 "h": 8,
@@ -184,8 +184,8 @@
             },
             "targets": [
                 {
-                    "expr": "histogram_quantile(0.95, sum(rate(request_latency_seconds_bucket[5m])) by (le, endpoint))",
-                    "legendFormat": "{{endpoint}}"
+                    "expr": "histogram_quantile(0.95, sum(rate(http_request_duration_seconds_bucket[5m])) by (le, route))",
+                    "legendFormat": "{{route}}"
                 }
             ],
             "fieldConfig": {
@@ -199,7 +199,7 @@
         {
             "id": 4,
             "type": "timeseries",
-            "title": "Average Latency per Endpoint (s)",
+            "title": "Average Latency per Route (s)",
             "datasource": "Prometheus",
             "gridPos": {
                 "h": 8,
@@ -209,14 +209,112 @@
             },
             "targets": [
                 {
-                    "expr": "sum(rate(request_latency_seconds_sum[5m])) by (endpoint) / sum(rate(request_latency_seconds_count[5m])) by (endpoint)",
-                    "legendFormat": "{{endpoint}}"
+                    "expr": "sum(rate(http_request_duration_seconds_sum[5m])) by (route) / sum(rate(http_request_duration_seconds_count[5m])) by (route)",
+                    "legendFormat": "{{route}}"
                 }
             ],
             "fieldConfig": {
                 "defaults": {
                     "unit": "s",
                     "decimals": 3
+                },
+                "overrides": []
+            }
+        },
+        {
+            "id": 5,
+            "type": "stat",
+            "title": "In-Progress Requests",
+            "datasource": "Prometheus",
+            "gridPos": {
+                "h": 4,
+                "w": 8,
+                "x": 0,
+                "y": 36
+            },
+            "targets": [
+                {
+                    "expr": "sum(http_inprogress_requests)",
+                    "instant": true,
+                    "legendFormat": "inprogress"
+                }
+            ],
+            "fieldConfig": {
+                "defaults": {
+                    "unit": "none"
+                },
+                "overrides": []
+            }
+        },
+        {
+            "id": 6,
+            "type": "timeseries",
+            "title": "P95 Response Size (bytes)",
+            "datasource": "Prometheus",
+            "gridPos": {
+                "h": 8,
+                "w": 24,
+                "x": 0,
+                "y": 40
+            },
+            "targets": [
+                {
+                    "expr": "histogram_quantile(0.95, sum(rate(http_response_size_bytes_bucket[5m])) by (le))",
+                    "legendFormat": "p95"
+                }
+            ],
+            "fieldConfig": {
+                "defaults": {
+                    "unit": "bytes"
+                },
+                "overrides": []
+            }
+        },
+        {
+            "id": 7,
+            "type": "timeseries",
+            "title": "YFinance P95 Latency (s)",
+            "datasource": "Prometheus",
+            "gridPos": {
+                "h": 8,
+                "w": 24,
+                "x": 0,
+                "y": 48
+            },
+            "targets": [
+                {
+                    "expr": "histogram_quantile(0.95, sum(rate(yfinance_request_duration_seconds_bucket[5m])) by (le, operation))",
+                    "legendFormat": "{{operation}}"
+                }
+            ],
+            "fieldConfig": {
+                "defaults": {
+                    "unit": "s",
+                    "decimals": 3
+                },
+                "overrides": []
+            }
+        },
+        {
+            "id": 8,
+            "type": "timeseries",
+            "title": "YFinance Outcome Rate (ops/s)",
+            "datasource": "Prometheus",
+            "gridPos": {
+                "h": 8,
+                "w": 24,
+                "x": 0,
+                "y": 56
+            },
+            "targets": [
+                {
+                    "expr": "sum by (operation, outcome) (rate(yfinance_requests_total[5m]))",
+                    "legendFormat": "{{operation}} {{outcome}}"
+                }
+            ],
+            "fieldConfig": {
+                "defaults": {
+                    "unit": "ops/s"
                 },
                 "overrides": []
             }

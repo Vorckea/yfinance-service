@@ -1,4 +1,5 @@
 import asyncio
+import time
 from datetime import date
 from functools import lru_cache
 
@@ -7,6 +8,7 @@ import yfinance as yf
 from fastapi import HTTPException
 
 from ...utils.logger import logger
+from ...monitoring.metrics import YF_LATENCY, YF_REQUESTS
 from .models import HistoricalPrice, HistoricalResponse
 
 
@@ -42,29 +44,35 @@ async def fetch_historical(symbol: str, start: date | None, end: date | None) ->
     """Fetch historical stock data for a given symbol."""
     logger.info("historical.fetch.request", extra={"symbol": symbol, "start": start, "end": end})
 
+    op = "history"
+    t0 = time.perf_counter()
     try:
-        # Provide an explicit timeout (seconds) just like in quote service to avoid
-        # TypeError from missing positional timeout arg and to bound upstream latency.
         df = await asyncio.wait_for(
             asyncio.to_thread(_fetch_history, symbol, start, end), timeout=120
         )
+        YF_REQUESTS.labels(operation=op, outcome="success").inc()
     except (ConnectionError, TimeoutError, asyncio.TimeoutError) as e:
+        YF_REQUESTS.labels(operation=op, outcome="timeout").inc()
         logger.warning(
             "historical.fetch.timeout",
             extra={"symbol": symbol, "start": start, "end": end, "error": str(e)},
         )
         raise HTTPException(status_code=503, detail="Upstream timeout")
     except asyncio.CancelledError:
+        YF_REQUESTS.labels(operation=op, outcome="cancelled").inc()
         logger.warning(
             "historical.fetch.cancelled", extra={"symbol": symbol, "start": start, "end": end}
         )
         raise HTTPException(status_code=499, detail="Request cancelled")
     except Exception:
+        YF_REQUESTS.labels(operation=op, outcome="error").inc()
         logger.exception(
             "historical.fetch.unexpected",
             extra={"symbol": symbol, "start": start, "end": end},
         )
         raise HTTPException(status_code=500, detail="Unexpected error fetching historical data")
+    finally:
+        YF_LATENCY.labels(operation=op).observe(time.perf_counter() - t0)
 
     if df.empty:
         logger.info(
