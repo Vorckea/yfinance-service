@@ -1,14 +1,12 @@
 import asyncio
-import re
 from functools import lru_cache
+from typing import Any
 
 import yfinance as yf
 from fastapi import HTTPException
 
 from ...utils.logger import logger
 from .models import InfoResponse
-
-SYMBOL_PATTERN = re.compile(r"^[A-Za-z0-9\.\-]{1,10}$")
 
 
 @lru_cache(maxsize=512)
@@ -17,31 +15,12 @@ def _get_ticker(symbol: str) -> yf.Ticker:
     return ticker
 
 
-async def fetch_info(symbol: str) -> InfoResponse:
-    logger.info("Info request received", extra={"symbol": symbol})
-    if not SYMBOL_PATTERN.match(symbol):
-        logger.error("Invalid symbol format", extra={"symbol": symbol})
-        raise HTTPException(
-            status_code=400,
-            detail="Symbol must be 1-10 chars, alphanumeric, dot or dash.",
-        )
+def _fetch_info(symbol: str) -> dict[str, Any]:
+    ticker = _get_ticker(symbol)
+    return ticker.info
 
-    def fetch_info_data(symbol: str):
-        ticker = _get_ticker(symbol)
-        return ticker.info
 
-    try:
-        info = await asyncio.to_thread(fetch_info_data, symbol)
-    except Exception as e:
-        logger.exception(
-            f"Exception fetching info data. ({type(e).__name__}): {e}", extra={"symbol": symbol}
-        )
-        raise HTTPException(status_code=500, detail="Internal error fetching info data")
-
-    if not info:
-        logger.error("No data found", extra={"symbol": symbol})
-        raise HTTPException(status_code=404, detail=f"No data for {symbol}")
-    logger.info("Info data fetched", extra={"symbol": symbol})
+def _map_info(symbol: str, info: dict[str, Any]) -> InfoResponse:
     return InfoResponse(
         symbol=symbol.upper(),
         short_name=info.get("shortName"),
@@ -62,3 +41,41 @@ async def fetch_info(symbol: str) -> InfoResponse:
         beta=info.get("beta"),
         address=info.get("address1"),
     )
+
+
+async def fetch_info(symbol: str) -> InfoResponse:
+    """Fetch information for a given symbol.
+
+    Args:
+        symbol (str): The stock symbol to fetch information for.
+
+    Raises:
+        HTTPException: If the symbol is invalid or not found.
+        HTTPException: If there is a timeout or connection error.
+        HTTPException: If the data is not found.
+        HTTPException: If there is an internal error.
+
+    Returns:
+        InfoResponse: The information response for the given symbol.
+
+    """
+    symbol = symbol.upper().strip()
+    logger.info("info.fetch.start", extra={"symbol": symbol})
+
+    try:
+        info = await asyncio.wait_for(asyncio.to_thread(_fetch_info, symbol), timeout=30)
+    except (ConnectionError, TimeoutError) as e:
+        logger.warning("info.fetch.timeout", extra={"symbol": symbol, "error": str(e)})
+        raise HTTPException(status_code=503, detail="Upstream timeout")
+    except asyncio.CancelledError:
+        logger.warning("info.fetch.cancelled", extra={"symbol": symbol})
+        raise HTTPException(status_code=500, detail="Internal error fetching quote data")
+    except Exception:
+        logger.exception("info.fetch.unexpected", extra={"symbol": symbol})
+        raise HTTPException(status_code=500, detail="Internal error fetching info data")
+    if not info:
+        logger.error("info.fetch.no_data", extra={"symbol": symbol})
+        raise HTTPException(status_code=404, detail=f"No data for {symbol}")
+
+    logger.info("info.fetch.success", extra={"symbol": symbol})
+    return _map_info(symbol, info)

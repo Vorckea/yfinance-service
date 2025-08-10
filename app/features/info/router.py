@@ -44,6 +44,7 @@ router = APIRouter()
             400: {"description": "Invalid symbol"},
             404: {"description": "Symbol not found"},
             422: {"description": "Unprocessable Entity"},
+            503: {"description": "Upstream timeout"},
         },
     },
 )
