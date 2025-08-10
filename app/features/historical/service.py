@@ -6,26 +6,21 @@ import pandas as pd
 import yfinance as yf
 from fastapi import HTTPException
 
-from ...common.constants import SYMBOL_PATTERN
 from ...utils.logger import logger
 from .models import HistoricalPrice, HistoricalResponse
 
 
 @lru_cache(maxsize=512)
 def _get_ticker(symbol: str) -> yf.Ticker:
-    # Lightweight cache to avoid recreating Ticker objects repeatedly
     return yf.Ticker(symbol)
 
 
 async def fetch_historical(symbol: str, start: date | None, end: date | None) -> HistoricalResponse:
     """Fetch historical stock data for a given symbol."""
     logger.info("Historical request received", extra={"symbol": symbol, "start": start, "end": end})
-    if not SYMBOL_PATTERN.match(symbol):
-        logger.warning("Invalid symbol format", extra={"symbol": symbol})
-        raise HTTPException(
-            status_code=400,
-            detail="Symbol must be 1-10 chars, alphanumeric, dot or dash.",
-        )
+    # Symbol format validation is enforced at the router layer via Path(pattern=...), which
+    # returns a 422 validation error before reaching this service. Redundant in-service
+    # validation was removed to avoid inconsistent status codes.
 
     def get_history(symbol: str, start: date | None, end: date | None) -> pd.DataFrame:
         ticker = _get_ticker(symbol)
@@ -55,13 +50,13 @@ async def fetch_historical(symbol: str, start: date | None, end: date | None) ->
     prices = [
         HistoricalPrice(
             date=ts.date(),
-            open=float(o),
-            high=float(h),
-            low=float(l),
-            close=float(c),
-            volume=int(v) if pd.notna(v) else 0,
+            open=float(open_),
+            high=float(high_),
+            low=float(low_),
+            close=float(close_),
+            volume=int(volume_) if pd.notna(volume_) else 0,
         )
-        for ts, o, h, l, c, v in df.itertuples(index=True, name=None)
+        for ts, open_, high_, low_, close_, volume_ in df.itertuples(index=True, name=None)
     ]
 
     return HistoricalResponse(symbol=symbol.upper(), prices=prices)

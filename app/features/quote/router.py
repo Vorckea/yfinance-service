@@ -31,9 +31,10 @@ router = APIRouter()
                 }
             },
         },
-        400: {"description": "Invalid symbol"},
-        404: {"description": "Symbol not found"},
-        422: {"description": "Unprocessable Entity"},
+        404: {"description": "No quote data found for symbol"},
+        422: {"description": "Validation error (invalid symbol format)"},
+        499: {"description": "Request cancelled by client"},
+        500: {"description": "Internal server error"},
         503: {"description": "Upstream timeout"},
     },
 )

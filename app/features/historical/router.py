@@ -49,14 +49,24 @@ router = APIRouter()
                 }
             },
         },
-        400: {"description": "Invalid symbol or date range"},
-        404: {"description": "Symbol not found"},
+        400: {"description": "Invalid date range (start > end)"},
+        404: {"description": "No historical data found for symbol"},
+        422: {"description": "Validation error (invalid symbol format)"},
+        500: {"description": "Internal server error"},
     },
 )
 async def get_historical(
     symbol: SymbolParam,
-    start: date | None = Query(None, description="Start date (YYYY-MM-DD)", example="2023-01-01"),
-    end: date | None = Query(None, description="End date (YYYY-MM-DD)", example="2023-12-31"),
+    start: date | None = Query(
+        None,
+        description="Start date (YYYY-MM-DD)",
+        examples={"default": {"summary": "Start date", "value": "2023-01-01"}},
+    ),
+    end: date | None = Query(
+        None,
+        description="End date (YYYY-MM-DD)",
+        examples={"default": {"summary": "End date", "value": "2023-12-31"}},
+    ),
 ) -> HistoricalResponse:
     if start and end and start > end:
         raise HTTPException(status_code=400, detail="start must be before or equal to end")

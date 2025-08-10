@@ -27,7 +27,10 @@ router = APIRouter()
                         "industry": "Consumer Electronics",
                         "country": "United States",
                         "website": "https://www.apple.com",
-                        "description": "Apple Inc. designs, manufactures, and markets consumer electronics, software, and services.",
+                        "description": (
+                            "Apple Inc. designs, manufactures, and markets consumer electronics, "
+                            "software, and services."
+                        ),
                         "market_cap": 2500000000000,
                         "shares_outstanding": 16000000000,
                         "dividend_yield": 0.006,
@@ -42,9 +45,10 @@ router = APIRouter()
                 }
             },
         },
-        400: {"description": "Invalid symbol"},
-        404: {"description": "Symbol not found"},
-        422: {"description": "Unprocessable Entity"},
+        404: {"description": "No info data found for symbol"},
+        422: {"description": "Validation error (invalid symbol format)"},
+        499: {"description": "Request cancelled by client"},
+        500: {"description": "Internal server error"},
         503: {"description": "Upstream timeout"},
     },
 )

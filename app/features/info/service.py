@@ -64,17 +64,17 @@ async def fetch_info(symbol: str) -> InfoResponse:
 
     try:
         info = await asyncio.wait_for(asyncio.to_thread(_fetch_info, symbol), timeout=30)
-    except (ConnectionError, TimeoutError) as e:
+    except (ConnectionError, TimeoutError, asyncio.TimeoutError) as e:
         logger.warning("info.fetch.timeout", extra={"symbol": symbol, "error": str(e)})
         raise HTTPException(status_code=503, detail="Upstream timeout")
     except asyncio.CancelledError:
         logger.warning("info.fetch.cancelled", extra={"symbol": symbol})
-        raise HTTPException(status_code=500, detail="Internal error fetching quote data")
+        raise HTTPException(status_code=499, detail="Request cancelled")
     except Exception:
         logger.exception("info.fetch.unexpected", extra={"symbol": symbol})
-        raise HTTPException(status_code=500, detail="Internal error fetching info data")
+        raise HTTPException(status_code=500, detail="Unexpected error fetching info data")
     if not info:
-        logger.error("info.fetch.no_data", extra={"symbol": symbol})
+        logger.info("info.fetch.no_data", extra={"symbol": symbol})
         raise HTTPException(status_code=404, detail=f"No data for {symbol}")
 
     logger.info("info.fetch.success", extra={"symbol": symbol})

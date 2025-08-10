@@ -53,17 +53,19 @@ async def fetch_quote(symbol: str) -> QuoteResponse:
 
     try:
         info = await asyncio.wait_for(asyncio.to_thread(_fetch_info, symbol), timeout=30)
-    except (ConnectionError, TimeoutError) as e:
+    # Network / upstream timeouts
+    except (ConnectionError, TimeoutError, asyncio.TimeoutError) as e:
         logger.warning("quote.fetch.timeout", extra={"symbol": symbol, "error": str(e)})
         raise HTTPException(status_code=503, detail="Upstream timeout")
     except asyncio.CancelledError:
-        logger.error("quote.fetch.cancelled", extra={"symbol": symbol})
-        raise HTTPException(status_code=500, detail="Internal error fetching quote data")
+        logger.warning("quote.fetch.cancelled", extra={"symbol": symbol})
+        # 499 Client Closed Request (nginx de-facto standard) to indicate client aborted
+        raise HTTPException(status_code=499, detail="Request cancelled")
     except Exception:
         logger.exception("quote.fetch.unexpected", extra={"symbol": symbol})
-        raise HTTPException(status_code=500, detail="Internal error fetching quote data")
+        raise HTTPException(status_code=500, detail="Unexpected error fetching quote data")
     if not info:
-        logger.error("quote.fetch.no_data", extra={"symbol": symbol})
+        logger.info("quote.fetch.no_data", extra={"symbol": symbol})
         raise HTTPException(status_code=404, detail=f"No data for {symbol}")
 
     logger.info("quote.fetch.success", extra={"symbol": symbol})
