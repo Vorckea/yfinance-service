@@ -9,7 +9,7 @@ SymbolParam = Annotated[
     Path(
         ...,
         description="Ticker symbol",
-        example="AAPL",
+        examples="AAPL",
         pattern=SYMBOL_REGEX,
     ),
 ]
