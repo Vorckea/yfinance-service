@@ -1,5 +1,5 @@
 import yfinance as yf
-from fastapi import APIRouter, Response
+from fastapi import APIRouter, HTTPException, Response
 
 from ...utils.logger import logger
 
@@ -42,25 +42,14 @@ async def get_health():
 async def get_ready():
     """Readiness check endpoint to verify yfinance is reachable."""
     try:
-        ticker = yf.Ticker("AAPL")
-        info = ticker.info
-        if not info:
-            return Response(
-                content='{"status": "not ready"}',
-                status_code=503,
-                media_type="application/json",
-            )
+        _ = yf.Ticker("AAPL")
     except Exception as e:
         logger.error(
             f"YFinance is not reachable ({type(e).__name__}): {e}",
             exc_info=True,
             extra={"ticker": "AAPL"},
         )
-        return Response(
-            content='{"status": "not ready"}',
-            status_code=503,
-            media_type="application/json",
-        )
+        raise HTTPException(status_code=503, detail="Not ready")
     return Response(
         content='{"status": "ready"}',
         status_code=200,

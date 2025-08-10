@@ -1,5 +1,4 @@
 import asyncio
-import re
 from datetime import date
 from functools import lru_cache
 
@@ -7,10 +6,9 @@ import pandas as pd
 import yfinance as yf
 from fastapi import HTTPException
 
+from ...common.constants import SYMBOL_PATTERN
 from ...utils.logger import logger
 from .models import HistoricalPrice, HistoricalResponse
-
-SYMBOL_PATTERN = re.compile(r"^[A-Za-z0-9\.\-]{1,10}$")
 
 
 @lru_cache(maxsize=512)
@@ -35,7 +33,7 @@ async def fetch_historical(symbol: str, start: date | None, end: date | None) ->
         if getattr(df.index, "tz", None) is not None:
             df = df.tz_convert(None)
         cols = ["Open", "High", "Low", "Close", "Volume"]
-        return df[cols] if not df.empty else df
+        return df.reindex(columns=cols) if not df.empty else df
 
     try:
         df = await asyncio.to_thread(get_history, symbol, start, end)

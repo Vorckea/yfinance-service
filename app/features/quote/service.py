@@ -22,7 +22,7 @@ def _fetch_info(symbol: str) -> dict[str, Any]:
 
 def _map_info(symbol: str, info: dict[str, Any]) -> QuoteResponse:
     return QuoteResponse(
-        symbol=symbol,
+        symbol=symbol.upper(),
         current_price=info.get("regularMarketPrice"),
         previous_close=info.get("regularMarketPreviousClose") or info.get("previousClose"),
         open=info.get("regularMarketOpen") or info.get("open"),
