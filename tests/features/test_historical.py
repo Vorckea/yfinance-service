@@ -40,8 +40,7 @@ def test_historical_invalid_symbol(client):
 def test_historical_not_found(client, mocker):
     mock_ticker = mocker.patch("yfinance.Ticker")
     mock_instance = mock_ticker.return_value
-    # Return empty DataFrame to simulate no data
     mock_instance.history.return_value = pd.DataFrame()
     response = client.get("/historical/ZZZZZZZZZZ")
     assert response.status_code == 404
-    assert "No historical data for" in response.json()["detail"]
+    assert "No data for" in response.json()["detail"]
