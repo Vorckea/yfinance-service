@@ -28,17 +28,23 @@ def _fetch_info(symbol: str) -> QuoteDict:
 
 
 def _map_info(symbol: str, info: QuoteDict) -> QuoteResponse:
-    return QuoteResponse(
-        symbol=symbol.upper(),
-        current_price=float(info.get("regularMarketPrice")),
-        previous_close=float(info.get("regularMarketPreviousClose") or info.get("previousClose")),
-        open=float(info.get("regularMarketOpen") or info.get("open")),
-        high=float(info.get("regularMarketDayHigh") or info.get("dayHigh")),
-        low=float(info.get("regularMarketDayLow") or info.get("dayLow")),
-        volume=int(info.get("regularMarketVolume") or info.get("volume"))
-        if info.get("regularMarketVolume") or info.get("volume")
-        else None,
-    )
+    try:
+        return QuoteResponse(
+            symbol=symbol.upper(),
+            current_price=float(info.get("regularMarketPrice")),
+            previous_close=float(
+                info.get("regularMarketPreviousClose") or info.get("previousClose")
+            ),
+            open=float(info.get("regularMarketOpen") or info.get("open")),
+            high=float(info.get("regularMarketDayHigh") or info.get("dayHigh")),
+            low=float(info.get("regularMarketDayLow") or info.get("dayLow")),
+            volume=int(info.get("regularMarketVolume") or info.get("volume"))
+            if info.get("regularMarketVolume") or info.get("volume")
+            else None,
+        )
+    except (TypeError, ValueError) as e:
+        logger.warning("quote.fetch.malformed_data", extra={"symbol": symbol, "error": str(e)})
+        raise HTTPException(status_code=502, detail="Malformed data from upstream")
 
 
 async def fetch_quote(symbol: str) -> QuoteResponse:
