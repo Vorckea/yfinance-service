@@ -1,7 +1,4 @@
-"""Quote service: fetches latest market data via yfinance.
-
-Backlog notes are embedded as TODO/FIXME comments for future improvements.
-"""
+"""Quote service: fetches latest market data via yfinance."""
 
 import asyncio
 from functools import lru_cache
