@@ -23,11 +23,6 @@ def _get_ticker(symbol: str) -> yf.Ticker:
 
 def _fetch_info(symbol: str) -> dict[str, Any]:
     ticker = _get_ticker(symbol)
-    return ticker.fast_info
-
-
-def _fetch_info_old(symbol: str) -> dict[str, Any]:
-    ticker = _get_ticker(symbol)
     return ticker.info
 
 
