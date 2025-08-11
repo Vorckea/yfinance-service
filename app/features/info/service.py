@@ -1,14 +1,15 @@
 import asyncio
-import time
 from functools import lru_cache
 from typing import Any
 
 import yfinance as yf
 from fastapi import HTTPException
 
-from ...monitoring.metrics import YF_LATENCY, YF_REQUESTS
+from ...monitoring.instrumentation import observe
 from ...utils.logger import logger
 from .models import InfoResponse
+
+InfoDict = dict[str, Any]
 
 
 @lru_cache(maxsize=512)
@@ -17,12 +18,12 @@ def _get_ticker(symbol: str) -> yf.Ticker:
     return ticker
 
 
-def _fetch_info(symbol: str) -> dict[str, Any]:
+def _fetch_info(symbol: str) -> InfoDict | None:
     ticker = _get_ticker(symbol)
     return ticker.info
 
 
-def _map_info(symbol: str, info: dict[str, Any]) -> InfoResponse:
+def _map_info(symbol: str, info: InfoDict) -> InfoResponse:
     return InfoResponse(
         symbol=symbol.upper(),
         short_name=info.get("shortName"),
@@ -65,24 +66,19 @@ async def fetch_info(symbol: str) -> InfoResponse:
     logger.info("info.fetch.start", extra={"symbol": symbol})
 
     op = "info_detail"
-    t0 = time.perf_counter()
     try:
-        info = await asyncio.wait_for(asyncio.to_thread(_fetch_info, symbol), timeout=30)
-        YF_REQUESTS.labels(operation=op, outcome="success").inc()
+        with observe(op):
+            info = await asyncio.wait_for(asyncio.to_thread(_fetch_info, symbol), timeout=30)
     except (ConnectionError, TimeoutError, asyncio.TimeoutError) as e:
-        YF_REQUESTS.labels(operation=op, outcome="timeout").inc()
         logger.warning("info.fetch.timeout", extra={"symbol": symbol, "error": str(e)})
         raise HTTPException(status_code=503, detail="Upstream timeout")
     except asyncio.CancelledError:
-        YF_REQUESTS.labels(operation=op, outcome="cancelled").inc()
         logger.warning("info.fetch.cancelled", extra={"symbol": symbol})
         raise HTTPException(status_code=499, detail="Request cancelled")
     except Exception:
-        YF_REQUESTS.labels(operation=op, outcome="error").inc()
         logger.exception("info.fetch.unexpected", extra={"symbol": symbol})
         raise HTTPException(status_code=500, detail="Unexpected error fetching info data")
-    finally:
-        YF_LATENCY.labels(operation=op).observe(time.perf_counter() - t0)
+
     if not info:
         logger.info("info.fetch.no_data", extra={"symbol": symbol})
         raise HTTPException(status_code=404, detail=f"No data for {symbol}")

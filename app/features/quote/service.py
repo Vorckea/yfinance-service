@@ -1,12 +1,11 @@
 import asyncio
-import time
 from functools import lru_cache
 from typing import Any
 
 import yfinance as yf
 from fastapi import HTTPException
 
-from ...monitoring.metrics import YF_LATENCY, YF_REQUESTS
+from ...monitoring.instrumentation import observe
 from ...utils.logger import logger
 from .models import QuoteResponse
 
@@ -54,24 +53,18 @@ async def fetch_quote(symbol: str) -> QuoteResponse:
     logger.info("quote.fetch.start", extra={"symbol": symbol})
 
     op = "quote_info"
-    t0 = time.perf_counter()
     try:
-        info = await asyncio.wait_for(asyncio.to_thread(_fetch_info, symbol), timeout=30)
-        YF_REQUESTS.labels(operation=op, outcome="success").inc()
+        with observe(op):
+            info = await asyncio.wait_for(asyncio.to_thread(_fetch_info, symbol), timeout=30)
     except (ConnectionError, TimeoutError, asyncio.TimeoutError) as e:
-        YF_REQUESTS.labels(operation=op, outcome="timeout").inc()
         logger.warning("quote.fetch.timeout", extra={"symbol": symbol, "error": str(e)})
         raise HTTPException(status_code=503, detail="Upstream timeout")
     except asyncio.CancelledError:
-        YF_REQUESTS.labels(operation=op, outcome="cancelled").inc()
         logger.warning("quote.fetch.cancelled", extra={"symbol": symbol})
         raise HTTPException(status_code=499, detail="Request cancelled")
     except Exception:
-        YF_REQUESTS.labels(operation=op, outcome="error").inc()
         logger.exception("quote.fetch.unexpected", extra={"symbol": symbol})
         raise HTTPException(status_code=500, detail="Unexpected error fetching quote data")
-    finally:
-        YF_LATENCY.labels(operation=op).observe(time.perf_counter() - t0)
     if not info:
         logger.info("quote.fetch.no_data", extra={"symbol": symbol})
         raise HTTPException(status_code=404, detail=f"No data for {symbol}")
