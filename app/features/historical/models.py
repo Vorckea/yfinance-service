@@ -11,7 +11,7 @@ class HistoricalPrice(BaseModel):
     high: float = Field(..., description="Highest price")
     low: float = Field(..., description="Lowest price")
     close: float = Field(..., description="Closing price")
-    volume: int = Field(..., description="Trading volume")
+    volume: int | None = Field(..., description="Trading volume")
 
 
 class HistoricalResponse(BaseModel):
