@@ -1,4 +1,3 @@
-import importlib.metadata
 import sys
 import time
 from contextlib import asynccontextmanager
@@ -33,14 +32,9 @@ async def lifespan(app: FastAPI):
     yield
 
 
-try:
-    __version__ = importlib.metadata.version("yfinance_service")
-except importlib.metadata.PackageNotFoundError:
-    __version__ = "unknown"
-
 app = FastAPI(
     title="YFinance Proxy Service",
-    version=__version__,
+    version="1.0.0",
     description=(
         "A FastAPI proxy for yfinance. Provides endpoints to fetch stock quotes and "
         "historical data."
