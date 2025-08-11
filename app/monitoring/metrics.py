@@ -16,9 +16,8 @@ HTTP_REQUEST_DURATION = Histogram(
     "http_request_duration_seconds",
     "Request latency (seconds)",
     ("route", "method"),
-    buckets=(0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1, 2, 5),
+    buckets=(0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1, 2, 5, 10),
 )
-# TODO(metrics): Evaluate adding higher latency buckets (10s) if upstream slow.
 
 HTTP_INPROGRESS = Gauge(
     "http_inprogress_requests",
@@ -33,13 +32,17 @@ HTTP_INPROGRESS_TOTAL = Gauge(
     "Total number of in-progress HTTP requests (all routes)",
 )
 
+
+def _get_exponential_buckets(start: float, factor: float, count: int) -> list[float]:
+    return [start * (factor**i) for i in range(count)]
+
+
 HTTP_RESPONSE_SIZE = Histogram(
     "http_response_size_bytes",
     "Response size (bytes)",
     ("route", "method"),
-    buckets=(200, 500, 1_000, 5_000, 10_000, 50_000, 100_000, 500_000, 1_000_000),
+    buckets=_get_exponential_buckets(200, 1.5, 8),
 )
-# TODO(metrics): Add exponential buckets utility helper to reduce manual updates.
 
 SERVICE_UPTIME = Gauge(
     "process_uptime_seconds",
@@ -64,6 +67,7 @@ YF_LATENCY = Histogram(
     buckets=(0.05, 0.1, 0.25, 0.5, 1, 2, 5, 10),
 )
 # TODO(metrics): Track separate histogram for upstream errors only for SLO burn rate analysis.
+
 
 CACHE_HITS = Counter(
     "cache_hits_total",
