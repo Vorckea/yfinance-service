@@ -1,3 +1,8 @@
+"""Quote service: fetches latest market data via yfinance.
+
+Backlog notes are embedded as TODO/FIXME comments for future improvements.
+"""
+
 import asyncio
 from functools import lru_cache
 from typing import Any
@@ -18,6 +23,11 @@ def _get_ticker(symbol: str) -> yf.Ticker:
 
 def _fetch_info(symbol: str) -> dict[str, Any]:
     ticker = _get_ticker(symbol)
+    return ticker.fast_info
+
+
+def _fetch_info_old(symbol: str) -> dict[str, Any]:
+    ticker = _get_ticker(symbol)
     return ticker.info
 
 
@@ -30,6 +40,7 @@ def _map_info(symbol: str, info: dict[str, Any]) -> QuoteResponse:
         high=info.get("dayHigh") or info.get("regularMarketDayHigh"),
         low=info.get("dayLow") or info.get("regularMarketDayLow"),
         volume=info.get("volume") or info.get("regularMarketVolume"),
+        # TODO(data): Explicit int() cast & differentiate missing vs zero volume.
     )
 
 

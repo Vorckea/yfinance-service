@@ -1,3 +1,8 @@
+"""Historical data endpoint definitions.
+
+Backlog TODOs inline track pagination, validation, and rate limiting improvements.
+"""
+
 from datetime import date
 
 from fastapi import APIRouter, HTTPException
@@ -68,6 +73,10 @@ async def get_historical(
         examples={"default": {"summary": "End date", "value": "2023-12-31"}},
     ),
 ) -> HistoricalResponse:
+    """Return historical OHLCV data for the symbol in the optional date range.
+
+    TODO(perf): Add optional interval parameter (1d,1h, etc.).
+    """
     if start and end and start > end:
         raise HTTPException(status_code=400, detail="start must be before or equal to end")
     return await fetch_historical(symbol, start, end)

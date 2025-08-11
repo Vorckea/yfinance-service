@@ -1,3 +1,8 @@
+"""Info service: fetches company metadata via yfinance with instrumentation.
+
+Backlog TODOs inline mark potential improvements (caching, resiliency, data quality).
+"""
+
 import asyncio
 from functools import lru_cache
 from typing import Any

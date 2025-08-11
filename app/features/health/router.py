@@ -1,3 +1,8 @@
+"""Health & readiness endpoints.
+
+NOTE: TODOs capture richer diagnostics and improved readiness semantics.
+"""
+
 import yfinance as yf
 from fastapi import APIRouter, HTTPException, Response
 
@@ -55,3 +60,5 @@ async def get_ready():
         status_code=200,
         media_type="application/json",
     )
+    # TODO(readiness): Replace ad-hoc ticker instantiation with lightweight probe
+    # and short-lived cached readiness state to reduce load.

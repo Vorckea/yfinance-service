@@ -1,3 +1,8 @@
+"""Info endpoint definitions.
+
+Inline backlog notes for caching and access control.
+"""
+
 from fastapi import APIRouter
 
 from ...common.validation import SymbolParam

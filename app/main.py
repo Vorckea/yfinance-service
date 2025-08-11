@@ -34,18 +34,20 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(
     title="YFinance Proxy Service",
-    version="1.0.0",
-    description="A FastAPI proxy for yfinance. Provides endpoints to fetch stock quotes and "
-    "historical data.",
+    version="1.0.0",  # TODO(backlog): Source version dynamically from pyproject.toml
+    description=(
+        "A FastAPI proxy for yfinance. Provides endpoints to fetch stock quotes and "
+        "historical data."
+    ),
     contact={
         "name": "Vorckea",
-        "email": "askelschrader@gmail.com",
+        "email": "askelschrader@gmail.com",  # TODO(nice): Externalize contact into config or env var
     },
     license_info={
         "name": "MIT License",
         "url": "https://opensource.org/license/MIT",
     },
-    lifespan=lifespan,
+    lifespan=lifespan,  # TODO(obs): Add shutdown metrics (e.g., total requests served)
 )
 
 # Unified logging + metrics middleware

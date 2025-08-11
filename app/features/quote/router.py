@@ -1,3 +1,8 @@
+"""Quote endpoint definitions.
+
+Contains TODOs for rate limiting and conditional request support.
+"""
+
 from fastapi import APIRouter
 
 from ...common.validation import SymbolParam

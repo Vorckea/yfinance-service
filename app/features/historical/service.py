@@ -18,10 +18,15 @@ def _get_ticker(symbol: str) -> yf.Ticker:
 
 def _fetch_history(symbol: str, start: date | None, end: date | None) -> pd.DataFrame:
     ticker = _get_ticker(symbol)
+    # TODO(perf): Pass interval param and allow client control (e.g., 1d/1h) to reduce payload size.
+    # TODO(resilience): Add retry with backoff for transient network failures.
     df = ticker.history(start=start, end=end)
     if getattr(df.index, "tz", None) is not None:
+        # TODO(data): Confirm timezone correctness for markets outside US (multi-exchange support).
         df = df.tz_convert(None)
     cols = ["Open", "High", "Low", "Close", "Volume"]
+    # TODO(validation): Ensure required columns exist; yfinance may omit Volume
+    # for certain asset classes (e.g., some funds / indices).
     return df.reindex(columns=cols) if not df.empty else df
 
 
@@ -34,6 +39,7 @@ def _map_history(df: pd.DataFrame) -> list[HistoricalPrice]:
             low=float(low_),
             close=float(close_),
             volume=int(volume_) if pd.notna(volume_) else 0,
+            # TODO(data): Distinguish missing vs 0 volume (None vs 0) for analytics accuracy.
         )
         for ts, open_, high_, low_, close_, volume_ in df.itertuples(index=True, name=None)
     ]
@@ -73,6 +79,7 @@ async def fetch_historical(symbol: str, start: date | None, end: date | None) ->
         )
         # Align 404 detail message with other feature services (quote/info) and tests which
         # assert substring "No data for".
+        # TODO(api): Optionally return 204 No Content instead of 404? Evaluate client expectations.
         raise HTTPException(status_code=404, detail=f"No data for {symbol}")
 
     logger.info("historical.fetch.success", extra={"symbol": symbol, "rows": len(df)})
