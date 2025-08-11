@@ -1,4 +1,7 @@
-"""Quote endpoint definitions."""
+"""Quote endpoint definitions.
+
+Provides the /quote/{symbol} endpoint for fetching latest market data.
+"""
 
 from fastapi import APIRouter
 
@@ -40,8 +43,6 @@ router = APIRouter()
         503: {"description": "Upstream timeout"},
     },
 )
-async def get_quote(
-    symbol: SymbolParam,
-) -> QuoteResponse:
+async def get_quote(symbol: SymbolParam) -> QuoteResponse:
     """Get the latest market quote for a given ticker symbol."""
     return await fetch_quote(symbol)

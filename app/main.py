@@ -41,13 +41,13 @@ app = FastAPI(
     ),
     contact={
         "name": "Vorckea",
-        "email": "askelschrader@gmail.com",  # TODO(nice): Externalize contact into config or env var
+        "email": "askelschrader@gmail.com",
     },
     license_info={
         "name": "MIT License",
         "url": "https://opensource.org/license/MIT",
     },
-    lifespan=lifespan,  # TODO(obs): Add shutdown metrics (e.g., total requests served)
+    lifespan=lifespan,
 )
 
 # Unified logging + metrics middleware

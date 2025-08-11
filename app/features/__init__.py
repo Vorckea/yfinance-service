@@ -1,0 +1,1 @@
+"""Quote feature package."""
