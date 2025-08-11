@@ -29,13 +29,14 @@ def _fetch_info(symbol: str) -> dict[str, Any]:
 def _map_info(symbol: str, info: dict[str, Any]) -> QuoteResponse:
     return QuoteResponse(
         symbol=symbol.upper(),
-        current_price=info.get("regularMarketPrice"),
-        previous_close=info.get("regularMarketPreviousClose") or info.get("previousClose"),
-        open=info.get("regularMarketOpen") or info.get("open"),
-        high=info.get("dayHigh") or info.get("regularMarketDayHigh"),
-        low=info.get("dayLow") or info.get("regularMarketDayLow"),
-        volume=info.get("volume") or info.get("regularMarketVolume"),
-        # TODO(data): Explicit int() cast & differentiate missing vs zero volume.
+        current_price=float(info.get("regularMarketPrice")),
+        previous_close=float(info.get("regularMarketPreviousClose") or info.get("previousClose")),
+        open=float(info.get("regularMarketOpen") or info.get("open")),
+        high=float(info.get("dayHigh") or info.get("regularMarketDayHigh")),
+        low=float(info.get("dayLow") or info.get("regularMarketDayLow")),
+        volume=int(info.get("volume") or info.get("regularMarketVolume"))
+        if info.get("volume") or info.get("regularMarketVolume")
+        else None,
     )
 
 

@@ -12,4 +12,4 @@ class QuoteResponse(BaseModel):
     open: float = Field(..., description="Opening price")
     high: float = Field(..., description="Highest price of the day")
     low: float = Field(..., description="Lowest price of the day")
-    volume: int = Field(..., description="Trading volume")
+    volume: int | None = Field(..., description="Trading volume")

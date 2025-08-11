@@ -1,7 +1,4 @@
-"""Quote endpoint definitions.
-
-Contains TODOs for rate limiting and conditional request support.
-"""
+"""Quote endpoint definitions."""
 
 from fastapi import APIRouter
 
