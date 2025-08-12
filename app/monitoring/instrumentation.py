@@ -1,14 +1,18 @@
-import asyncio
 import time
 from contextlib import contextmanager
-
-from fastapi import HTTPException
 
 from .metrics import YF_LATENCY, YF_REQUESTS
 
 
 @contextmanager
 def observe(op: str, outcome_on_error: str = "error"):
+    """Observe a yfinance operation for metrics.
+
+    Args:
+        op (str): Operation name (e.g., 'quote', 'info')
+        outcome_on_error (str, optional): Outcome label for errors. Defaults to "error".
+
+    """
     start = time.perf_counter()
     try:
         yield

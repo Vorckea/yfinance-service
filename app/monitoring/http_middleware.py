@@ -4,8 +4,6 @@ Provides:
     - Low-cardinality Prometheus metrics (requests, latency, in-progress, response size)
     - Correlation ID propagation (X-Correlation-ID)
     - Structured logging for success, slow, and error paths
-
-Supersedes the separate `LoggingMiddleware` and `prometheus_middleware`.
 """
 
 from __future__ import annotations
@@ -31,6 +29,22 @@ CORRELATION_HEADER = "X-Correlation-ID"
 
 def _status_class(code: int) -> str:
     return f"{code // 100}xx"
+
+
+def _extract_route(request: Request) -> str:
+    route_obj = request.scope.get("route")
+    return getattr(route_obj, "path_format", getattr(route_obj, "path", "__unmatched__"))
+
+
+def _get_body_size(response: Response) -> int:
+    if hasattr(response, "body") and response.body is not None:
+        return len(response.body)
+    elif "content-length" in response.headers:
+        try:
+            return int(response.headers["content-length"])
+        except ValueError:
+            pass
+    return 0
 
 
 async def http_metrics_middleware(request: Request, call_next: Callable) -> Response:
@@ -72,23 +86,14 @@ async def http_metrics_middleware(request: Request, call_next: Callable) -> Resp
     finally:
         HTTP_INPROGRESS_TOTAL.dec()
 
-    route_obj = request.scope.get("route")
-    route = getattr(route_obj, "path_format", getattr(route_obj, "path", "__unmatched__"))
-
+    route = _extract_route(request)
     duration = time.perf_counter() - start
-    HTTP_INPROGRESS.labels(route=route, method=method).inc()
     status_class = _status_class(response.status_code)
+    body_size = _get_body_size(response)
+
+    HTTP_INPROGRESS.labels(route=route, method=method).inc()
     HTTP_REQUEST_DURATION.labels(route=route, method=method).observe(duration)
     HTTP_REQUESTS.labels(route=route, method=method, status_class=status_class).inc()
-
-    body_size = 0
-    if hasattr(response, "body") and response.body is not None:
-        body_size = len(response.body)
-    elif "content-length" in response.headers:
-        try:
-            body_size = int(response.headers["content-length"])
-        except ValueError:
-            pass
     HTTP_RESPONSE_SIZE.labels(route=route, method=method).observe(body_size)
 
     response.headers[CORRELATION_HEADER] = cid
