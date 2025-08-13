@@ -3,9 +3,13 @@
 Inline backlog notes for caching and access control.
 """
 
-from fastapi import APIRouter
+from typing import Annotated
 
+from fastapi import APIRouter, Depends
+
+from ...clients.yfinance_client import YFinanceClient
 from ...common.validation import SymbolParam
+from ...dependencies import get_yfinance_client
 from .models import InfoResponse
 from .service import fetch_info
 
@@ -57,6 +61,8 @@ router = APIRouter()
         503: {"description": "Upstream timeout"},
     },
 )
-async def get_info(symbol: SymbolParam) -> InfoResponse:
+async def get_info(
+    symbol: SymbolParam, client: Annotated[YFinanceClient, Depends(get_yfinance_client)]
+) -> InfoResponse:
     """Get detailed information about a company for a given ticker symbol."""
-    return await fetch_info(symbol)
+    return await fetch_info(symbol, client)

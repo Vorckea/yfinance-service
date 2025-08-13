@@ -4,11 +4,14 @@ Backlog TODOs inline track pagination, validation, and rate limiting improvement
 """
 
 from datetime import date
+from typing import Annotated
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Depends, HTTPException
 from fastapi.params import Query
 
+from ...clients.yfinance_client import YFinanceClient
 from ...common.validation import SymbolParam
+from ...dependencies import get_yfinance_client
 from .models import HistoricalResponse
 from .service import fetch_historical
 
@@ -62,6 +65,7 @@ router = APIRouter()
 )
 async def get_historical(
     symbol: SymbolParam,
+    client: Annotated[YFinanceClient, Depends(get_yfinance_client)],
     start: date | None = Query(
         None,
         description="Start date (YYYY-MM-DD)",
@@ -79,4 +83,4 @@ async def get_historical(
     """
     if start and end and start > end:
         raise HTTPException(status_code=400, detail="start must be before or equal to end")
-    return await fetch_historical(symbol, start, end)
+    return await fetch_historical(symbol, start, end, client)

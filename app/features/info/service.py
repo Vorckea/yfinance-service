@@ -3,32 +3,14 @@
 Backlog TODOs inline mark potential improvements (caching, resiliency, data quality).
 """
 
-import asyncio
-from functools import lru_cache
 from typing import Any
 
-import yfinance as yf
-from fastapi import HTTPException
-
-from ...monitoring.instrumentation import observe
+from ...clients.yfinance_client import YFinanceClient
 from ...utils.logger import logger
 from .models import InfoResponse
 
-InfoDict = dict[str, Any]
 
-
-@lru_cache(maxsize=512)
-def _get_ticker(symbol: str) -> yf.Ticker:
-    ticker = yf.Ticker(symbol)
-    return ticker
-
-
-def _fetch_info(symbol: str) -> InfoDict | None:
-    ticker = _get_ticker(symbol)
-    return ticker.info
-
-
-def _map_info(symbol: str, info: InfoDict) -> InfoResponse:
+def _map_info(symbol: str, info: dict[str, Any]) -> InfoResponse:
     return InfoResponse(
         symbol=symbol.upper(),
         short_name=info.get("shortName"),
@@ -51,17 +33,12 @@ def _map_info(symbol: str, info: InfoDict) -> InfoResponse:
     )
 
 
-async def fetch_info(symbol: str) -> InfoResponse:
+async def fetch_info(symbol: str, client: YFinanceClient) -> InfoResponse:
     """Fetch information for a given symbol.
 
     Args:
         symbol (str): The stock symbol to fetch information for.
-
-    Raises:
-        HTTPException: If the symbol is invalid or not found.
-        HTTPException: If there is a timeout or connection error.
-        HTTPException: If the data is not found.
-        HTTPException: If there is an internal error.
+        client (YFinanceClient): The YFinance client to use for fetching data.
 
     Returns:
         InfoResponse: The information response for the given symbol.
@@ -70,23 +47,7 @@ async def fetch_info(symbol: str) -> InfoResponse:
     symbol = symbol.upper().strip()
     logger.info("info.fetch.start", extra={"symbol": symbol})
 
-    op = "info_detail"
-    try:
-        with observe(op):
-            info = await asyncio.wait_for(asyncio.to_thread(_fetch_info, symbol), timeout=30)
-    except (ConnectionError, TimeoutError, asyncio.TimeoutError) as e:
-        logger.warning("info.fetch.timeout", extra={"symbol": symbol, "error": str(e)})
-        raise HTTPException(status_code=503, detail="Upstream timeout")
-    except asyncio.CancelledError:
-        logger.warning("info.fetch.cancelled", extra={"symbol": symbol})
-        raise HTTPException(status_code=499, detail="Request cancelled")
-    except Exception:
-        logger.exception("info.fetch.unexpected", extra={"symbol": symbol})
-        raise HTTPException(status_code=500, detail="Unexpected error fetching info data")
-
-    if not info:
-        logger.info("info.fetch.no_data", extra={"symbol": symbol})
-        raise HTTPException(status_code=404, detail=f"No data for {symbol}")
+    info = await client.get_info(symbol)
 
     logger.info("info.fetch.success", extra={"symbol": symbol})
     return _map_info(symbol, info)

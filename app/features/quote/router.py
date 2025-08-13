@@ -3,9 +3,13 @@
 Provides the /quote/{symbol} endpoint for fetching latest market data.
 """
 
-from fastapi import APIRouter
+from typing import Annotated
 
+from fastapi import APIRouter, Depends
+
+from ...clients.yfinance_client import YFinanceClient
 from ...common.validation import SymbolParam
+from ...dependencies import get_yfinance_client
 from .models import QuoteResponse
 from .service import fetch_quote
 
@@ -43,6 +47,8 @@ router = APIRouter()
         503: {"description": "Upstream timeout"},
     },
 )
-async def get_quote(symbol: SymbolParam) -> QuoteResponse:
+async def get_quote(
+    symbol: SymbolParam, client: Annotated[YFinanceClient, Depends(get_yfinance_client)]
+) -> QuoteResponse:
     """Get the latest market quote for a given ticker symbol."""
-    return await fetch_quote(symbol)
+    return await fetch_quote(symbol, client)
