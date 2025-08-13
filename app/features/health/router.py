@@ -3,9 +3,12 @@
 NOTE: TODOs capture richer diagnostics and improved readiness semantics.
 """
 
-import yfinance as yf
-from fastapi import APIRouter, HTTPException, Response
+from typing import Annotated
 
+from fastapi import APIRouter, Depends, HTTPException, Response
+
+from ...clients.yfinance_client import YFinanceClient
+from ...dependencies import get_yfinance_client
 from ...utils.logger import logger
 
 router = APIRouter()
@@ -44,16 +47,9 @@ async def get_health():
         },
     },
 )
-async def get_ready():
+async def get_ready(client: Annotated[YFinanceClient, Depends(get_yfinance_client)]):
     """Readiness check endpoint to verify yfinance is reachable."""
-    try:
-        _ = yf.Ticker("AAPL")
-    except Exception as e:
-        logger.error(
-            f"YFinance is not reachable ({type(e).__name__}): {e}",
-            exc_info=True,
-            extra={"ticker": "AAPL"},
-        )
+    if not await client.ping():
         raise HTTPException(status_code=503, detail="Not ready")
     return Response(
         content='{"status": "ready"}',
