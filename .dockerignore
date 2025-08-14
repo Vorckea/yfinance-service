@@ -11,3 +11,6 @@ tests/
 .idea/
 dist/
 build/
+
+# Stress test
+stress_test.ps1

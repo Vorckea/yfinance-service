@@ -25,3 +25,6 @@ logs/
 
 # pytest
 .pytest_cache/
+
+# Stress test
+stress_test.ps1
