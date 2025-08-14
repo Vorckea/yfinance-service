@@ -1,13 +1,16 @@
+"""Tests for the /historical endpoint."""
+
 import pandas as pd
+from fastapi import HTTPException
 
 VALID_SYMBOLS = "AAPL"
 INVALID_SYMBOLS = "!!!"
+NOT_FOUND_SYMBOL = "ZZZZZZZZZZ"
 
 
-def test_historical_valid_symbol(client, mocker):
-    mock_ticker = mocker.patch("yfinance.Ticker")
-    mock_instance = mock_ticker.return_value
-    mock_instance.history.return_value = pd.DataFrame(
+def test_historical_valid_symbol(client, mock_yfinance_client):
+    """Test case for a valid symbol."""
+    mock_yfinance_client.get_history.return_value = pd.DataFrame(
         {
             "Open": [150.0, 151.0],
             "High": [152.0, 153.0],
@@ -31,16 +34,18 @@ def test_historical_valid_symbol(client, mocker):
 
 
 def test_historical_invalid_symbol(client):
+    """Test case for an invalid symbol format."""
     response = client.get(f"/historical/{INVALID_SYMBOLS}?start=2024-08-01&end=2024-08-02")
     assert response.status_code == 422
     body = response.json()
     assert "detail" in body and isinstance(body["detail"], list)
 
 
-def test_historical_not_found(client, mocker):
-    mock_ticker = mocker.patch("yfinance.Ticker")
-    mock_instance = mock_ticker.return_value
-    mock_instance.history.return_value = pd.DataFrame()
-    response = client.get("/historical/ZZZZZZZZZZ")
+def test_historical_not_found(client, mock_yfinance_client):
+    """Test case for a symbol not found."""
+    mock_yfinance_client.get_history.side_effect = HTTPException(
+        status_code=404, detail=f"No data for {NOT_FOUND_SYMBOL}"
+    )
+    response = client.get(f"/historical/{NOT_FOUND_SYMBOL}")
     assert response.status_code == 404
     assert "No data for" in response.json()["detail"]

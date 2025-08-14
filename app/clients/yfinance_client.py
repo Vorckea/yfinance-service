@@ -60,7 +60,7 @@ class YFinanceClient:
         try:
             self._get_ticker("AAPL")
             return True
-        except HTTPException as e:
+        except Exception as e:
             logger.warning(
                 "yfinance.client.ping_failed",
                 extra={"error": str(e), "ticker": "AAPL"},
