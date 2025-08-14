@@ -1,3 +1,4 @@
+import asyncio
 from datetime import date
 
 import pandas as pd
@@ -34,6 +35,6 @@ async def fetch_historical(
 
     logger.info("historical.fetch.success", extra={"symbol": symbol, "rows": len(df)})
 
-    prices = _map_history(df)
+    prices = await asyncio.to_thread(_map_history, df)
 
     return HistoricalResponse(symbol=symbol.upper(), prices=prices)
