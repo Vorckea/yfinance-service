@@ -1,4 +1,4 @@
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 
 class QuoteResponse(BaseModel):
@@ -41,3 +41,9 @@ class QuoteResponse(BaseModel):
         description="Trading volume",
         examples=[10000, 500000, None],
     )
+
+    @field_validator("current_price", "previous_close", "open_price", "high", "low")
+    def non_negative(cls, v):
+        if v < 0:
+            raise ValueError("must be non-negative")
+        return v

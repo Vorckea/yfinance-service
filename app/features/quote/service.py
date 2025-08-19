@@ -9,6 +9,8 @@ from ...clients.yfinance_client import YFinanceClient
 from ...utils.logger import logger
 from .models import QuoteResponse
 
+Info = dict[str, Any]
+
 FIELD_MAP: Mapping[str, Sequence[str]] = {
     "current_price": ["regularMarketPrice"],
     "previous_close": ["regularMarketPreviousClose", "previousClose"],
@@ -25,8 +27,8 @@ REVERSE_MAP: dict[str, str] = {
 REQUIRED_FIELDS = ("current_price", "previous_close", "open", "high", "low")
 
 
-def _extract_logical_values(info: dict[str, Any]) -> dict[str, Any]:
-    result: dict[str, Any] = {}
+def _extract_logical_values(info: Info) -> Info:
+    result: Info = {}
     required_set = set(REQUIRED_FIELDS)
 
     for k, v in info.items():
@@ -42,7 +44,7 @@ def _extract_logical_values(info: dict[str, Any]) -> dict[str, Any]:
     return result
 
 
-def _ensure_info_present(info: dict[str, Any] | None, symbol: str) -> dict[str, Any]:
+def _ensure_info_present(info: Info | None, symbol: str) -> Info:
     if not info:
         logger.warning("quote.fetch.no_upstream_data", extra={"symbol": symbol})
         raise HTTPException(status_code=502, detail="No data from upstream")
@@ -67,7 +69,7 @@ def _parse_float(value: Any) -> float | None:
         return None
 
 
-def _map_quote(symbol: str, info: dict[str, Any]) -> QuoteResponse:
+def _map_quote(symbol: str, info: Info) -> QuoteResponse:
     mapped = _extract_logical_values(info)
 
     missing = [f for f in REQUIRED_FIELDS if mapped.get(f) is None]
