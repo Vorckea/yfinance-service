@@ -42,8 +42,14 @@ class QuoteResponse(BaseModel):
         examples=[10000, 500000, None],
     )
 
+    @field_validator("symbol", mode="before")
+    @classmethod
+    def normalize_symbol(cls, v: str) -> str:
+        return v.strip().upper()
+
     @field_validator("current_price", "previous_close", "open_price", "high", "low")
-    def non_negative(cls, v):
+    @classmethod
+    def non_negative(cls, v: float) -> float:
         if v < 0:
             raise ValueError("must be non-negative")
         return v
