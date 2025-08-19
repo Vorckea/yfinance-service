@@ -32,7 +32,7 @@ router = APIRouter()
                         "symbol": "AAPL",
                         "current_price": 150.0,
                         "previous_close": 148.0,
-                        "open": 149.0,
+                        "open_price": 149.0,
                         "high": 151.0,
                         "low": 147.5,
                         "volume": 1000000,
@@ -44,6 +44,7 @@ router = APIRouter()
         422: {"description": "Validation error (invalid symbol format)"},
         499: {"description": "Request cancelled by client"},
         500: {"description": "Internal server error"},
+        502: {"description": "Bad gateway"},
         503: {"description": "Upstream timeout"},
     },
 )
