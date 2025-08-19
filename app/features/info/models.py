@@ -24,3 +24,4 @@ class InfoResponse(BaseModel):
     trailing_pe: float | None = Field(None, description="Trailing P/E ratio")
     beta: float | None = Field(None, description="Beta value")
     address: str | None = Field(None, description="Company address")
+    currency: str | None = Field(None, description="Currency of the stock")

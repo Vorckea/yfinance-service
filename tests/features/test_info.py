@@ -30,6 +30,7 @@ def test_info_valid_symbol(client, mock_yfinance_client):
         "trailingPE": 28.0,
         "beta": 1.2,
         "address1": "1 Apple Park Way, Cupertino, CA 95014, USA",
+        "currency": "USD",
     }
     response = client.get(f"/info/{VALID_SYMBOL}")
     assert response.status_code == 200
@@ -38,6 +39,7 @@ def test_info_valid_symbol(client, mock_yfinance_client):
     assert data["short_name"] == "Apple Inc."
     assert data["current_price"] == 150.0
     assert data["address"] == "1 Apple Park Way, Cupertino, CA 95014, USA"
+    assert data["currency"] == "USD"
 
 
 def test_info_invalid_symbol(client):

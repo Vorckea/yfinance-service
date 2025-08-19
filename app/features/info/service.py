@@ -30,6 +30,7 @@ def _map_info(symbol: str, info: dict[str, Any]) -> InfoResponse:
         trailing_pe=info.get("trailingPE"),
         beta=info.get("beta"),
         address=info.get("address1"),
+        currency=info.get("currency"),
     )
 
 
