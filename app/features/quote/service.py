@@ -8,40 +8,58 @@ from ...clients.yfinance_client import YFinanceClient
 from ...utils.logger import logger
 from .models import QuoteResponse
 
+FIELD_MAP = {
+    "current_price": ["regularMarketPrice"],
+    "previous_close": ["regularMarketPreviousClose", "previousClose"],
+    "open": ["regularMarketOpen", "open"],
+    "high": ["regularMarketDayHigh", "dayHigh"],
+    "low": ["regularMarketDayLow", "dayLow"],
+    "volume": ["regularMarketVolume", "volume"],
+}
+
+REQUIRED_FIELDS = ["current_price", "previous_close", "open", "high", "low"]
+
+
+def _get_field(info: dict[str, Any], keys: list[str]) -> Any:
+    """Return the first non-None value for the given keys from info."""
+    for key in keys:
+        value = info.get(key)
+        if value is not None:
+            return value
+    return None
+
+
+def _validate_required_fields(info: dict[str, Any]) -> None:
+    """Ensure all required fields are present in info."""
+    missing = [field for field in REQUIRED_FIELDS if _get_field(info, FIELD_MAP[field]) is None]
+    if missing:
+        logger.warning("quote.fetch.missing_fields", extra={"missing": missing})
+        raise HTTPException(
+            status_code=502,
+            detail=f"Missing required fields in upstream data: {', '.join(missing)}",
+        )
+
+
+def _parse_volume(value: Any) -> int | None:
+    if value is None:
+        return None
+    try:
+        return int(value)
+    except (ValueError, TypeError):
+        return None
+
 
 def _map_quote(symbol: str, info: dict[str, Any]) -> QuoteResponse:
     try:
-        required_fields = [
-            "regularMarketPrice",
-            "regularMarketPreviousClose",
-            "regularMarketOpen",
-            "regularMarketDayHigh",
-            "regularMarketDayLow",
-        ]
-        missing = [
-            field
-            for field in required_fields
-            if info.get(field) is None and info.get(field.replace("regularMarket", "")) is None
-        ]
-        if missing:
-            logger.warning(
-                "quote.fetch.missing_fields", extra={"symbol": symbol, "missing": missing}
-            )
-            raise HTTPException(
-                status_code=502, detail=f"Missing required fields from upstream: {missing}"
-            )
+        _validate_required_fields(info)
         return QuoteResponse(
             symbol=symbol.upper(),
-            current_price=float(info.get("regularMarketPrice")),
-            previous_close=float(
-                info.get("regularMarketPreviousClose") or info.get("previousClose")
-            ),
-            open=float(info.get("regularMarketOpen") or info.get("open")),
-            high=float(info.get("regularMarketDayHigh") or info.get("dayHigh")),
-            low=float(info.get("regularMarketDayLow") or info.get("dayLow")),
-            volume=int(info.get("regularMarketVolume") or info.get("volume"))
-            if info.get("regularMarketVolume") or info.get("volume")
-            else None,
+            current_price=float(_get_field(info, FIELD_MAP["current_price"])),
+            previous_close=float(_get_field(info, FIELD_MAP["previous_close"])),
+            open=float(_get_field(info, FIELD_MAP["open"])),
+            high=float(_get_field(info, FIELD_MAP["high"])),
+            low=float(_get_field(info, FIELD_MAP["low"])),
+            volume=_parse_volume(_get_field(info, FIELD_MAP["volume"])),
         )
     except (TypeError, ValueError) as e:
         logger.warning("quote.fetch.malformed_data", extra={"symbol": symbol, "error": str(e)})
