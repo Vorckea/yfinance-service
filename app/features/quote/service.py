@@ -9,8 +9,27 @@ from ...utils.logger import logger
 from .models import QuoteResponse
 
 
-def _map_info(symbol: str, info: dict[str, Any]) -> QuoteResponse:
+def _map_quote(symbol: str, info: dict[str, Any]) -> QuoteResponse:
     try:
+        required_fields = [
+            "regularMarketPrice",
+            "regularMarketPreviousClose",
+            "regularMarketOpen",
+            "regularMarketDayHigh",
+            "regularMarketDayLow",
+        ]
+        missing = [
+            field
+            for field in required_fields
+            if info.get(field) is None and info.get(field.replace("regularMarket", "")) is None
+        ]
+        if missing:
+            logger.warning(
+                "quote.fetch.missing_fields", extra={"symbol": symbol, "missing": missing}
+            )
+            raise HTTPException(
+                status_code=502, detail=f"Missing required fields from upstream: {missing}"
+            )
         return QuoteResponse(
             symbol=symbol.upper(),
             current_price=float(info.get("regularMarketPrice")),
@@ -46,4 +65,4 @@ async def fetch_quote(symbol: str, client: YFinanceClient) -> QuoteResponse:
     info = await client.get_info(symbol)
 
     logger.info("quote.fetch.success", extra={"symbol": symbol})
-    return _map_info(symbol, info)
+    return _map_quote(symbol, info)

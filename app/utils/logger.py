@@ -1,8 +1,9 @@
 import logging
-
+import os
 
 logger = logging.getLogger("yfinance-service")
-logger.setLevel(logging.INFO)
+log_level = os.getenv("LOG_LEVEL", "INFO").upper()
+logger.setLevel(getattr(logging, log_level, logging.INFO))
 
 if not logger.hasHandlers():
     handler = logging.StreamHandler()
