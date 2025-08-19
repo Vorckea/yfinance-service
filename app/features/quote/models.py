@@ -21,7 +21,7 @@ class QuoteResponse(BaseModel):
         description="Previous closing price",
         examples=[148.0, 2790.0],
     )
-    open: float = Field(
+    open_price: float = Field(
         ...,
         description="Opening price",
         examples=[149.0, 2795.0],
