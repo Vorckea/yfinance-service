@@ -8,11 +8,9 @@ ENV PYTHONUNBUFFERED=1 \
 
 WORKDIR /app
 
-RUN apt-get update && apt-get install -y --no-install-recommends curl ca-certificates \
-    && rm -rf /var/lib/apt/lists/*
-
-RUN pip install --no-cache-dir "poetry==$POETRY_VERSION" "poetry-plugin-export" && \
-    poetry config virtualenvs.create false
+RUN python -m pip install --upgrade pip setuptools wheel \
+    && python -m pip install --no-cache-dir "poetry==$POETRY_VERSION" "poetry-plugin-export" \
+    && poetry config virtualenvs.create false
 
 COPY pyproject.toml poetry.lock* /app/
 
@@ -23,27 +21,24 @@ FROM python:3.13-slim-bookworm AS runtime
 
 ENV PYTHONUNBUFFERED=1 \
     PYTHONFAULTHANDLER=1 \
-    PYTHONPATH=/app
+    PYTHONPATH=/app \
+    SSL_CERT_FILE=/etc/ssl/certs/ca-certificates.crt \
+    CURL_CA_BUNDLE=/etc/ssl/certs/ca-certificates.crt
+
+RUN groupadd -r appuser && useradd -r -g appuser -d /home/appuser -s /usr/sbin/nologin -c "App user" appuser \
+    && mkdir -p /app
 
 WORKDIR /app
 
-COPY --from=builder /app/requirements.txt /app/
+COPY --from=builder /app/requirements.txt /app/requirements.txt
 
-# Install CA certificates and libcurl runtime so curl_cffi/OpenSSL have a proper trust store
 RUN apt-get update \
     && apt-get install -y --no-install-recommends ca-certificates libcurl4 \
-    && rm -rf /var/lib/apt/lists/*
+    && rm -rf /var/lib/apt/lists/* \
+    && python -m pip install --no-cache-dir --no-compile -r requirements.txt
 
-# Explicitly point Python/curl to the system cert bundle (belt-and-suspenders)
-ENV SSL_CERT_FILE=/etc/ssl/certs/ca-certificates.crt \
-    CURL_CA_BUNDLE=/etc/ssl/certs/ca-certificates.crt
+COPY --chown=appuser:appuser app ./app
 
-RUN pip install --no-cache-dir --no-compile -r requirements.txt
-
-COPY app ./app
-
-RUN useradd --create-home --shell /usr/sbin/nologin appuser \
-    && chown -R appuser:appuser /app
 USER appuser
 
 EXPOSE 8000

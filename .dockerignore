@@ -1,16 +1,49 @@
+# Python artifacts
 __pycache__/
 *.py[cod]
-.env
-.env.*
-.git
-.gitignore
+*.pyc
+*.pyo
+*.pyd
+
+# Virtual envs / interpreter helpers
+.venv/
+venv/
+venv3/
+.Python
+
+# Poetry / pip caches
+.cache/
+.cache/pip/
+.cache/pypoetry/
+.cache/buildx/
+
+# Test / tooling artifacts
 tests/
+monitoring/
+.pytest_cache/
+.mypy_cache/
+.tox/
+coverage.xml
+htmlcov/
+.coverage
 *.log
-*.md
-.vscode/
-.idea/
+
+# Build artifacts
 dist/
 build/
+*.egg-info/
 
-# Stress test
+# IDE / OS
+.vscode/
+.idea/
+.DS_Store
+
+# Repo / secrets
+.git
+.env
+.env.*
+
+# Misc
+.github/
+.gitignore
 stress_test.ps1
