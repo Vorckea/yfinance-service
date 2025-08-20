@@ -3,7 +3,7 @@ import time
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, Response
-from prometheus_client import generate_latest
+from prometheus_client import CONTENT_TYPE_LATEST, generate_latest
 
 from app.features.health.router import router as health_router
 from app.features.historical.router import router as historical_router
@@ -41,7 +41,7 @@ app = FastAPI(
     ),
     contact={
         "name": "Vorckea",
-        "email": "askelschrader@gmail.com",
+        "email": "akselschrader@gmail.com",
     },
     license_info={
         "name": "MIT License",
@@ -58,7 +58,7 @@ app.middleware("http")(http_metrics_middleware)
 def metrics():
     """Endpoint to expose Prometheus metrics."""
     SERVICE_UPTIME.set(time.time() - app.state.start_time)
-    return Response(generate_latest(), media_type="text/plain")
+    return Response(generate_latest(), media_type=CONTENT_TYPE_LATEST)
 
 
 app.include_router(quote_router, prefix="/quote", tags=["quote"])

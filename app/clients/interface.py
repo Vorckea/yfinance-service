@@ -1,17 +1,19 @@
 from abc import ABC, abstractmethod
+from collections.abc import Mapping
 from datetime import date
+from typing import Any
 
 import pandas as pd
 
 
 class YFinanceClientInterface(ABC):
     @abstractmethod
-    async def get_info(self, symbol: str) -> dict[str, object]:
+    async def get_info(self, symbol: str) -> Mapping[str, Any]:
         """Fetch information about a specific stock."""
         pass
 
     @abstractmethod
-    async def get_history(self, symbol: str, start: date, end: date) -> pd.DataFrame:
+    async def get_history(self, symbol: str, start: date | None, end: date | None) -> pd.DataFrame:
         """Fetch historical market data for a specific stock."""
         pass
 
