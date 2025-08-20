@@ -25,6 +25,7 @@ from .metrics import (
 
 SLOW_THRESHOLD_SECONDS = 10
 CORRELATION_HEADER = "X-Correlation-ID"
+SKIP_PATHS = ["/metrics", "/health", "/ready", "/openapi.json", "/docs", "/redoc"]
 
 
 def _status_class(code: int) -> str:
@@ -37,11 +38,12 @@ def _extract_route(request: Request) -> str:
 
 
 def _get_body_size(response: Response) -> int:
-    if hasattr(response, "body") and response.body is not None:
+    if getattr(response, "body", None) is not None:
         return len(response.body)
-    elif "content-length" in response.headers:
+    content_length = response.headers.get("content-length")
+    if content_length:
         try:
-            return int(response.headers["content-length"])
+            return int(content_length)
         except ValueError:
             pass
     return 0
@@ -54,7 +56,7 @@ async def http_metrics_middleware(request: Request, call_next: Callable) -> Resp
     processing resolves the templated route path for labeled metrics.
     Skips /metrics and /health endpoints to avoid recursion/noise.
     """
-    if request.url.path == "/metrics" or request.url.path == "/health":
+    if request.url.path in SKIP_PATHS:
         return await call_next(request)
 
     start = time.perf_counter()

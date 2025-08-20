@@ -36,7 +36,7 @@ class YFinanceClient:
     async def _fetch_data(self, op: str, fetch_func, *args, **kwargs) -> Any:
         symbol = args[0] if args else "N/A"
         try:
-            with observe(op):
+            async with observe(op):
                 return await asyncio.wait_for(
                     asyncio.to_thread(fetch_func, *args, **kwargs), self._timeout
                 )
