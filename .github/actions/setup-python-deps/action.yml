@@ -22,9 +22,9 @@ runs:
           uses: actions/cache@v4
           with:
               path: ~/.cache/pypoetry
-              key: poetry-${{ runner.os }}-${{ hashFiles('**/poetry.lock') }}
+              key: pip-${{ runner.os }}-${{ hashFiles('**/poetry.lock', '**/pyproject.toml') }}
               restore-keys: |
-                poetry-${{ runner.os }}-
+                pip-${{ runner.os }}-
 
         - name: Install Poetry
           run: pip install --no-cache-dir poetry || { echo "Poetry install failed"; exit 1; }

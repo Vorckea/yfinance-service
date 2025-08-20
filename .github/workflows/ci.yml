@@ -3,6 +3,12 @@ name: CI Pipeline
 permissions:
   contents: read
 
+defaults:
+    run:
+        shell: bash
+env:
+    CI: true
+
 on: 
     push:
         branches: [main]
@@ -19,6 +25,7 @@ jobs:
         strategy:
           matrix:
             python-version: ['3.13']
+          fail-fast: false
         with:
             python-version: ${{ matrix.python-version }}
 
@@ -28,6 +35,7 @@ jobs:
         strategy:
           matrix:
             python-version: ['3.13']
+          fail-fast: false
         with:
             python-version: ${{ matrix.python-version }}
 
