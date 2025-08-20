@@ -9,7 +9,7 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.params import Query
 
-from ...clients.yfinance_client import YFinanceClient
+from ...clients.interface import YFinanceClientInterface
 from ...common.validation import SymbolParam
 from ...dependencies import get_yfinance_client
 from .models import HistoricalResponse
@@ -65,7 +65,7 @@ router = APIRouter()
 )
 async def get_historical(
     symbol: SymbolParam,
-    client: Annotated[YFinanceClient, Depends(get_yfinance_client)],
+    client: Annotated[YFinanceClientInterface, Depends(get_yfinance_client)],
     start: date | None = Query(
         None,
         description="Start date (YYYY-MM-DD)",

@@ -3,7 +3,7 @@ from datetime import date
 
 import pandas as pd
 
-from ...clients.yfinance_client import YFinanceClient
+from ...clients.interface import YFinanceClientInterface
 from ...utils.logger import logger
 from .models import HistoricalPrice, HistoricalResponse
 
@@ -26,7 +26,7 @@ def _map_history(df: pd.DataFrame) -> list[HistoricalPrice]:
 
 
 async def fetch_historical(
-    symbol: str, start: date | None, end: date | None, client: YFinanceClient
+    symbol: str, start: date | None, end: date | None, client: YFinanceClientInterface
 ) -> HistoricalResponse:
     """Fetch historical stock data for a given symbol."""
     logger.info("historical.fetch.request", extra={"symbol": symbol, "start": start, "end": end})

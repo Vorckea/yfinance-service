@@ -7,7 +7,7 @@ from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, Response
 
-from ...clients.yfinance_client import YFinanceClient
+from ...clients.interface import YFinanceClientInterface
 from ...dependencies import get_yfinance_client
 from ...utils.logger import logger
 
@@ -47,7 +47,7 @@ async def get_health():
         },
     },
 )
-async def get_ready(client: Annotated[YFinanceClient, Depends(get_yfinance_client)]):
+async def get_ready(client: Annotated[YFinanceClientInterface, Depends(get_yfinance_client)]):
     """Readiness check endpoint to verify yfinance is reachable."""
     if not await client.ping():
         raise HTTPException(status_code=503, detail="Not ready")

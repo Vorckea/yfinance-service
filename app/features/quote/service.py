@@ -5,7 +5,7 @@ from typing import Any
 
 from fastapi import HTTPException
 
-from ...clients.yfinance_client import YFinanceClient
+from ...clients.interface import YFinanceClientInterface
 from ...utils.logger import logger
 from .models import QuoteResponse
 
@@ -108,7 +108,7 @@ def _map_quote(symbol: str, info: Info) -> QuoteResponse:
     )
 
 
-async def fetch_quote(symbol: str, client: YFinanceClient) -> QuoteResponse:
+async def fetch_quote(symbol: str, client: YFinanceClientInterface) -> QuoteResponse:
     """Fetch stock quote information.
 
     Args:

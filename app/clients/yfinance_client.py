@@ -10,6 +10,8 @@ import pandas as pd
 import yfinance as yf
 from fastapi import HTTPException
 
+from app.clients.interface import YFinanceClientInterface
+
 from ..monitoring.instrumentation import observe
 from ..utils.logger import logger
 
@@ -17,7 +19,7 @@ YFinanceData = dict[str, Any]
 T = TypeVar("T")
 
 
-class YFinanceClient:
+class YFinanceClient(YFinanceClientInterface):
     """Client for interacting with the Yahoo Finance API."""
 
     def __init__(self, timeout: int = 30, ticker_cache_size: int = 512):

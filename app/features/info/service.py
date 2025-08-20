@@ -5,7 +5,7 @@ Backlog TODOs inline mark potential improvements (caching, resiliency, data qual
 
 from typing import Any
 
-from ...clients.yfinance_client import YFinanceClient
+from ...clients.interface import YFinanceClientInterface
 from ...utils.logger import logger
 from .models import InfoResponse
 
@@ -34,7 +34,7 @@ def _map_info(symbol: str, info: dict[str, Any]) -> InfoResponse:
     )
 
 
-async def fetch_info(symbol: str, client: YFinanceClient) -> InfoResponse:
+async def fetch_info(symbol: str, client: YFinanceClientInterface) -> InfoResponse:
     """Fetch information for a given symbol.
 
     Args:

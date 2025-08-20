@@ -7,7 +7,7 @@ from typing import Annotated
 
 from fastapi import APIRouter, Depends
 
-from ...clients.yfinance_client import YFinanceClient
+from ...clients.interface import YFinanceClientInterface
 from ...common.validation import SymbolParam
 from ...dependencies import get_yfinance_client
 from .models import InfoResponse
@@ -62,7 +62,7 @@ router = APIRouter()
     },
 )
 async def get_info(
-    symbol: SymbolParam, client: Annotated[YFinanceClient, Depends(get_yfinance_client)]
+    symbol: SymbolParam, client: Annotated[YFinanceClientInterface, Depends(get_yfinance_client)]
 ) -> InfoResponse:
     """Get detailed information about a company for a given ticker symbol."""
     return await fetch_info(symbol, client)
