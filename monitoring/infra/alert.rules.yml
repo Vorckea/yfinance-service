@@ -1,26 +1,37 @@
 groups:
-  - name: yfinance-service-alerts
-    rules:
-      - alert: HighErrorRate
-        expr: |
-          (
-            sum(increase(http_requests_total{status_class="5xx"}[5m])) 
-            /
-            sum(increase(http_requests_total[5m]))
-          ) > 0.05
-        for: 5m
-        labels:
-          severity: warning
-        annotations:
-          summary: "High HTTP error rate (>5%) in yfinance-service (5m window)"
-      - alert: HighP95Latency
-        expr: |
-          histogram_quantile(
-            0.95,
-            sum(rate(http_request_duration_seconds_bucket[5m])) by (le)
-          ) > 1
-        for: 10m
-        labels:
-          severity: warning
-        annotations:
-          summary: "P95 latency > 1s over 10m"
+- name: yfinance-service-alerts
+  rules:
+  - alert: HighErrorRate
+    expr: |
+      (sum(increase(http_requests_total{status_class="5xx"}[5m]))
+      / clamp_min(sum(increase(http_requests_total[5m])), 1)) > 0.05
+    for: 10m
+    labels:
+      severity: page
+    annotations:
+      summary: "High HTTP 5xx error rate (>5%) for yfinance-service (5m window)"
+      description: "The 5xx rate is >5% for more than 10 minutes. Investigate upstream failures."
+      runbook: "https://your-runbook.example.com/yfinance/high-error-rate"
+
+  - alert: HighP95Latency
+    expr: |
+      histogram_quantile(
+        0.95,
+        sum(rate(http_request_duration_seconds_bucket[5m])) by (le, job)
+      ) > 1
+    for: 10m
+    labels:
+      severity: warning
+    annotations:
+      summary: "P95 latency > 1s for yfinance-service (5m window)"
+      description: "P95 latency exceeded 1s for 10 minutes. Check downstream/backpressure and yfinance availability."
+      runbook: "https://your-runbook.example.com/yfinance/high-p95"
+
+  - alert: PrometheusDown
+    expr: up{job="prometheus"} == 0
+    for: 5m
+    labels:
+      severity: page
+    annotations:
+      summary: "Prometheus instance down"
+      description: "Prometheus target is not up."

@@ -234,7 +234,7 @@
             },
             "targets": [
                 {
-                    "expr": "sum(http_inprogress_requests)",
+                    "expr": "sum(http_inprogress_total)",
                     "instant": true,
                     "legendFormat": "inprogress"
                 }

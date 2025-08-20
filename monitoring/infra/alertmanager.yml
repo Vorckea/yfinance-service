@@ -1,0 +1,24 @@
+global:
+  resolve_timeout: 5m
+
+route:
+  group_by: [ 'alertname', 'job' ]
+  group_wait: 30s
+  group_interval: 5m
+  repeat_interval: 3h
+  receiver: 'default'
+
+receivers:
+- name: 'default'
+  # By default: write to a simple file, or add webhook/Slack/email as needed.
+  webhook_configs:
+  - url: 'http://localhost:9094/' # example: replace with real webhook receiver or remove
+
+# Example: Uncomment and configure your email or slack receivers
+#  - name: 'team-email'
+#    email_configs:
+#      - to: 'oncall@example.com'
+#        from: 'alertmanager@example.com'
+#        smarthost: 'smtp.example.com:587'
+#        auth_username: 'alertmanager'
+#        auth_password: '...'

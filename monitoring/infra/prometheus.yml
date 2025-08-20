@@ -1,24 +1,40 @@
 global:
   scrape_interval: 5s
-  evaluation_interval: 5s
+  evaluation_interval: 15s
+  scrape_timeout: 10s
   external_labels:
     environment: 'dev'
     service: 'yfinance-service'
+    prometheus: 'primary'
+
+alerting:
+  alertmanagers:
+  - static_configs:
+    - targets: [ 'alertmanager:9093' ]
 
 rule_files:
-  - './alert.rules.yml'
+- './alert.rules.yml'
+- './recording.rules.yml'
 
 scrape_configs:
-  - job_name: 'yfinance-service'
-    metrics_path: /metrics
-    scrape_timeout: 5s
-    static_configs:
-      - targets: 
-          - yfinance-service:8000
-        labels:
-          instance: 'main'
+- job_name: 'yfinance-service'
+  metrics_path: /metrics
+  static_configs:
+  - targets:
+    - yfinance-service:8000
+    labels:
+      job: 'yfinance-service'
+      instance: 'main'
+  metric_relabel_configs:
+  - source_labels: [ 'route' ]
+    regex: '__unmatched__'
+    action: drop
+  - target_label: instance
+    replacement: 'main'
 
-  - job_name: 'prometheus'
-    static_configs:
-      - targets: 
-          - localhost:9090
+- job_name: 'prometheus'
+  static_configs:
+  - targets:
+    - localhost:9090
+    labels:
+      job: 'prometheus'

@@ -1,0 +1,17 @@
+groups:
+- name: yfinance-recording-rules
+  rules:
+  # request rate (per 1m) across all routes
+  - record: http:request:rate1m
+    expr: sum(rate(http_requests_total[1m])) by (job)
+
+  # error rate (5m window) as a fraction [0..1]
+  - record: http:errors:ratio5m
+    expr: |
+      sum(increase(http_requests_total{status_class="5xx"}[5m]))
+      /
+      sum(increase(http_requests_total[5m]))
+
+  # p95 latency per job (5m window)
+  - record: http:request_p95:5m
+    expr: histogram_quantile(0.95, sum(rate(http_request_duration_seconds_bucket[5m])) by (le, job))

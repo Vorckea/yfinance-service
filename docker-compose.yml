@@ -18,9 +18,25 @@ services:
       - "9090:9090"
     volumes:
       - prometheus_data:/prometheus
-      - ./monitoring/infra/prometheus.yml:/etc/prometheus/prometheus.yml
+      - ./monitoring/infra/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./monitoring/infra/alert.rules.yml:/etc/prometheus/alert.rules.yml:ro
+      - ./monitoring/infra/recording.rules.yml:/etc/prometheus/recording.rules.yml:ro
     depends_on:
       - yfinance-service
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+
+  alertmanager:
+    image: prom/alertmanager:latest
+    restart: unless-stopped
+    ports:
+      - "9093:9093"
+    volumes:
+      - ./monitoring/infra/alertmanager.yml:/etc/alertmanager/alertmanager.yml:ro
+    command:
+      - '--config.file=/etc/alertmanager/alertmanager.yml'
+    depends_on:
+      - prometheus
 
   grafana:
     image: grafana/grafana:latest
