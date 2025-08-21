@@ -33,6 +33,12 @@ jobs:
           --cov-report=html
           --junitxml=pytest-report.xml
 
+      - name: Upload Pytest JUnit report to GitHub Step Summary
+        if: always()
+        uses: test-summary/action@v2
+        with:
+          paths: "pytest-report.xml"
+
       - name: Upload Pytest JUnit report
         if: always()
         uses: actions/upload-artifact@v4
