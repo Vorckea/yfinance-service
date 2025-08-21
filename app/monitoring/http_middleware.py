@@ -33,6 +33,9 @@ def _status_class(code: int) -> str:
 
 def _extract_route_best_effort(request: Request) -> str:
     try:
+        route = request.scope.get("route")
+        if route is not None:
+            return getattr(route, "path_format", getattr(route, "path", request.url.path))
         for r in request.app.router.routes:
             match, _ = r.matches(request.scope)
             if match is Match.FULL:
@@ -43,14 +46,18 @@ def _extract_route_best_effort(request: Request) -> str:
 
 
 def _get_body_size(response: Response) -> int:
-    if getattr(response, "body", None) is not None:
-        return len(response.body)
-    content_length = response.headers.get("content-length")
-    if content_length:
-        try:
-            return int(content_length)
-        except ValueError:
-            pass
+    try:
+        body = getattr(response, "body", None)
+        if isinstance(body, (bytes, bytearray)):
+            return len(body)
+        content_length = response.headers.get("content-length")
+        if content_length:
+            try:
+                return int(content_length)
+            except (ValueError, TypeError):
+                pass
+    except Exception:
+        pass
     return 0
 
 
@@ -73,38 +80,68 @@ async def http_metrics_middleware(request: Request, call_next: Callable) -> Resp
 
     route = _extract_route_best_effort(request)
 
-    # Increment total in-progress immediately (route unknown yet)
-    HTTP_INPROGRESS_TOTAL.inc()
-    HTTP_INPROGRESS.labels(route=route, method=method).inc()
+    try:
+        HTTP_INPROGRESS_TOTAL.inc()
+    except Exception:
+        pass
+
+    per_route_inc = False
 
     try:
+        try:
+            HTTP_INPROGRESS.labels(route=route, method=method).inc()
+            per_route_inc = True
+        except Exception:
+            per_route_inc = False
+
         response = await call_next(request)
     except Exception:
         duration = time.perf_counter() - start
-        # Per-route in-progress is very brief for error path but recorded for consistency
-        HTTP_REQUEST_DURATION.labels(route=route, method=method).observe(duration)
-        HTTP_REQUESTS.labels(route=route, method=method, status_class="5xx").inc()
+        try:
+            HTTP_REQUEST_DURATION.labels(route=route, method=method).observe(duration)
+        except Exception:
+            pass
+        try:
+            HTTP_REQUESTS.labels(route=route, method=method, status_class="5xx").inc()
+        except Exception:
+            pass
         logger.exception(
             "Unhandled exception",
             extra={"cid": cid, "route": route, "method": method, "latency": duration},
         )
         raise
     finally:
-        HTTP_INPROGRESS.labels(route=route, method=method).dec()
-        HTTP_INPROGRESS_TOTAL.dec()
+        try:
+            if per_route_inc:
+                HTTP_INPROGRESS.labels(route=route, method=method).dec()
+        except Exception:
+            pass
+        try:
+            HTTP_INPROGRESS_TOTAL.dec()
+        except Exception:
+            pass
 
     duration = time.perf_counter() - start
     status_class = _status_class(response.status_code)
     body_size = _get_body_size(response)
 
-    HTTP_REQUEST_DURATION.labels(route=route, method=method).observe(duration)
-    HTTP_REQUESTS.labels(route=route, method=method, status_class=status_class).inc()
+    try:
+        HTTP_REQUEST_DURATION.labels(route=route, method=method).observe(duration)
+    except Exception:
+        pass
+    try:
+        HTTP_REQUESTS.labels(route=route, method=method, status_class=status_class).inc()
+    except Exception:
+        pass
     try:
         HTTP_RESPONSE_SIZE.labels(route=route, method=method).observe(body_size)
     except Exception:
         pass
 
-    response.headers[CORRELATION_HEADER] = cid
+    try:
+        response.headers[CORRELATION_HEADER] = cid
+    except Exception:
+        pass
 
     if duration >= SLOW_THRESHOLD_SECONDS:
         logger.warning(
@@ -118,15 +155,17 @@ async def http_metrics_middleware(request: Request, call_next: Callable) -> Resp
                 "threshold": SLOW_THRESHOLD_SECONDS,
             },
         )
-    logger.info(
-        "Request completed",
-        extra={
-            "cid": cid,
-            "route": route,
-            "method": method,
-            "status_code": response.status_code,
-            "latency": duration,
-            "response_size": body_size,
-        },
-    )
+    else:
+        logger.info(
+            "Request completed",
+            extra={
+                "cid": cid,
+                "route": route,
+                "method": method,
+                "status_code": response.status_code,
+                "latency": duration,
+                "response_size": body_size,
+            },
+        )
+
     return response
