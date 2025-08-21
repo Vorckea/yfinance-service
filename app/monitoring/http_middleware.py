@@ -6,13 +6,12 @@ Provides:
     - Structured logging for success, slow, and error paths
 """
 
-from __future__ import annotations
-
 import time
 import uuid
 from collections.abc import Callable
 
 from fastapi import Request, Response
+from starlette.routing import Match
 
 from ..utils.logger import logger
 from .metrics import (
@@ -32,9 +31,15 @@ def _status_class(code: int) -> str:
     return f"{code // 100}xx"
 
 
-def _extract_route(request: Request) -> str:
-    route_obj = request.scope.get("route")
-    return getattr(route_obj, "path_format", getattr(route_obj, "path", "__unmatched__"))
+def _extract_route_best_effort(request: Request) -> str:
+    try:
+        for r in request.app.router.routes:
+            match, _ = r.matches(request.scope)
+            if match is Match.FULL:
+                return getattr(r, "path_format", getattr(r, "path", request.url.path))
+    except Exception:
+        pass
+    return request.url.path
 
 
 def _get_body_size(response: Response) -> int:
@@ -61,23 +66,22 @@ async def http_metrics_middleware(request: Request, call_next: Callable) -> Resp
 
     start = time.perf_counter()
     method = request.method
-    # Route will be resolved after routing (post call_next) to avoid '__unmatched__'.
 
     # Correlation ID
     cid = request.headers.get(CORRELATION_HEADER, str(uuid.uuid4()))
     request.state.correlation_id = cid
 
+    route = _extract_route_best_effort(request)
+
     # Increment total in-progress immediately (route unknown yet)
     HTTP_INPROGRESS_TOTAL.inc()
+    HTTP_INPROGRESS.labels(route=route, method=method).inc()
+
     try:
         response = await call_next(request)
     except Exception:
-        route_obj = request.scope.get("route")
-        route = getattr(route_obj, "path_format", getattr(route_obj, "path", "__unmatched__"))
         duration = time.perf_counter() - start
         # Per-route in-progress is very brief for error path but recorded for consistency
-        HTTP_INPROGRESS.labels(route=route, method=method).inc()
-        HTTP_INPROGRESS.labels(route=route, method=method).dec()
         HTTP_REQUEST_DURATION.labels(route=route, method=method).observe(duration)
         HTTP_REQUESTS.labels(route=route, method=method, status_class="5xx").inc()
         logger.exception(
@@ -86,19 +90,22 @@ async def http_metrics_middleware(request: Request, call_next: Callable) -> Resp
         )
         raise
     finally:
+        HTTP_INPROGRESS.labels(route=route, method=method).dec()
         HTTP_INPROGRESS_TOTAL.dec()
 
-    route = _extract_route(request)
     duration = time.perf_counter() - start
     status_class = _status_class(response.status_code)
     body_size = _get_body_size(response)
 
-    HTTP_INPROGRESS.labels(route=route, method=method).inc()
     HTTP_REQUEST_DURATION.labels(route=route, method=method).observe(duration)
     HTTP_REQUESTS.labels(route=route, method=method, status_class=status_class).inc()
-    HTTP_RESPONSE_SIZE.labels(route=route, method=method).observe(body_size)
+    try:
+        HTTP_RESPONSE_SIZE.labels(route=route, method=method).observe(body_size)
+    except Exception:
+        pass
 
     response.headers[CORRELATION_HEADER] = cid
+
     if duration >= SLOW_THRESHOLD_SECONDS:
         logger.warning(
             "Slow request",
@@ -122,5 +129,4 @@ async def http_metrics_middleware(request: Request, call_next: Callable) -> Resp
             "response_size": body_size,
         },
     )
-    HTTP_INPROGRESS.labels(route=route, method=method).dec()
     return response
