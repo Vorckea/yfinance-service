@@ -32,6 +32,17 @@ jobs:
           --cov-report=xml 
           --cov-report=html
           --junitxml=pytest-report.xml
+      
+      - name: Upload test results to Github Checks
+        if: always()
+        uses: dorny/test-reporter@v2
+        with:
+          name: pytest
+          path: pytest-report.xml
+          reporter: junit
+          fail-on-error: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Upload Pytest JUnit report
         if: always()
