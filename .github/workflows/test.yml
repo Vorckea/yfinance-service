@@ -31,7 +31,59 @@ jobs:
           --cov-report=term-missing 
           --cov-report=xml 
           --cov-report=html
-          --junitxml=pytest-report.xml >> $GITHUB_STEP_SUMMARY
+          --junitxml=pytest-report.xml
+
+      - name: Write pytest summary to Github Step Summary
+        if: always()
+        run: |
+          python - <<'PY'
+          import os, sys, xml.etree.ElementTree as ET
+          out = os.environ.get("GITHUB_STEP_SUMMARY")
+          xml_path = "pytest-report.xml"
+          if not out:
+              sys.exit(0)
+          try:
+              tree = ET.parse(xml_path)
+              root = tree.getroot()
+          except Exception as e:
+              with open(out, "a") as f:
+                  f.write("## Pytest results\nCould not read pytest-report.xml: {}\\n".format(e))
+              sys.exit(0)
+          suites = root.findall("testsuite") if root.tag == "testsuites" else [root]
+          total = failures = errors = skipped = 0
+          failed_cases = []
+          for s in suites:
+              total += int(s.get("tests", 0))
+              failures += int(s.get("failures", 0))
+              errors += int(s.get("errors", 0))
+              skipped += int(s.get("skipped", 0))
+              for tc in s.findall("testcase"):
+                  for ch in tc:
+                      if ch.tag in ("failure", "error"):
+                          classname = tc.get("classname", "")
+                          name = tc.get("name", "")
+                          msg = ch.get("message", "") or ""
+                          text = (ch.text or "").strip()
+                          failed_cases.append((classname, name, msg, text))
+          with open(out, "a") as f:
+              f.write("## Test Report\\n")
+              f.write(f"- Total: **{total}**  \\n")
+              f.write(f"- Failures: **{failures}**  \\n")
+              f.write(f"- Errors: **{errors}**  \\n")
+              f.write(f"- Skipped: **{skipped}**  \\n\\n")
+              if failed_cases:
+                  f.write("<details>\\n<summary>Failed tests ({})</summary>\\n\\n".format(len(failed_cases)))
+                  for cls, nm, msg, txt in failed_cases:
+                      title = f"{cls}.{nm}" if cls else nm
+                      f.write(f"### {title}\\n")
+                      if msg:
+                          f.write(f"- Message: `{msg}`\\n\\n")
+                      if txt:
+                          f.write("```text\\n")
+                          f.write(txt + "\\n")
+                          f.write("```\\n\\n")
+                  f.write("</details>\\n")
+          PY
 
       - name: Upload Pytest JUnit report
         if: always()
