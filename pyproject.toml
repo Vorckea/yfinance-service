@@ -24,7 +24,7 @@ httptools = "^0.6.4"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^8.4.1"
-ruff = "^0.12.7"
+ruff = "^0.13.1"
 black = "^25.1.0"
 pytest-mock = "^3.14.1"
 pylint = "^3.3.7"
