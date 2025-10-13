@@ -20,7 +20,7 @@ package-mode = false
 
 [tool.poetry.group.docker.dependencies]
 uvloop = "^0.21.0"
-httptools = "^0.6.4"
+httptools = "^0.7.1"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^8.4.1"
