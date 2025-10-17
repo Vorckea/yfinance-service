@@ -56,12 +56,14 @@ jobs:
 
 
       - name: Scan image with Trivy (vuln check)
-        uses: aquasecurity/trivy-action@v1
+        uses: aquasecurity/trivy-action@v0.28.0
         with:
           image-ref: ghcr.io/${{ steps.set-vars.outputs.repo }}:${{ github.sha }}
-
-
-
+          format: "table"
+          exit-code: "1"
+          ignore-unfixed: true
+          vuln-type: "os,library"
+          severity: "HIGH,CRITICAL"
 
       - name: Move new cache
         if: always()
