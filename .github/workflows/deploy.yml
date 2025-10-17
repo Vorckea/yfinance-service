@@ -32,24 +32,33 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Set lowercase repo and tag
+        id: set-vars
+        run: |
+          echo "repo=$(echo \"${GITHUB_REPOSITORY}\" | tr '[:upper:]' '[:lower:]')" >> $GITHUB_OUTPUT
+          echo "tag=$(echo \"${RELEASE_TAG}\" | tr '[:upper:]' '[:lower:]')" >> $GITHUB_OUTPUT
+        env:
+          RELEASE_TAG: ${{ github.event.release.tag_name }}
+
       - name: Build and Push Docker Image
         uses: docker/build-push-action@v6
         with:
-          context: .
+          context: .  
           file: ./Dockerfile
           push: true
           platforms: linux/amd64,linux/arm64
           tags: |
-            ghcr.io/${{ toLower(github.repository) }}:${{ toLower(github.event.release.tag_name) }}
-            ghcr.io/${{ toLower(github.repository) }}:latest
-            ghcr.io/${{ toLower(github.repository) }}:${{ github.sha }}
+            ghcr.io/${{ steps.set-vars.outputs.repo }}:${{ steps.set-vars.outputs.tag }}
+            ghcr.io/${{ steps.set-vars.outputs.repo }}:latest
+            ghcr.io/${{ steps.set-vars.outputs.repo }}:${{ github.sha }}
           cache-from: type=local,src=.cache/buildx
           cache-to: type=local,dest=.cache/buildx-new,mode=max
+
 
       - name: Scan image with Trivy (vuln check)
         uses: aquasecurity/trivy-action@v1
         with:
-          image-ref: ghcr.io/${{ toLower(github.repository) }}:${{ github.sha }}
+          image-ref: ghcr.io/${{ steps.set-vars.outputs.repo }}:${{ github.sha }}
 
 
 
