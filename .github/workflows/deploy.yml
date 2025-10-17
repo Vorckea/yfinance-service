@@ -13,6 +13,8 @@ jobs:
   build-and-push:
     if: ${{ github.event.release.target_commitish == 'main' }}
     runs-on: ubuntu-latest
+    environment:
+      name: production
     steps:
       - name: Checkout
         uses: actions/checkout@v5
@@ -36,9 +38,19 @@ jobs:
           context: .
           file: ./Dockerfile
           push: true
+          platforms: linux/amd64,linux/arm64
+          cache-from: type=local,src=.cache/buildx
+          cache-to: type=local,dest=.cache/buildx-new,mode=max
           tags: |
             ghcr.io/${{ github.repository }}:${{ github.event.release.tag_name }}
             ghcr.io/${{ github.repository }}:latest
+
+      - name: Move new cache
+        if: always()
+        run: |
+          rm -rf ./.cache/buildx
+          mv ./.cache/buildx-new ./.cache/buildx
+
       - name: Deployment (placeholder)
         run: | 
           echo "Image pushed: ghcr.io/${{ github.repository }}:${{ github.event.release.tag_name }}"
