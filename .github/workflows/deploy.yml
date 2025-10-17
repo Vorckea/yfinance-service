@@ -39,11 +39,20 @@ jobs:
           file: ./Dockerfile
           push: true
           platforms: linux/amd64,linux/arm64
+          tags: |
+            ghcr.io/${{ toLower(github.repository) }}:${{ toLower(github.event.release.tag_name) }}
+            ghcr.io/${{ toLower(github.repository) }}:latest
+            ghcr.io/${{ toLower(github.repository) }}:${{ github.sha }}
           cache-from: type=local,src=.cache/buildx
           cache-to: type=local,dest=.cache/buildx-new,mode=max
-          tags: |
-            ghcr.io/${{ github.repository }}:${{ github.event.release.tag_name }}
-            ghcr.io/${{ github.repository }}:latest
+
+      - name: Scan image with Trivy (vuln check)
+        uses: aquasecurity/trivy-action@v1
+        with:
+          image-ref: ghcr.io/${{ toLower(github.repository) }}:${{ github.sha }}
+
+
+
 
       - name: Move new cache
         if: always()
