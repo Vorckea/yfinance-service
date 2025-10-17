@@ -32,13 +32,6 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Set lowercase repo and tag
-        id: set-vars
-        run: |
-          echo "repo=$(echo \"${GITHUB_REPOSITORY}\" | tr '[:upper:]' '[:lower:]')" >> $GITHUB_OUTPUT
-          echo "tag=$(echo \"${RELEASE_TAG}\" | tr '[:upper:]' '[:lower:]')" >> $GITHUB_OUTPUT
-        env:
-          RELEASE_TAG: ${{ github.event.release.tag_name }}
 
       - name: Build and Push Docker Image
         uses: docker/build-push-action@v6
@@ -48,9 +41,9 @@ jobs:
           push: true
           platforms: linux/amd64,linux/arm64
           tags: |
-            ghcr.io/${{ steps.set-vars.outputs.repo }}:${{ steps.set-vars.outputs.tag }}
-            ghcr.io/${{ steps.set-vars.outputs.repo }}:latest
-            ghcr.io/${{ steps.set-vars.outputs.repo }}:${{ github.sha }}
+            ghcr.io/vorckea/yfinance-service:${{ github.event.release.tag_name }}
+            ghcr.io/vorckea/yfinance-service:latest
+            ghcr.io/vorckea/yfinance-service:${{ github.sha }}
           cache-from: type=local,src=.cache/buildx
           cache-to: type=local,dest=.cache/buildx-new,mode=max
 
@@ -58,7 +51,7 @@ jobs:
       - name: Scan image with Trivy (vuln check)
         uses: aquasecurity/trivy-action@0.28.0
         with:
-          image-ref: ghcr.io/${{ steps.set-vars.outputs.repo }}:${{ github.sha }}
+          image-ref: ghcr.io/vorckea/yfinance-service:${{ github.sha }}
           format: "table"
           exit-code: "1"
           ignore-unfixed: true
