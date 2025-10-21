@@ -19,7 +19,7 @@ dependencies = [
 package-mode = false
 
 [tool.poetry.group.docker.dependencies]
-uvloop = "^0.21.0"
+uvloop = "^0.22.1"
 httptools = "^0.7.1"
 
 [tool.poetry.group.dev.dependencies]
