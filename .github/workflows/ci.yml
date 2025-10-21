@@ -28,7 +28,7 @@ jobs:
         uses: ./.github/workflows/lint.yml
         strategy:
           matrix:
-            python-version: ['3.13']
+            python-version: ['3.13', '3.14']
           fail-fast: false
         with:
             python-version: ${{ matrix.python-version }}
@@ -38,7 +38,7 @@ jobs:
         uses: ./.github/workflows/test.yml
         strategy:
           matrix:
-            python-version: ['3.13']
+            python-version: ['3.13', '3.14']
           fail-fast: false
         with:
             python-version: ${{ matrix.python-version }}
@@ -47,5 +47,5 @@ jobs:
         name: Build Docker Image
         uses: ./.github/workflows/build.yml
         with:
-            python-version: '3.13'
+            python-version: '3.14'
         needs: [lint, test]
