@@ -19,15 +19,15 @@ dependencies = [
 package-mode = false
 
 [tool.poetry.group.docker.dependencies]
-uvloop = "^0.21.0"
-httptools = "^0.6.4"
+uvloop = "^0.22.1"
+httptools = "^0.7.1"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^8.4.1"
-ruff = "^0.13.1"
+ruff = "^0.14.0"
 black = "^25.1.0"
 pytest-mock = "^3.14.1"
-pylint = "^3.3.7"
+pylint = "^4.0.0"
 pytest-cov = "^7.0.0"
 
 [tool.poetry.requires-plugins]
