@@ -4,17 +4,25 @@ on:
   release:
     types: [published]
 
-permissions:
-  contents: read
-  packages: write
-  id-token: write
-
 jobs:
   build-and-push:
     if: ${{ github.event.release.target_commitish == 'main' }}
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     environment:
       name: production
+
+    permissions:
+      contents: read
+      packages: write
+      id-token: write # for OIDC
+      attestations: write 
+
+    env:
+      REPO_LC: ${{ github.repository_owner }}/${{ github.event.repository.name }}
+      IMAGE_NAME: ghcr.io/${{ github.repository }}
+      TAG: ${{ github.event.release.tag_name }}
+
     steps:
       - name: Checkout
         uses: actions/checkout@v5
@@ -24,9 +32,8 @@ jobs:
         run: |
           TAG="${{ github.event.release.tag_name }}"
           echo "Release tag: $TAG"
-          # Accept v1.2.3 or 1.2.3 (optional pre-release suffix allowed)
           if [[ ! "$TAG" =~ ^v?[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?$ ]]; then
-            echo "Release tag is not semver (expected v1.2.3 or 1.2.3). Aborting."
+            echo "❌ Release tag is not semver (expected v1.2.3 or 1.2.3). Aborting."
             exit 1
           fi
 
@@ -44,25 +51,53 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
 
 
+      - name: Extract release version
+        id: extract_version
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.IMAGE_NAME }}
+          tags: |
+            type=sha
+            type=semver,pattern={{version}}
+            type=semver,pattern={{version}}.{{minor}}
+            type=semver,pattern={{major}}
+
       - name: Build and Push Docker Image
+        id: push
         uses: docker/build-push-action@v6
         with:
           context: .  
           file: ./Dockerfile
           push: true
           platforms: linux/amd64,linux/arm64
-          tags: |
-            ghcr.io/vorckea/yfinance-service:${{ github.event.release.tag_name }}
-            ghcr.io/vorckea/yfinance-service:latest
-            ghcr.io/vorckea/yfinance-service:${{ github.sha }}
+          tags: ${{ steps.extract_version.outputs.tags }}
           cache-from: type=local,src=.cache/buildx
           cache-to: type=local,dest=.cache/buildx-new,mode=max
 
+      - name: Generate SBOM
+        uses: anchore/sbom-action@v0
+        with:
+          image: ${{ env.IMAGE_NAME }}@${{ steps.push.outputs.digest }}
+          format: cyclonedx
+          output: sbom.cyclonedx.json
+
+      - name: Upload SBOM
+        uses: actions/upload-artifact@v4
+        with:
+          name: sbom
+          path: sbom.cyclonedx.json
+
+      - name: Generate artifact attestation
+        uses: actions/attest-build-provenance@v3
+        with:
+          subject-name: ${{ env.IMAGE_NAME }}
+          subject-digest: ${{ steps.push.outputs.digest }}
+          push-to-registry: true
 
       - name: Scan image with Trivy (vuln check)
         uses: aquasecurity/trivy-action@0.33.1
         with:
-          image-ref: ghcr.io/vorckea/yfinance-service:${{ github.sha }}
+          image-ref: ${{ env.IMAGE_NAME }}@${{ steps.push.outputs.digest }}
           format: "table"
           exit-code: "1"
           ignore-unfixed: true
@@ -77,5 +112,5 @@ jobs:
 
       - name: Deployment (placeholder)
         run: | 
-          echo "Image pushed: ghcr.io/${{ github.repository }}:${{ github.event.release.tag_name }}"
+          echo "✅ Image pushed: ${{ env.IMAGE_NAME }}@${{ steps.push.outputs.digest }}"
           echo "Add your deploy step here (e.g. kubectl apply / helm upgrade / ssh deploy)"
