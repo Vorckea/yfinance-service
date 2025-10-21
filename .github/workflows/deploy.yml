@@ -19,6 +19,17 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v5
 
+      - name: Verify release tag is semver
+        id: verify_tag
+        run: |
+          TAG="${{ github.event.release.tag_name }}"
+          echo "Release tag: $TAG"
+          # Accept v1.2.3 or 1.2.3 (optional pre-release suffix allowed)
+          if [[ ! "$TAG" =~ ^v?[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?$ ]]; then
+            echo "Release tag is not semver (expected v1.2.3 or 1.2.3). Aborting."
+            exit 1
+          fi
+
       - name: Setup QEMU
         uses: docker/setup-qemu-action@v2
 
