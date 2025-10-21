@@ -43,19 +43,19 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: pytest-report
+          name: pytest-report-${{ inputs.python-version }}
           path: pytest-report.xml
 
       - name: Upload Coverage XML
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: coverage-xml
+          name: coverage-xml-${{ inputs.python-version }}
           path: coverage.xml
 
       - name: Upload Coverage HTML
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: coverage-html
+          name: coverage-html-${{ inputs.python-version }}
           path: htmlcov/

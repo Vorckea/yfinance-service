@@ -30,7 +30,7 @@ jobs:
             - name: Upload Ruff report
               uses: actions/upload-artifact@v4
               with:
-                name: ruff-report
+                name: ruff-report-${{ inputs.python-version }}
                 path: ruff-report.txt
 
             - name: Check formatting with Ruff
