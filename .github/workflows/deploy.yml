@@ -49,7 +49,7 @@ jobs:
 
 
       - name: Scan image with Trivy (vuln check)
-        uses: aquasecurity/trivy-action@0.28.0
+        uses: aquasecurity/trivy-action@0.33.1
         with:
           image-ref: ghcr.io/vorckea/yfinance-service:${{ github.sha }}
           format: "table"
