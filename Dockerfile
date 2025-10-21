@@ -1,5 +1,5 @@
 # --- Stage 1: Builder ---
-FROM python:3.13-slim-bookworm AS builder
+FROM python:3.14-slim-bookworm AS builder
 
 ENV PYTHONUNBUFFERED=1 \
     PYTHONFAULTHANDLER=1 \
@@ -17,7 +17,7 @@ COPY pyproject.toml poetry.lock* /app/
 RUN poetry export --without-hashes --with docker -f requirements.txt -o requirements.txt
 
 # --- Stage 2: Runtime ---
-FROM python:3.13-slim-bookworm AS runtime
+FROM python:3.14-slim-bookworm AS runtime
 
 ENV PYTHONUNBUFFERED=1 \
     PYTHONFAULTHANDLER=1 \
