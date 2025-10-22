@@ -1,9 +1,11 @@
 name: Create GitHub Release
 
 on:
-    push:
-        branches:
-            - main
+    pull_request:
+      types:
+        - closed
+      branches:
+        - main
 
 permissions:
     contents: write
