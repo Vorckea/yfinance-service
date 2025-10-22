@@ -2,10 +2,10 @@ name: Create GitHub Release
 
 on:
     pull_request:
-        types: [closed]
+        types: 
+            - closed
         branches:
-            - 'release/*'
-            - 'hotfix/*'
+            - 'main'
 
 permissions:
     contents: write
