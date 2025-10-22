@@ -19,10 +19,10 @@ jobs:
       attestations: write 
 
     env:
-      REPO_LC: ${{ github.repository_owner }}/${{ github.event.repository.name }}
-      IMAGE_NAME: ghcr.io/${{ github.repository }}
+      REPO_LC: vorckea/${{ github.event.repository.name }}
+      IMAGE_NAME: ghcr.io/vorckea/${{ github.event.repository.name }}
       TAG: ${{ github.event.release.tag_name }}
-
+       
     steps:
       - name: Checkout
         uses: actions/checkout@v5
