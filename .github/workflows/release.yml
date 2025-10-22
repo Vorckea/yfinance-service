@@ -13,7 +13,12 @@ permissions:
 jobs:
     tag-and-release:
         runs-on: ubuntu-latest
-        if: github.event.pull_request.merged == true && (startsWith(github.event.pull_request.base.ref, 'release/') || startsWith(github.event.pull_request.base.ref, 'hotfix/'))
+        if: >
+          github.event.pull_request.merged == true &&
+            (
+              startsWith(github.event.pull_request.head.ref, 'release/') ||
+              startsWith(github.event.pull_request.head.ref, 'hotfix/')
+            )        
         steps:
             - uses: actions/checkout@v5
 
@@ -41,7 +46,7 @@ jobs:
                         owner,
                         repo,
                         ref: `refs/tags/${tag}`,
-                        sha: context.sha
+                        sha: context.payload.pull_request.merge_commit_sha
                     });
                     console.log(`✅ Created tag ${tag}`);
 
@@ -49,5 +54,7 @@ jobs:
               env:
                 GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
               run: |
-                gh release create "${{ steps.extract.outputs.version }}" --title "Release ${{ steps.extract.outputs.version }}" --generate-notes
+                gh release create "${{ steps.extract.outputs.version }}" \
+                   --title "Release ${{ steps.extract.outputs.version }}" \
+                   --generate-notes
                 
