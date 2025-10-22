@@ -25,8 +25,7 @@ jobs:
             - name: Extract version from branch
               id: extract
               run: |
-                BRANCH="${GITHUB_REF##*/}"
-                BRANCH="${GITHUB_REF##*/}"
+                BRANCH="${{ github.event.pull_request.head.ref }}"
                 if [[ "$BRANCH" == release/* ]]; then
                   VERSION="${BRANCH#release/}"
                 elif [[ "$BRANCH" == hotfix/* ]]; then
