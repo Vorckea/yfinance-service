@@ -13,7 +13,7 @@ jobs:
       name: production
 
     permissions:
-      contents: read
+      contents: write
       packages: write
       id-token: write # for OIDC
       attestations: write 
