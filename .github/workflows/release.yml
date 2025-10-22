@@ -27,7 +27,7 @@ jobs:
               uses: actions/github-script@v7
               with: 
                 script: |
-                    const tag = '${{ steps.extract.outputs.version  }}';
+                    const tag = '${{ steps.extract.outputs.version }}';
                     const { repo, owner } = context.repo;
                     await github.rest.git.createRef({
                         owner,
