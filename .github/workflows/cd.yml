@@ -1,0 +1,59 @@
+name: CD Pipeline
+
+on:
+    pull_request:
+        types: [closed]
+        branches: [main]
+
+concurrency:
+    group: cd-pipeline-${{ github.ref_name }}
+    cancel-in-progress: true
+
+permissions:
+    contents: read
+    packages: read
+    id-token: write # for OIDC
+
+jobs:
+    tag-and-release:
+      runs-on: ubuntu-latest
+      if: >
+          github.event.pull_request.merged == true &&
+            (
+              startsWith(github.event.pull_request.head.ref, 'release/') ||
+              startsWith(github.event.pull_request.head.ref, 'hotfix/')
+            )
+      permissions:
+        contents: write
+      steps:
+        - name: Checkout code
+          uses: actions/checkout@v5
+
+        - name: Create GitHub Release
+          id: create_release
+          uses: ./.github/actions/release
+          with:
+            pull_request_head_ref: ${{ github.event.pull_request.head.ref }}
+            merge_commit_sha: ${{ github.event.pull_request.merge_commit_sha }}
+      outputs:
+        release_tag: ${{ steps.create_release.outputs.release_tag }}
+        release_name: ${{ steps.create_release.outputs.release_name }}
+
+    build-and-push:
+        needs: tag-and-release
+        runs-on: ubuntu-latest
+        permissions:
+          contents: read
+          packages: write
+          id-token: write # for OIDC
+          attestations: write # for deploying to cloud providers
+        steps:
+          - name: Checkout code
+            uses: actions/checkout@v5
+
+          - name: Build and Push Docker Image
+            id: build_and_push
+            uses: ./.github/actions/deploy
+            with:
+                release_tag: ${{ needs.tag-and-release.outputs.release_tag }}
+                release_name: ${{ needs.tag-and-release.outputs.release_name }}
