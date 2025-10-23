@@ -8,6 +8,10 @@ inputs:
     type: string
     description: "The merge commit SHA of the pull request"
     required: true
+  github_token:
+    type: string
+    description: "GitHub token (pass secrets.GITHUB_TOKEN from the workflow)"
+    required: true
 outputs:
   release_tag:
     description: "The created release tag"
@@ -50,7 +54,7 @@ runs:
     - name: Create GitHub Release
       shell: bash
       env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        GITHUB_TOKEN: ${{ inputs.github_token }}
       run: |
         gh release create "${{ steps.extract.outputs.version }}" \
            --title "Release ${{ steps.extract.outputs.version }}" \

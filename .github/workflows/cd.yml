@@ -35,6 +35,7 @@ jobs:
           with:
             pull_request_head_ref: ${{ github.event.pull_request.head.ref }}
             merge_commit_sha: ${{ github.event.pull_request.merge_commit_sha }}
+            github_token: ${{ secrets.GITHUB_TOKEN }}
       outputs:
         release_tag: ${{ steps.create_release.outputs.release_tag }}
         release_name: ${{ steps.create_release.outputs.release_name }}
@@ -57,3 +58,4 @@ jobs:
             with:
                 release_tag: ${{ needs.tag-and-release.outputs.release_tag }}
                 release_name: ${{ needs.tag-and-release.outputs.release_name }}
+                github_token: ${{ secrets.GITHUB_TOKEN }}
