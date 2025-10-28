@@ -28,7 +28,7 @@ jobs:
                 poetry run ruff check app tests --output-format=github | tee ruff-report.txt
 
             - name: Upload Ruff report
-              uses: actions/upload-artifact@v4
+              uses: actions/upload-artifact@v5
               with:
                 name: ruff-report-${{ inputs.python-version }}
                 path: ruff-report.txt
