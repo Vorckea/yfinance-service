@@ -41,21 +41,21 @@ jobs:
 
       - name: Upload Pytest JUnit report
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: pytest-report-${{ inputs.python-version }}
           path: pytest-report.xml
 
       - name: Upload Coverage XML
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: coverage-xml-${{ inputs.python-version }}
           path: coverage.xml
 
       - name: Upload Coverage HTML
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: coverage-html-${{ inputs.python-version }}
           path: htmlcov/
