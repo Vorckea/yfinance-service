@@ -10,7 +10,7 @@ def test_metric_check_ok(client):
     assert response.status_code == 200
     assert content_type == CONTENT_TYPE_LATEST
 
-    body = response.get_data(as_text=True)
+    body = response.text
     families = {mf.name: mf for mf in text_string_to_metric_families(body)}
     assert "process_uptime_seconds" in families
     assert "build_info_info" in families
