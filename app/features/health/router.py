@@ -51,10 +51,6 @@ async def get_ready(client: Annotated[YFinanceClientInterface, Depends(get_yfina
     """Readiness check endpoint to verify yfinance is reachable."""
     if not await client.ping():
         raise HTTPException(status_code=503, detail="Not ready")
-    return Response(
-        content='{"status": "ready"}',
-        status_code=200,
-        media_type="application/json",
-    )
+    return {"status": "ready"}
     # TODO(readiness): Replace ad-hoc ticker instantiation with lightweight probe
     # and short-lived cached readiness state to reduce load.
