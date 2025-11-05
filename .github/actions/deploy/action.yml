@@ -34,7 +34,7 @@ runs:
       run: |
         TAG="${{ inputs.release_tag }}"
         echo "Release tag: $TAG"
-        if [[ ! "$TAG" =~ ^v?[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?$ ]]; then
+        if [[ ! "$TAG" =~ ^v?(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(-([0-9A-Za-z-]+(\.[0-9A-Za-z-]+)*))?(\+([0-9A-Za-z-]+(\.[0-9A-Za-z-]+)*))?$ ]]; then
           echo "❌ Release tag is not semver (expected v1.2.3 or 1.2.3). Aborting."
           exit 1
         fi
@@ -58,10 +58,10 @@ runs:
       with:
         images: ${{ env.IMAGE_NAME }}
         tags: |
-          type=sha
           type=semver,pattern={{version}}
           type=semver,pattern={{major}}.{{minor}}
           type=semver,pattern={{major}}
+          type=raw,value=latest,enable= {{ is_prerelease != 'true' }}
 
     - name: Build and Push Docker Image
       id: push
@@ -70,7 +70,6 @@ runs:
         context: .  
         file: ./Dockerfile
         push: true
-        load: true
         platforms: linux/amd64,linux/arm64
         tags: ${{ steps.extract_version.outputs.tags }}
         cache-from: type=gha
