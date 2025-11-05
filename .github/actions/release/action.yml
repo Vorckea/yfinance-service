@@ -36,7 +36,9 @@ runs:
           echo "Branch name does not match release/* or hotfix/* pattern."
           exit 1
         fi
-        echo "version=v$VERSION" >> "$GITHUB_OUTPUT"
+        # Remove leading 'v' if it exists, then add it back to ensure 'vX.Y.Z' format
+        VERSION="v$(echo $VERSION | sed 's/^v//')"
+        echo "version=$VERSION" >> "$GITHUB_OUTPUT"
     
     - name: Create Git tag
       uses: actions/github-script@v7
@@ -72,6 +74,6 @@ runs:
           echo "Generating notes since previous release: $LATEST_TAG"
           gh release create "${{ steps.extract.outputs.version }}" \
             --title "Release ${{ steps.extract.outputs.version }}" \
-            --notes-from-tag "$LATEST_TAG" \
+            --notes-start-tag "$LATEST_TAG" \
             --generate-notes
         fi
