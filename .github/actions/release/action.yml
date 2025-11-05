@@ -57,6 +57,13 @@ runs:
       env:
         GITHUB_TOKEN: ${{ inputs.github_token }}
       run: |
+        # Fetch all tags to ensure we have the full history
+        git fetch --tags
+
+        # Get the latest tag
+        LATEST_TAG=$(git describe --tags `git rev-list --tags --max-count=1`)
+
         gh release create "${{ steps.extract.outputs.version }}" \
            --title "Release ${{ steps.extract.outputs.version }}" \
+           --notes-from-tag "$LATEST_TAG" \
            --generate-notes
