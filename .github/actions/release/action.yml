@@ -51,6 +51,7 @@ runs:
                 sha: '${{ inputs.merge_commit_sha }}'
             });
             console.log(`✅ Created tag ${tag}`);
+            
     - name: Create GitHub Release
       shell: bash
       env:
