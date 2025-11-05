@@ -74,6 +74,6 @@ runs:
           echo "Generating notes since previous release: $LATEST_TAG"
           gh release create "${{ steps.extract.outputs.version }}" \
             --title "Release ${{ steps.extract.outputs.version }}" \
-            --notes-from-tag "$LATEST_TAG" \
+            --notes-start-tag "$LATEST_TAG" \
             --generate-notes
         fi
