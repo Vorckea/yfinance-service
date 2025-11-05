@@ -1,0 +1,23 @@
+changelog:
+  categories:
+    - title: "🚀 New Features"
+      labels:
+        - "feature"
+        - "feat"
+    - title: "🐛 Bug Fixes"
+      labels:
+        - "bug"
+        - "fix"
+    - title: "📄 Documentation"
+      labels:
+        - "documentation"
+        - "docs"
+    - title: "🧰 Maintenance"
+      labels:
+        - "maintenance"
+        - "chore"
+    - title: "🔨 Other Changes"
+      labels:
+        - "*"
+  contributors:
+    - "all"
