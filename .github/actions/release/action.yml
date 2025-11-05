@@ -60,10 +60,18 @@ runs:
         # Fetch all tags to ensure we have the full history
         git fetch --tags
 
-        # Get the latest tag
-        LATEST_TAG=$(git describe --tags `git rev-list --tags --max-count=1`)
+        # Get the latest release tag from GitHub, which is more reliable than git describe
+        LATEST_TAG=$(gh release list --limit 1 --json tagName --jq '.[0].tagName')
 
-        gh release create "${{ steps.extract.outputs.version }}" \
-           --title "Release ${{ steps.extract.outputs.version }}" \
-           --notes-from-tag "$LATEST_TAG" \
-           --generate-notes
+        if [ -z "$LATEST_TAG" ]; then
+          echo "No previous release found. Generating notes from the beginning of history."
+          gh release create "${{ steps.extract.outputs.version }}" \
+            --title "Release ${{ steps.extract.outputs.version }}" \
+            --generate-notes
+        else
+          echo "Generating notes since previous release: $LATEST_TAG"
+          gh release create "${{ steps.extract.outputs.version }}" \
+            --title "Release ${{ steps.extract.outputs.version }}" \
+            --notes-from-tag "$LATEST_TAG" \
+            --generate-notes
+        fi
