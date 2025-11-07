@@ -3,16 +3,17 @@
 Provides the /quote/{symbol} endpoint for fetching latest market data.
 """
 
-from typing import Annotated
+from typing import Annotated, Dict, Union
 
 from fastapi import APIRouter, Depends
 from fastapi import HTTPException, Query
 import asyncio
+import json
 
 from ...clients.interface import YFinanceClientInterface
 from ...common.validation import SymbolParam
 from ...dependencies import get_yfinance_client
-from .models import QuoteResponse
+from .models import QuoteResponse, SymbolErrorModel
 from .service import fetch_quote
 
 router = APIRouter()
@@ -56,9 +57,11 @@ async def get_quote(
     """Get the latest market quote for a given ticker symbol."""
     return await fetch_quote(symbol, client)
 
+MAX_CONCURRENCY = 10
 
 @router.get(
     "",
+    response_model=Dict[str, Union[QuoteResponse, SymbolErrorModel]],
     response_model_exclude_none=True,
     summary="Get latest quotes for multiple symbols",
     description="Accepts a CSV `symbols` query parameter and returns a map of symbol -> quote or error.",
@@ -67,7 +70,7 @@ async def get_quote(
 async def get_quotes(
     symbols: Annotated[str, Query(..., description="Comma-separated list of ticker symbols")],
     client: Annotated[YFinanceClientInterface, Depends(get_yfinance_client)],
-) -> dict:
+) -> Dict[str, Union[QuoteResponse, SymbolErrorModel]]:
     """Fetch latest quotes for multiple symbols in a single request.
 
     Behaviour:
@@ -75,13 +78,19 @@ async def get_quotes(
     - For symbols that fail to fetch, the value will be an object with `error` and `status_code`.
     - The route returns HTTP 200 regardless of per-symbol failures; individual failures are reported per-symbol.
     """
+    # Early guard for empty/whitespace-only param
+    if not symbols or not symbols.strip():
+        raise HTTPException(status_code=400, detail="Empty symbols list")
+
     # Parse CSV and normalize
     requested = [s.strip().upper() for s in symbols.split(",") if s.strip()]
     if not requested:
+        # catches inputs like ",,," or entries that are all whitespace
         raise HTTPException(status_code=400, detail="Empty symbols list")
 
     # Cap concurrency to avoid overwhelming upstream or local resources
-    semaphore = asyncio.Semaphore(10)
+    concurrency = min(len(requested), MAX_CONCURRENCY)
+    semaphore = asyncio.BoundedSemaphore(concurrency)
 
     async def _fetch(sym: str):
         async with semaphore:
@@ -89,9 +98,33 @@ async def get_quotes(
                 result = await fetch_quote(sym, client)
                 return sym, result
             except HTTPException as exc:
-                return sym, {"error": str(exc.detail), "status_code": exc.status_code}
+                # Sanitizing detail and status_code before constructing the Pydantic model
+                detail = exc.detail
+                try:
+                    # Prioratize simple string representation; if complex, JSON-encode it
+                    if isinstance(detail, (str, int, float, bool)):
+                        err_str = str(detail)
+                    else:
+                        err_str = json.dumps(detail, default=str)
+                except Exception:
+                    err_str = str(detail)
+
+                status_code = getattr(exc, "status_code", None) or getattr(exc, "status", None) or 502
+                try:
+                    status_code = int(status_code)
+                except Exception:
+                    status_code = 502
+
+                try:
+                    return sym, SymbolErrorModel(error=err_str, status_code=status_code)
+                except Exception:
+                    # Fallback to plain dict if model construction unexpectedly fails
+                    return sym, {"error": err_str, "status_code": status_code}
             except Exception as exc:  # pragma: no cover - defensive
-                return sym, {"error": str(exc), "status_code": 500}
+                try:
+                    return sym, SymbolErrorModel(error=str(exc), status_code=500)
+                except Exception:
+                    return sym, {"error": str(exc), "status_code": 500}
 
     tasks = [_fetch(s) for s in requested]
     results = await asyncio.gather(*tasks)
@@ -99,7 +132,7 @@ async def get_quotes(
     # Build mapping
     out: dict[str, object] = {}
     for sym, value in results:
-        # If it's a QuoteResponse, convert to dict
+        # Pydantic models (QuoteResponse or SymbolErrorModel) expose model_dump
         if hasattr(value, "model_dump"):
             out[sym] = value.model_dump(exclude_none=True)
         else:
