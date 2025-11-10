@@ -63,6 +63,12 @@ docker build -t yfinance-service .
 docker run -p 8000:8000 yfinance-service
 ```
 
+### Using Prebuilt Docker Image
+```sh
+docker pull ghcr.io/vorckea/yfinance-service:latest
+docker run -p 8000:8000 ghcr.io/vorckea/yfinance-service:latest
+```
+
 ### Using Docker Compose (with Prometheus)
 
 ```sh
