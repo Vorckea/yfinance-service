@@ -24,7 +24,7 @@ uvloop = "^0.22.1"
 httptools = "^0.7.1"
 
 [tool.poetry.group.dev.dependencies]
-pytest = "^8.4.1"
+pytest = "^9.0.0"
 ruff = "^0.14.0"
 black = "^25.1.0"
 pytest-mock = "^3.14.1"
