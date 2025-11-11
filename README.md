@@ -2,101 +2,100 @@
 
 ![Build Status](https://img.shields.io/github/actions/workflow/status/Vorckea/yfinance-service/ci.yml?branch=main)
 ![Coverage](https://img.shields.io/badge/coverage-83%25-brightgreen)
+![Python](https://img.shields.io/badge/python-3.13%2B-blue)
+![FastAPI](https://img.shields.io/badge/FastAPI-0.116%2B-009688?logo=fastapi)
 ![License](https://img.shields.io/github/license/Vorckea/yfinance-service)
+![Docker](https://img.shields.io/badge/docker-ghcr.io/vorckea/yfinance--service-blue)
+[![Stars](https://img.shields.io/github/stars/Vorckea/yfinance-service?style=social)](https://github.com/Vorckea/yfinance-service)
+![Release](https://img.shields.io/github/v/release/Vorckea/yfinance-service)
 
-A FastAPI-based service that acts as a proxy for the [yfinance](https://github.com/ranaroussi/yfinance) Python library, enabling non-Python projects to access financial market data via HTTP endpoints.
+
+> *A lightweight* ***FastAPI*** microservice that wraps [yfinance](https://github.com/ranaroussi/yfinance), exposing **RESTful endpoints** for market data, perfect for **non-Python projects**, **microservice architectures**, and **monitorable deployments**.
+
+## Why Use This?
+- **Language-agnostic**: Get Yahoo Finance data via HTTP, no python dependency.
+- **Production-ready**: Includes Prometheus metrics and health checks.
+- **Simple setup**: Run with Docker, Poetry, or Docker Compose (Grafana/Prometheus included).
+- **Extendable**: Built on FastAPI; easy to add routes or middleware.
 
 ## Features
-
-- **Quote API**: Fetch latest market quotes for ticker symbols.
-- **Historical API**: Retrieve historical market data for symbols over a date range.
-- **Info API**: Retrieve detailed company information for a ticker symbol.
-- **Health Check**: Simple endpoint to verify service status.
-- **Prometheus Metrics**: `/metrics` endpoint for monitoring request count, errors, and latency.
+| Feature                | Description                                             |
+| ---------------------- | ------------------------------------------------------- |
+| **Quote API**          | Fetch latest market quotes (OHLCV) for ticker symbols.  |
+| **Historical API**     | Retrieve historical data within a date range.           |
+| **Info API**           | Get company fundamentals (sector, market cap, etc.).    |
+| **Health Check**       | Simple `/health` endpoint to verify service status.     |
+| **Prometheus Metrics** | `/metrics` endpoint for request count, errors, latency. |
 
 ## API Endpoints
 
-### Quote
+| Endpoint                                                   | Description               | Example                                            |
+| ---------------------------------------------------------- | ------------------------- | -------------------------------------------------- |
+| `GET /quote/{symbol}`                                      | Latest quote for a symbol | `/quote/AAPL`                                      |
+| `GET /historical/{symbol}?start=YYYY-MM-DD&end=YYYY-MM-DD` | Historical OHLCV data     | `/historical/AAPL?start=2024-01-01&end=2024-02-01` |
+| `GET /info/{symbol}`                                       | Company details           | `/info/TSLA`                                       |
+| `GET /health`                                              | Health check              | `/health`                                          |
+| `GET /metrics`                                             | Prometheus metrics        | `/metrics`                                         |
 
-- `GET /quote/{symbol}`: Get the latest quote (OHLCV) for a symbol .
+## Quick Start
 
-### Historical
-
-- `GET /historical/{symbol}?start=YYYY-MM-DD&end=YYYY-MM-DD`: Get historical data (OHLCV) for a symbol within a date range.
-
-### Info
-
-- `GET /info/{symbol}`: Get detailed company information for a symbol (e.g., company name, sector, industry, market cap, price, etc.).
-
-### Health
-
-- `GET /health`: Service health check.
-
-### Metrics
-
-- `GET /metrics`: Prometheus metrics endpoint (request count, error count, latency).
-
-## Monitoring with Prometheus
-
-This service exposes metrics at `/metrics` in Prometheus format.  
-To use with Prometheus and Grafana, see the provided `docker-compose.yml` and the configs in `monitoring/infra/` and `monitoring/dashboards/` for a quick setup.
-
-**Example Prometheus Query for Latency:**
-
-```text
-rate(request_latency_seconds_sum[5m]) / rate(request_latency_seconds_count[5m])
-```
-
-## Setup & Installation
-
-### Using Poetry
-
-```sh
-poetry install
-poetry run uvicorn app.main:app --reload
-```
-
-### Using Docker
-
-```sh
-docker build -t yfinance-service .
-docker run -p 8000:8000 yfinance-service
-```
-
-### Using Prebuilt Docker Image
+### Run with Docker
 ```sh
 docker pull ghcr.io/vorckea/yfinance-service:latest
 docker run -p 8000:8000 ghcr.io/vorckea/yfinance-service:latest
 ```
 
-### Using Docker Compose (with Prometheus)
+Then visit:
+http://localhost:8000/docs: Interactive Swagger UI
 
+### Local Development (Poetry)
+```sh
+poetry install
+poetry run uvicorn app.main:app --reload
+```
+
+### With Prometheus + Grafana
 ```sh
 docker compose up --build
 ```
 
-- Access the API at [http://localhost:8000](http://localhost:8000)
-- Access Prometheus at [http://localhost:9090](http://localhost:9090)
-- Access Grafana at [http://localhost:3000](http://localhost:3000)
+Access:
+- API: http://localhost:8000
+- Prometheus: http://localhost:9090
+- Grafana → http://localhost:3000
 
-Prometheus config: `monitoring/infra/prometheus.yml`
-Prometheus alert rules: `monitoring/infra/alert.rules.yml`
-Grafana dashboards: `monitoring/dashboards/`
-Grafana datasources: `monitoring/datasources/`
+Relevant files:
+- Prometheus config: monitoring/infra/prometheus.yml
+- Alert rules: monitoring/infra/alert.rules.yml
+- Dashboards: monitoring/dashboards/
+
+
 
 ## Usage Example
 
-Fetch the latest quote for Apple:
-
+Get the latest quote for Apple:
 ```sh
 curl http://localhost:8000/quote/AAPL
 ```
 
-Fetch company info for Apple:
+Get company info for Tesla:
 
 ```sh
-curl http://localhost:8000/info/AAPL
+curl http://localhost:8000/info/TSLA
 ```
+
+## Monitoring Example:
+Prometheus query for average latency (5-minute window):
+```promql
+rate(request_latency_seconds_sum[5m]) / rate(request_latency_seconds_count[5m])
+
+```
+
+## Contributing
+Contributions are welcome!
+- Open an issue for bugs or new features.
+- Look for **good first issue** labels to get started.
+- Please see [CONTRIBUTING.md](CONTRIBUTING.md)
 
 ## License
 
