@@ -1,3 +1,5 @@
+"""Instrumentation utilities for monitoring yfinance operations."""
+
 import asyncio
 import time
 from contextlib import asynccontextmanager

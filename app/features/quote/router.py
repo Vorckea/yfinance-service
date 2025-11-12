@@ -56,14 +56,16 @@ async def get_quote(
     """Get the latest market quote for a given ticker symbol."""
     return await fetch_quote(symbol, client)
 
+
 MAX_CONCURRENCY = 10
+
 
 @router.get(
     "",
     response_model=Dict[str, Union[QuoteResponse, SymbolErrorModel]],
     response_model_exclude_none=True,
     summary="Get latest quotes for multiple symbols",
-    description="Accepts a CSV `symbols` query parameter and returns a map of symbol -> quote or error.",
+    description="Accepts a CSV `symbols` query parameter and returns a map of symbol -> quote or error.",  # noqa E501
     operation_id="getQuotesBulk",
 )
 async def get_quotes(
@@ -75,7 +77,8 @@ async def get_quotes(
     Behaviour:
     - Returns a mapping of SYMBOL -> QuoteResponse JSON for successful fetches.
     - For symbols that fail to fetch, the value will be an object with `error` and `status_code`.
-    - The route returns HTTP 200 regardless of per-symbol failures; individual failures are reported per-symbol.
+    - The route returns HTTP 200 regardless of per-symbol failures; individual failures are reported
+    per-symbol.
     """
     # Early guard for empty/whitespace-only param
     if not symbols or not symbols.strip():
@@ -108,7 +111,9 @@ async def get_quotes(
                 except Exception:
                     err_str = str(detail)
 
-                status_code = getattr(exc, "status_code", None) or getattr(exc, "status", None) or 502
+                status_code = (
+                    getattr(exc, "status_code", None) or getattr(exc, "status", None) or 502
+                )
                 try:
                     status_code = int(status_code)
                 except Exception:

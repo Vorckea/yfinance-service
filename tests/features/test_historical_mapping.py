@@ -1,3 +1,5 @@
+"""Tests for historical data mapping."""
+
 from datetime import datetime
 
 import numpy as np
@@ -8,6 +10,7 @@ from app.features.historical.service import _map_history
 
 
 def test_map_history_naive_index():
+    """Test that naive datetime index is preserved in HistoricalPrice."""
     data = {
         "Open": [100.0],
         "High": [110.0],
@@ -25,7 +28,9 @@ def test_map_history_naive_index():
     assert isinstance(item, HistoricalPrice)
     assert item.volume == 1000
 
+
 def test_map_history_timezone_aware():
+    """Test that timezone-aware index results in date-only in HistoricalPrice."""
     index = [pd.Timestamp("2024-01-01 15:30", tz="UTC")]
     data = {
         "Open": [200.0],
@@ -43,9 +48,8 @@ def test_map_history_timezone_aware():
     assert result[0].date.isoformat() == "2024-01-01"
 
 
-
-
 def test_map_history_nan_volume_becomes_none():
+    """Test that NaN volume is converted to None in HistoricalPrice."""
     data = {
         "Open": [50.0, 60.0],
         "High": [55.0, 65.0],
@@ -61,4 +65,3 @@ def test_map_history_nan_volume_becomes_none():
     # Check ordering: latest first
     assert result[0].date > result[1].date
     assert result[1].volume is None
-

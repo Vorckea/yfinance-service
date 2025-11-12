@@ -47,9 +47,10 @@ def test_quote_not_found_symbol(client, mock_yfinance_client):
     assert response.status_code == 404
     assert "No data for" in response.json()["detail"]
 
+
 @pytest.mark.asyncio
 async def test_fetch_quote_upstream_none():
-    """Upstream returns None -> should raise 502"""
+    """Upstream returns None -> should raise 502."""
     client = AsyncMock()
     client.get_info.return_value = None
     with pytest.raises(HTTPException) as exc:
@@ -57,9 +58,10 @@ async def test_fetch_quote_upstream_none():
     assert exc.value.status_code == 502
     assert "No data from upstream" in exc.value.detail
 
+
 @pytest.mark.asyncio
 async def test_fetch_quote_upstream_empty():
-    """Upstream returns empty dict -> should raise 502"""
+    """Upstream returns empty dict -> should raise 502."""
     client = AsyncMock()
     client.get_info.return_value = {}
     with pytest.raises(HTTPException) as exc:
@@ -67,9 +69,10 @@ async def test_fetch_quote_upstream_empty():
     assert exc.value.status_code == 502
     assert "No data from upstream" in exc.value.detail  # change expected string
 
+
 @pytest.mark.asyncio
 async def test_fetch_quote_missing_required_fields():
-    """Upstream missing a required field -> should raise 502 with symbol"""
+    """Upstream missing a required field -> should raise 502 with symbol."""
     client = AsyncMock()
     client.get_info.return_value = {"regularMarketPrice": 100.0}  # missing others
     with pytest.raises(HTTPException) as exc:
@@ -78,12 +81,13 @@ async def test_fetch_quote_missing_required_fields():
     assert "Missing required fields" in exc.value.detail
     assert "AAPL" in exc.value.detail
 
+
 @pytest.mark.asyncio
 async def test_fetch_quote_malformed_numbers():
-    """Upstream has malformed numeric fields -> should raise 502"""
+    """Upstream has malformed numeric fields -> should raise 502."""
     client = AsyncMock()
     client.get_info.return_value = {
-        "regularMarketPrice": "not-a-number", #invalid
+        "regularMarketPrice": "not-a-number",  # invalid
         "regularMarketPreviousClose": 95.0,
         "regularMarketOpen": 98.0,
         "regularMarketDayHigh": 102.0,
@@ -94,9 +98,10 @@ async def test_fetch_quote_malformed_numbers():
     assert exc.value.status_code == 502
     assert "Malformed numeric data" in exc.value.detail
 
+
 @pytest.mark.asyncio
 async def test_fetch_quote_missing_volume():
-    """Upstream missing optional volume -> should succeed, volume None"""
+    """Upstream missing optional volume -> should succeed, volume None."""
     client = AsyncMock()
     client.get_info.return_value = {
         "regularMarketPrice": 100.0,

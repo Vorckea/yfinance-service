@@ -91,7 +91,9 @@ class YFinanceClient(YFinanceClientInterface):
             raise HTTPException(status_code=502, detail="Malformed data from upstream")
         return info
 
-    async def get_history(self, symbol: str, start: date | None, end: date | None) -> pd.DataFrame | None:
+    async def get_history(
+        self, symbol: str, start: date | None, end: date | None
+    ) -> pd.DataFrame | None:
         """Fetch historical market data for a specific stock.
 
         Args:

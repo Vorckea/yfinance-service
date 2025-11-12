@@ -1,3 +1,5 @@
+"""Logger configuration for the yfinance-service application."""
+
 import logging
 import os
 

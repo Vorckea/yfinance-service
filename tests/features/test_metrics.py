@@ -1,4 +1,4 @@
-"""Tests for the /metrics endpoint"""
+"""Tests for the /metrics endpoint."""
 
 from prometheus_client import CONTENT_TYPE_LATEST
 from prometheus_client.parser import text_string_to_metric_families
@@ -18,4 +18,3 @@ def test_metric_check_ok(client):
 
     assert any(True for _ in families["process_uptime_seconds"].samples)
     assert any(True for _ in families["build_info_info"].samples)
-
