@@ -1,9 +1,13 @@
+"""Models for historical stock data responses."""
+
 import datetime
 
 from pydantic import BaseModel, ConfigDict, Field
 
 
 class HistoricalPrice(BaseModel):
+    """Model for storing historical price data."""
+
     model_config = ConfigDict(frozen=True)
 
     date: datetime.date = Field(..., description="Date of the price")
@@ -15,6 +19,8 @@ class HistoricalPrice(BaseModel):
 
 
 class HistoricalResponse(BaseModel):
+    """Response model for historical stock data."""
+
     model_config = ConfigDict(frozen=True)
 
     symbol: str = Field(..., description="Ticker symbol (e.g., AAPL)")

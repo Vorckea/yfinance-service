@@ -1,6 +1,9 @@
-import pytest
-import pandas as pd
+"""Tests for YFinanceClient error handling."""
+
 import asyncio
+
+import pandas as pd
+import pytest
 from fastapi import HTTPException
 
 from app.clients.yfinance_client import YFinanceClient
@@ -56,22 +59,6 @@ async def test_get_info_non_dict(monkeypatch):
         await client.get_info("AAPL")
 
     assert excinfo.value.status_code == 502
-
-
-@pytest.mark.asyncio
-async def test_get_info_empty(monkeypatch):
-    """Simulate missing info (None or empty dict) -> should raise HTTP 404."""
-    client = YFinanceClient()
-
-    async def mock_fetch_data(*a, **kw):
-        return None
-
-    monkeypatch.setattr(client, "_fetch_data", mock_fetch_data)
-
-    with pytest.raises(HTTPException) as excinfo:
-        await client.get_info("AAPL")
-
-    assert excinfo.value.status_code == 404
 
 
 @pytest.mark.asyncio

@@ -1,3 +1,5 @@
+"""Models for stock information responses."""
+
 from pydantic import BaseModel, ConfigDict, Field
 
 

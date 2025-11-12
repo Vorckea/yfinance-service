@@ -1,3 +1,5 @@
+"""Main application entry point for the YFinance Proxy Service."""
+
 import sys
 import time
 from contextlib import asynccontextmanager
@@ -15,6 +17,7 @@ from app.monitoring.metrics import BUILD_INFO, SERVICE_UPTIME
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    """Lifespan context manager to initialize application state."""
     app.state.start_time = time.time()
     contact_name = None
     contact_email = None

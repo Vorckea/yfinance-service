@@ -1,3 +1,5 @@
+"""Service layer for fetching historical stock data."""
+
 import asyncio
 from datetime import date
 

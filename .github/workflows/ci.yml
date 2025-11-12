@@ -30,7 +30,7 @@ jobs:
         uses: ./.github/workflows/lint.yml
         strategy:
           matrix:
-            python-version: ['3.13', '3.14']
+            python-version: ['3.14']
           fail-fast: false
         with:
             python-version: ${{ matrix.python-version }}

@@ -5,11 +5,10 @@ NOTE: TODOs capture richer diagnostics and improved readiness semantics.
 
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, HTTPException, Response
+from fastapi import APIRouter, Depends, HTTPException
 
 from ...clients.interface import YFinanceClientInterface
 from ...dependencies import get_yfinance_client
-from ...utils.logger import logger
 
 router = APIRouter()
 
