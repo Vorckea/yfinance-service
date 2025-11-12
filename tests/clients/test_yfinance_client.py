@@ -1,6 +1,7 @@
-import pytest
-import pandas as pd
 import asyncio
+
+import pandas as pd
+import pytest
 from fastapi import HTTPException
 
 from app.clients.yfinance_client import YFinanceClient

@@ -128,6 +128,7 @@ async def fetch_quote(symbol: str, client: YFinanceClientInterface) -> QuoteResp
 
     Raises:
         HTTPException: 400 for empty symbol, 502 for upstream issues.
+
     """
     symbol = symbol.upper().strip()
     if not symbol:

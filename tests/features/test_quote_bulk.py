@@ -3,7 +3,6 @@
 Covers successful multi-symbol fetch and partial-failure behavior.
 """
 
-import pytest
 from fastapi import HTTPException
 
 VALID_A = "AAPL"

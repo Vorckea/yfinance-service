@@ -53,7 +53,7 @@ class QuoteResponse(BaseModel):
         if v < 0:
             raise ValueError("must be non-negative")
         return v
-    
+
 class SymbolErrorModel(BaseModel):
     """Per-symbol error shape for bulk quote responses."""
 

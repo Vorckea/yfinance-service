@@ -3,12 +3,11 @@
 Provides the /quote/{symbol} endpoint for fetching latest market data.
 """
 
-from typing import Annotated, Dict, Union
-
-from fastapi import APIRouter, Depends
-from fastapi import HTTPException, Query
 import asyncio
 import json
+from typing import Annotated, Dict, Union
+
+from fastapi import APIRouter, Depends, HTTPException, Query
 
 from ...clients.interface import YFinanceClientInterface
 from ...common.validation import SymbolParam

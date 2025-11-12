@@ -17,7 +17,7 @@ async def observe(op: str, outcome_on_error: str = "error"):
     start = time.monotonic()
     try:
         yield
-    except asyncio.CancelledError as exc:
+    except asyncio.CancelledError:
         # cancelled should propagate after recording
         try:
             YF_REQUESTS.labels(operation=op, outcome="cancelled").inc()

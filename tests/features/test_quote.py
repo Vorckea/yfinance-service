@@ -1,11 +1,11 @@
 """Tests for the /quote endpoint."""
 
+from unittest.mock import AsyncMock
+
 import pytest
 from fastapi import HTTPException
-from unittest.mock import AsyncMock
-from fastapi import HTTPException
 
-from app.features.quote.service import fetch_quote, QuoteResponse
+from app.features.quote.service import QuoteResponse, fetch_quote
 
 VALID_SYMBOL = "AAPL"
 INVALID_SYMBOL = "!!!"

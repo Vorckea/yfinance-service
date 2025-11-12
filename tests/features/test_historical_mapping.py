@@ -1,8 +1,10 @@
-import pandas as pd
-import numpy as np
 from datetime import datetime
-from app.features.historical.service import _map_history
+
+import numpy as np
+import pandas as pd
+
 from app.features.historical.models import HistoricalPrice
+from app.features.historical.service import _map_history
 
 
 def test_map_history_naive_index():
