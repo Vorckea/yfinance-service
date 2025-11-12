@@ -68,12 +68,13 @@ def _parse_float(value: Any) -> float | None:
     except (TypeError, ValueError):
         return None
 
+
 def _raise_malformed_data(symbol: str) -> None:
     logger.warning("quote.fetch.malformed_number", extra={"symbol": symbol})
     raise HTTPException(
-        status_code=502,
-        detail=f"Malformed numeric data from upstream for {symbol}"
+        status_code=502, detail=f"Malformed numeric data from upstream for {symbol}"
     )
+
 
 def _map_quote(symbol: str, info: Info) -> QuoteResponse:
     """Map upstream info to QuoteResponse, validating required fields."""
@@ -82,10 +83,7 @@ def _map_quote(symbol: str, info: Info) -> QuoteResponse:
     # Check for missing required fields
     missing = [f for f in REQUIRED_FIELDS if mapped.get(f) is None]
     if missing:
-        logger.warning(
-            "quote.fetch.missing_fields",
-            extra={"symbol": symbol, "missing": missing}
-        )
+        logger.warning("quote.fetch.missing_fields", extra={"symbol": symbol, "missing": missing})
         raise HTTPException(
             status_code=502,
             detail=f"Missing required fields in upstream data for {symbol}: {', '.join(missing)}",
@@ -113,7 +111,6 @@ def _map_quote(symbol: str, info: Info) -> QuoteResponse:
         low=parsed_values["low"],
         volume=volume,
     )
-
 
 
 async def fetch_quote(symbol: str, client: YFinanceClientInterface) -> QuoteResponse:
@@ -148,4 +145,3 @@ async def fetch_quote(symbol: str, client: YFinanceClientInterface) -> QuoteResp
 
     logger.info("quote.fetch.success", extra={"symbol": symbol})
     return mapped
-
