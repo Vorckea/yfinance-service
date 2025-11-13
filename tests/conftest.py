@@ -1,12 +1,14 @@
 """Global test fixtures and configurations for the FastAPI application."""
 
-from unittest.mock import AsyncMock
 
 import pytest
 from fastapi.testclient import TestClient
+from unittest.mock import AsyncMock
 
-from app.dependencies import get_yfinance_client
 from app.main import app
+from app.dependencies import get_yfinance_client
+
+from tests.clients.fake_client import FakeYFinanceClient
 
 
 @pytest.fixture(scope="function")
@@ -27,3 +29,39 @@ def client(mock_yfinance_client):
     with TestClient(app) as c:
         yield c
     app.dependency_overrides.clear()
+
+
+@pytest.fixture(scope="function")
+def fake_yfinance_client():
+    """Provide a deterministic fake YFinance client for tests."""
+    return FakeYFinanceClient()
+
+
+@pytest.fixture(scope="function")
+def client_fake(fake_yfinance_client):
+    """FastAPI test client using the fake YFinance client instead of mock."""
+    app.dependency_overrides[get_yfinance_client] = lambda: fake_yfinance_client
+    with TestClient(app) as c:
+        yield c
+    app.dependency_overrides.clear()
+
+
+# Pytest configuration to register custom markers
+def pytest_configure(config):
+    """Register a custom marker for tests using the fake client."""
+    config.addinivalue_line(
+        "markers", "usefakeclient: use the deterministic fake YFinance client instead of mocks"
+    )
+
+
+@pytest.hookimpl(tryfirst=True)
+def pytest_runtest_setup(item):
+    """Auto-switch to fake client when test is marked with @pytest.mark.usefakeclient."""
+    if "usefakeclient" in item.keywords:
+        # Override FastAPI dependency before the test runs
+        from app.dependencies import get_yfinance_client
+        from tests.clients.fake_client import FakeYFinanceClient
+        from app.main import app
+
+        app.dependency_overrides[get_yfinance_client] = lambda: FakeYFinanceClient()
+
