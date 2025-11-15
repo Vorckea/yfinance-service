@@ -46,6 +46,11 @@ package-mode = false
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
 
+markers = [
+    "integration: marks tests as integration tests"
+]
+    
+
 [tool.black]
 line-length = 100
 

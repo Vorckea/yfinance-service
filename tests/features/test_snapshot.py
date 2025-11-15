@@ -56,7 +56,7 @@ def test_snapshot_valid_symbol_success(client, mock_yfinance_client):
     # Verify info fields
     info = data["info"]
     assert info["symbol"] == VALID_SYMBOL
-    assert info["short_name"] == "Apple Inc."
+    assert info["short_name"] == "Apple Inc."  # From mock_yfinance_client
     assert info["exchange"] == "NASDAQ"
     assert info["sector"] == "Technology"
 
