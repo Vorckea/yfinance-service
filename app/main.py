@@ -38,7 +38,7 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(
     title="YFinance Proxy Service",
-    version="1.0.0",
+    version="0.0.18",
     description=(
         "A FastAPI proxy for yfinance. Provides endpoints to fetch stock quotes and "
         "historical data."
