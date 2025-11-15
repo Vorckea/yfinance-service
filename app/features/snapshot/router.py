@@ -9,7 +9,7 @@ from fastapi import APIRouter, Depends
 
 from ...clients.interface import YFinanceClientInterface
 from ...common.validation import SymbolParam
-from ...dependencies import get_yfinance_client, get_info_cache
+from ...dependencies import get_info_cache, get_yfinance_client
 from ...utils.cache import SnapshotCache
 from .models import SnapshotResponse
 from .service import fetch_snapshot
@@ -23,7 +23,7 @@ router = APIRouter()
     summary="Get snapshot (info + quote) for a symbol",
     description=(
         "Returns both company information and latest market quote for the given ticker symbol "
-        "in a single response. If either info or quote fetch fails, the entire request returns 502. "
+        "in a single response. If either info or quote fetch fails, the entire request returns 502."
         "Info is cached with a 5-minute TTL; quote is always fresh."
     ),
     operation_id="getSnapshotBySymbol",
@@ -43,7 +43,7 @@ router = APIRouter()
                             "industry": "Consumer Electronics",
                             "country": "United States",
                             "website": "https://www.apple.com",
-                            "description": "Apple Inc. designs and manufactures consumer electronics.",
+                            "description": "Apple Inc. designs and manufactures consumer electronics.",  # noqa: E501
                             "market_cap": 2500000000000,
                             "shares_outstanding": 16000000000,
                             "dividend_yield": 0.006,

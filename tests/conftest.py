@@ -1,14 +1,14 @@
 """Global test fixtures and configurations for the FastAPI application."""
 
 
-import pytest
-from fastapi.testclient import TestClient
 from unittest.mock import AsyncMock
 
-from app.main import app
-from app.dependencies import get_yfinance_client, get_info_cache
-from app.utils.cache import SnapshotCache
+import pytest
+from fastapi.testclient import TestClient
 
+from app.dependencies import get_info_cache, get_yfinance_client
+from app.main import app
+from app.utils.cache import SnapshotCache
 from tests.clients.fake_client import FakeYFinanceClient
 
 
@@ -63,9 +63,9 @@ def pytest_runtest_setup(item):
     """Auto-switch to fake client when test is marked with @pytest.mark.usefakeclient."""
     if "usefakeclient" in item.keywords:
         # Override FastAPI dependency before the test runs
-        from app.dependencies import get_yfinance_client, get_info_cache
-        from tests.clients.fake_client import FakeYFinanceClient
+        from app.dependencies import get_info_cache, get_yfinance_client
         from app.main import app
+        from tests.clients.fake_client import FakeYFinanceClient
 
         app.dependency_overrides[get_yfinance_client] = lambda: FakeYFinanceClient()
         app.dependency_overrides[get_info_cache] = lambda: SnapshotCache(maxsize=32, ttl=300)

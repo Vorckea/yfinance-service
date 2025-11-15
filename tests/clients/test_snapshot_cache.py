@@ -1,9 +1,15 @@
-import pytest
+"""Unit tests for SnapshotCache."""
+
 import asyncio
+
+import pytest
+
 from app.utils.cache import SnapshotCache
+
 
 @pytest.mark.asyncio
 async def test_snapshot_cache_reuses_recent_value():
+    """Test that cache reuses recent value within TTL."""
     cache = SnapshotCache(maxsize=2, ttl=2)
     called = 0
 
@@ -22,8 +28,11 @@ async def test_snapshot_cache_reuses_recent_value():
 
 @pytest.mark.asyncio
 async def test_snapshot_cache_expires_after_ttl(monkeypatch):
+    """Test that cache entries expire after TTL."""
     cache = SnapshotCache(maxsize=2, ttl=0)
-    async def fake_fetch(): return {"price": 100}
+
+    async def fake_fetch():
+        return {"price": 100}
 
     await cache.get_or_set("AAPL", fake_fetch())
     result2 = await cache.get_or_set("AAPL", fake_fetch())

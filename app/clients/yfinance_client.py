@@ -1,6 +1,7 @@
 """Client for interacting with the Yahoo Finance API."""
 
 import asyncio
+from asyncio import Semaphore
 from collections.abc import Callable
 from datetime import date
 from functools import lru_cache
@@ -12,7 +13,6 @@ from fastapi import HTTPException
 
 from app.clients.interface import YFinanceClientInterface
 from app.utils.cache import SnapshotCache
-from asyncio import Semaphore
 
 from ..monitoring.instrumentation import observe
 from ..utils.logger import logger
@@ -34,7 +34,7 @@ class YFinanceClient(YFinanceClientInterface):
                 return await self._real_fetch_snapshot(symbol)
 
         # Cache layer
-        return await self._snapshot_cache.get_or_set(symbol, _fetch())    
+        return await self._snapshot_cache.get_or_set(symbol, _fetch())
 
     def __init__(self, timeout: int = 30, ticker_cache_size: int = 512):
         """Initialize the YFinanceClient.

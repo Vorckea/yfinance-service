@@ -1,10 +1,12 @@
-import pytest
+"""Integration tests for snapshot endpoint."""
+
 import httpx
-from unittest.mock import AsyncMock
+import pytest
+
+from app.dependencies import get_info_cache, get_yfinance_client
 from app.main import app
-from app.dependencies import get_yfinance_client, get_info_cache
-from tests.clients.fake_client import FakeYFinanceClient
 from app.utils.cache import SnapshotCache
+from tests.clients.fake_client import FakeYFinanceClient
 
 
 @pytest.mark.asyncio
@@ -34,7 +36,7 @@ async def test_snapshot_staging():
 async def test_snapshot_info_caching():
     """Integration test: verify quote is fetched fresh on each request (via get_snapshot calls)."""
     call_counts = {"get_snapshot_called": 0}
-    
+
     class CountingFakeClient(FakeYFinanceClient):
         async def get_snapshot(self, symbol: str):
             call_counts["get_snapshot_called"] += 1
@@ -58,11 +60,12 @@ async def test_snapshot_info_caching():
         # Second request: quote should be fresh (snapshot called again)
         resp2 = await client.get("/snapshot/AAPL")
         assert resp2.status_code == 200
-        
+
         # Snapshot/quote should have been called again (always fresh)
         assert call_counts["get_snapshot_called"] > get_snapshot_calls_first, (
             f"Expected get_snapshot to be called fresh on second request, "
-            f"but total calls: {call_counts['get_snapshot_called']}, after first: {get_snapshot_calls_first}"
+            f"but total calls: {call_counts['get_snapshot_called']}, "
+            f"after first: {get_snapshot_calls_first}"
         )
 
     app.dependency_overrides.clear()
@@ -72,9 +75,11 @@ async def test_snapshot_info_caching():
 @pytest.mark.integration
 async def test_snapshot_error_propagation():
     """Integration test: 502 error from info or quote should propagate."""
+
     class FailingFakeClient(FakeYFinanceClient):
         async def get_info(self, symbol: str):
             from fastapi import HTTPException
+
             raise HTTPException(status_code=502, detail="Upstream error")
 
     failing_client = FailingFakeClient()
@@ -88,4 +93,3 @@ async def test_snapshot_error_propagation():
         assert "Upstream error" in data["detail"]
 
     app.dependency_overrides.clear()
-

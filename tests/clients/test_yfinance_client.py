@@ -1,11 +1,10 @@
 """Tests for YFinanceClient error handling."""
 
 import asyncio
-import pytest
-import pandas as pd
 
-from httpx import AsyncClient
-from fastapi import HTTPException, status
+import pandas as pd
+import pytest
+from fastapi import HTTPException
 
 from app.clients.yfinance_client import YFinanceClient
 

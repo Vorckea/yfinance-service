@@ -1,15 +1,19 @@
 """A lightweight fake YFinance client for testing purposes."""
 
 from datetime import datetime, timezone
+
 import pandas as pd
+
 from app.clients.yfinance_client import YFinanceClientInterface
 
 
 class FakeYFinanceClient(YFinanceClientInterface):
     """Fake client implementing YFinanceClientInterface for stable testing."""
-    
+
     _snapshot_cache = {}
+
     async def get_snapshot(self, symbol: str):
+        """Return deterministic fake snapshot data."""
         if symbol in self._snapshot_cache:
             return self._snapshot_cache[symbol]
 
@@ -28,7 +32,7 @@ class FakeYFinanceClient(YFinanceClientInterface):
         }
         self._snapshot_cache[symbol] = data
         return data
-    
+
     async def get_info(self, symbol: str) -> dict:
         """Return deterministic fake stock info."""
         # Provide both company info and quote-like fields so existing services

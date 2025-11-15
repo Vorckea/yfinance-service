@@ -1,9 +1,14 @@
-import pytest
+"""Tests for rate limiting of snapshot fetches."""
+
 import asyncio
 from asyncio import Semaphore
 
+import pytest
+
+
 @pytest.mark.asyncio
 async def test_concurrent_snapshot_limited(monkeypatch):
+    """Test that concurrent snapshot fetches are limited."""
     sem = Semaphore(2)
     calls = 0
 

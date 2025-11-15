@@ -1,9 +1,9 @@
 """Tests for the /historical endpoint."""
 
-import pytest
-from httpx import AsyncClient
 import pandas as pd
+import pytest
 from fastapi import HTTPException, status
+from httpx import AsyncClient
 
 VALID_SYMBOLS = "AAPL"
 INVALID_SYMBOLS = "!!!"

@@ -1,11 +1,15 @@
+"""In-memory TTL-based async-safe cache for snapshot responses."""
+
 import asyncio
 import time
 from collections import OrderedDict
+
 
 class SnapshotCache:
     """Simple TTL-based async-safe in-memory cache for snapshot responses."""
 
     def __init__(self, maxsize: int = 32, ttl: int = 60):
+        """Initialize the cache."""
         self._cache = OrderedDict()
         self._ttl = ttl
         self._maxsize = maxsize
@@ -32,7 +36,7 @@ class SnapshotCache:
                         pass
                     return value
                 del self._cache[key]
-            
+
             # Fetch new value and store
             value = await coro
             self._cache[key] = (value, now + self._ttl)
