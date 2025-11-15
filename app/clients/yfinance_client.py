@@ -11,6 +11,8 @@ import yfinance as yf
 from fastapi import HTTPException
 
 from app.clients.interface import YFinanceClientInterface
+from app.utils.cache import SnapshotCache
+from asyncio import Semaphore
 
 from ..monitoring.instrumentation import observe
 from ..utils.logger import logger
@@ -21,6 +23,18 @@ T = TypeVar("T")
 
 class YFinanceClient(YFinanceClientInterface):
     """Client for interacting with the Yahoo Finance API."""
+
+    _snapshot_cache = SnapshotCache(maxsize=64, ttl=120)
+    _semaphore = Semaphore(5)  # limit concurrent upstream calls
+
+    async def get_snapshot(self, symbol: str):
+        """Get current snapshot, using cache and concurrency control."""
+        async def _fetch():
+            async with self._semaphore:
+                return await self._real_fetch_snapshot(symbol)
+
+        # Cache layer
+        return await self._snapshot_cache.get_or_set(symbol, _fetch())    
 
     def __init__(self, timeout: int = 30, ticker_cache_size: int = 512):
         """Initialize the YFinanceClient.

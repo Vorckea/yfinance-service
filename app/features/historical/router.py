@@ -4,7 +4,7 @@ Backlog TODOs inline track pagination, validation, and rate limiting improvement
 """
 
 from datetime import date
-from typing import Annotated
+from typing import Annotated, Literal
 
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.params import Query
@@ -16,6 +16,8 @@ from .models import HistoricalResponse
 from .service import fetch_historical
 
 router = APIRouter()
+
+ALLOWED_INTERVALS = ("1h", "5h", "12h", "1d", "1wk", "1mo")
 
 
 @router.get(
@@ -76,6 +78,11 @@ async def get_historical(
         description="End date (YYYY-MM-DD)",
         examples={"default": {"summary": "End date", "value": "2023-12-31"}},
     ),
+    interval: Literal["1h", "5h", "12h", "1d", "1wk", "1mo"] = Query(
+        "1d",
+        description='Data aggregation interval ("1h", "5h", "12h", "1d", "1wk", "1mo")',
+        examples={"default": {"summary": "Interval", "value": "1d"}},
+    ),
 ) -> HistoricalResponse:
     """Return historical OHLCV data for the symbol in the optional date range.
 
@@ -83,4 +90,10 @@ async def get_historical(
     """
     if start and end and start > end:
         raise HTTPException(status_code=400, detail="start must be before or equal to end")
-    return await fetch_historical(symbol, start, end, client)
+
+    if interval not in ALLOWED_INTERVALS:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Unsupported interval '{interval}'. Allowed: {', '.join(ALLOWED_INTERVALS)}",
+        )
+    return await fetch_historical(symbol, start, end, client, interval=interval)

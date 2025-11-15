@@ -1,10 +1,11 @@
 """Tests for YFinanceClient error handling."""
 
 import asyncio
-
-import pandas as pd
 import pytest
-from fastapi import HTTPException
+import pandas as pd
+
+from httpx import AsyncClient
+from fastapi import HTTPException, status
 
 from app.clients.yfinance_client import YFinanceClient
 
@@ -108,3 +109,14 @@ async def test_get_history_non_dataframe(monkeypatch):
         await client.get_history("AAPL", None, None)
 
     assert excinfo.value.status_code == 502
+
+@pytest.mark.asyncio
+@pytest.mark.usefakeclient
+async def test_historical_fake_client(client_fake):
+    """Uses the fake deterministic client instead of async mocks."""
+    resp = client_fake.get("/historical/AAPL", params={"interval": "1d"})
+    assert resp.status_code == 200
+    data = resp.json()
+    assert data["symbol"] == "AAPL"
+    assert len(data["prices"]) == 3
+    assert data["prices"][0]["open"] == 100.0
