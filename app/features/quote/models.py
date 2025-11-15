@@ -1,3 +1,5 @@
+"""Models for stock quote responses."""
+
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 
@@ -45,11 +47,22 @@ class QuoteResponse(BaseModel):
     @field_validator("symbol", mode="before")
     @classmethod
     def normalize_symbol(cls, v: str) -> str:
+        """Ensure symbol is uppercase and stripped of whitespace."""
         return v.strip().upper()
 
     @field_validator("current_price", "previous_close", "open_price", "high", "low")
     @classmethod
     def non_negative(cls, v: float) -> float:
+        """Ensure price fields are non-negative."""
         if v < 0:
             raise ValueError("must be non-negative")
         return v
+
+
+class SymbolErrorModel(BaseModel):
+    """Per-symbol error shape for bulk quote responses."""
+
+    model_config = ConfigDict(frozen=True, extra="ignore")
+
+    error: str
+    status_code: int

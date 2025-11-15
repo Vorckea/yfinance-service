@@ -34,7 +34,7 @@ runs:
       run: |
         TAG="${{ inputs.release_tag }}"
         echo "Release tag: $TAG"
-        if [[ ! "$TAG" =~ ^v?[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?$ ]]; then
+        if [[ ! "$TAG" =~ ^v?(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(-([0-9A-Za-z-]+(\.[0-9A-Za-z-]+)*))?(\+([0-9A-Za-z-]+(\.[0-9A-Za-z-]+)*))?$ ]]; then
           echo "❌ Release tag is not semver (expected v1.2.3 or 1.2.3). Aborting."
           exit 1
         fi
@@ -57,11 +57,13 @@ runs:
       uses: docker/metadata-action@v5
       with:
         images: ${{ env.IMAGE_NAME }}
+        github_token: ${{ inputs.github_token }}
         tags: |
-          type=sha
-          type=semver,pattern={{version}}
-          type=semver,pattern={{major}}.{{minor}}
-          type=semver,pattern={{major}}
+          type=semver,pattern={{version}},value=${{ inputs.release_tag }}
+          type=semver,pattern={{major}}.{{minor}},value=${{ inputs.release_tag }}
+          type=semver,pattern={{major}},value=${{ inputs.release_tag }}
+          type=raw,value=latest,enable={{is_prerelease != 'true'}}
+
 
     - name: Build and Push Docker Image
       id: push

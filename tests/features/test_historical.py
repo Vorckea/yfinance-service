@@ -1,7 +1,9 @@
 """Tests for the /historical endpoint."""
 
+import pytest
+from httpx import AsyncClient
 import pandas as pd
-from fastapi import HTTPException
+from fastapi import HTTPException, status
 
 VALID_SYMBOLS = "AAPL"
 INVALID_SYMBOLS = "!!!"
@@ -49,3 +51,24 @@ def test_historical_not_found(client, mock_yfinance_client):
     response = client.get(f"/historical/{NOT_FOUND_SYMBOL}")
     assert response.status_code == 404
     assert "No data for" in response.json()["detail"]
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("interval", ["1h", "5h", "12h", "1d", "1wk", "1mo"])
+async def test_historical_interval_valid(client: AsyncClient, interval: str):
+    """Test valid aggregation intervals for /historical endpoint."""
+    resp = client.get("/historical/AAPL", params={"interval": interval})
+    assert resp.status_code == status.HTTP_200_OK, f"Failed for interval: {interval}"
+    data = resp.json()
+    assert data["symbol"] == "AAPL"
+    assert "prices" in data
+    assert isinstance(data["prices"], list)
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("interval", ["5min", "2h", "3mo", "xyz"])
+async def test_historical_interval_invalid(client: AsyncClient, interval: str):
+    """Test invalid aggregation intervals for /historical endpoint."""
+    resp = client.get("/historical/AAPL", params={"interval": interval})
+    assert resp.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY, f"Expected 422 for {interval}"
+    assert "interval" in resp.text

@@ -1,3 +1,5 @@
+"""Main application entry point for the YFinance Proxy Service."""
+
 import sys
 import time
 from contextlib import asynccontextmanager
@@ -9,12 +11,14 @@ from app.features.health.router import router as health_router
 from app.features.historical.router import router as historical_router
 from app.features.info.router import router as info_router
 from app.features.quote.router import router as quote_router
+from app.features.snapshot.router import router as snapshot_router
 from app.monitoring.http_middleware import http_metrics_middleware
 from app.monitoring.metrics import BUILD_INFO, SERVICE_UPTIME
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    """Lifespan context manager to initialize application state."""
     app.state.start_time = time.time()
     contact_name = None
     contact_email = None
@@ -64,6 +68,7 @@ def metrics():
 app.include_router(quote_router, prefix="/quote", tags=["quote"])
 app.include_router(historical_router, prefix="/historical", tags=["historical"])
 app.include_router(info_router, prefix="/info", tags=["info"])
+app.include_router(snapshot_router, prefix="/snapshot", tags=["snapshot"])
 
 # Health check endpoint
 app.include_router(health_router, tags=["health"])

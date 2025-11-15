@@ -1,3 +1,5 @@
+"""Common validation parameters for FastAPI endpoints."""
+
 from typing import Annotated
 
 from fastapi.params import Path

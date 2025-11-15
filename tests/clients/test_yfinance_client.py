@@ -1,7 +1,11 @@
+"""Tests for YFinanceClient error handling."""
+
+import asyncio
 import pytest
 import pandas as pd
-import asyncio
-from fastapi import HTTPException
+
+from httpx import AsyncClient
+from fastapi import HTTPException, status
 
 from app.clients.yfinance_client import YFinanceClient
 
@@ -75,22 +79,6 @@ async def test_get_info_empty(monkeypatch):
 
 
 @pytest.mark.asyncio
-async def test_get_info_empty(monkeypatch):
-    """Simulate missing info (None or empty dict) -> should raise HTTP 404."""
-    client = YFinanceClient()
-
-    async def mock_fetch_data(*a, **kw):
-        return None
-
-    monkeypatch.setattr(client, "_fetch_data", mock_fetch_data)
-
-    with pytest.raises(HTTPException) as excinfo:
-        await client.get_info("AAPL")
-
-    assert excinfo.value.status_code == 404
-
-
-@pytest.mark.asyncio
 async def test_get_history_empty_df(monkeypatch):
     """Simulate empty history -> should raise HTTP 404."""
     client = YFinanceClient()
@@ -121,3 +109,14 @@ async def test_get_history_non_dataframe(monkeypatch):
         await client.get_history("AAPL", None, None)
 
     assert excinfo.value.status_code == 502
+
+@pytest.mark.asyncio
+@pytest.mark.usefakeclient
+async def test_historical_fake_client(client_fake):
+    """Uses the fake deterministic client instead of async mocks."""
+    resp = client_fake.get("/historical/AAPL", params={"interval": "1d"})
+    assert resp.status_code == 200
+    data = resp.json()
+    assert data["symbol"] == "AAPL"
+    assert len(data["prices"]) == 3
+    assert data["prices"][0]["open"] == 100.0
