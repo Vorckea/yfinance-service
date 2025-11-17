@@ -1,12 +1,13 @@
 import asyncio
 import time
+from typing import Any
 
 
 class SnapshotCache:
     """Simple TTL-based async-safe in-memory cache for snapshot responses."""
 
     def __init__(self, maxsize: int = 32, ttl: int = 60):
-        self._cache: dict[str, tuple[any, float]] = {}
+        self._cache: dict[str, tuple[Any, float]] = {}
         self._ttl = ttl
         self._maxsize = maxsize
         self._lock = asyncio.Lock()
