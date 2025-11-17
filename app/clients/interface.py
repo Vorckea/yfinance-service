@@ -18,7 +18,7 @@ class YFinanceClientInterface(ABC):
 
     @abstractmethod
     async def get_history(
-        self, symbol: str, start: date | None, end: date | None
+        self, symbol: str, start: date | None, end: date | None, interval: str = "1d"
     ) -> pd.DataFrame | None:
         """Fetch historical market data for a specific stock."""
         pass

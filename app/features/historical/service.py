@@ -55,9 +55,9 @@ async def fetch_historical(
         extra={"symbol": symbol, "start": start, "end": end, "interval": interval},
     )
 
-    
+
     history_call = client.get_history(symbol, start, end, interval)
-    
+
     if asyncio.iscoroutine(history_call):
         df = await history_call
     else:
@@ -85,5 +85,5 @@ async def fetch_historical(
         extra={"symbol": symbol, "rows": len(df), "interval": interval},
     )
 
-    prices = await asyncio.to_thread(_map_history, df)
+    prices = _map_history(df)
     return HistoricalResponse(symbol=symbol.upper(), prices=prices)
