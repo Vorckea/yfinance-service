@@ -9,7 +9,7 @@ from fastapi import APIRouter, Depends
 
 from ...clients.interface import YFinanceClientInterface
 from ...common.validation import SymbolParam
-from ...dependencies import get_yfinance_client, get_info_cache
+from ...dependencies import get_info_cache, get_yfinance_client
 from ...utils.cache import SnapshotCache
 from .models import SnapshotResponse
 from .service import fetch_snapshot

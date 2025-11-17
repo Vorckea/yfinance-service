@@ -11,8 +11,6 @@ import yfinance as yf
 from fastapi import HTTPException
 
 from app.clients.interface import YFinanceClientInterface
-from app.utils.cache import SnapshotCache
-from asyncio import Semaphore
 
 from ..monitoring.instrumentation import observe
 from ..utils.logger import logger
@@ -23,18 +21,6 @@ T = TypeVar("T")
 
 class YFinanceClient(YFinanceClientInterface):
     """Client for interacting with the Yahoo Finance API."""
-
-    _snapshot_cache = SnapshotCache(maxsize=64, ttl=120)
-    _semaphore = Semaphore(5)  # limit concurrent upstream calls
-
-    async def get_snapshot(self, symbol: str):
-        """Get current snapshot, using cache and concurrency control."""
-        async def _fetch():
-            async with self._semaphore:
-                return await self._real_fetch_snapshot(symbol)
-
-        # Cache layer
-        return await self._snapshot_cache.get_or_set(symbol, _fetch())    
 
     def __init__(self, timeout: int = 30, ticker_cache_size: int = 512):
         """Initialize the YFinanceClient.
@@ -106,7 +92,7 @@ class YFinanceClient(YFinanceClientInterface):
         return info
 
     async def get_history(
-        self, symbol: str, start: date | None, end: date | None
+        self, symbol: str, start: date | None, end: date | None, interval: str = "1d"
     ) -> pd.DataFrame | None:
         """Fetch historical market data for a specific stock.
 
@@ -114,6 +100,7 @@ class YFinanceClient(YFinanceClientInterface):
             symbol (str): The stock symbol to fetch historical data for.
             start (date | None): The start date for the historical data.
             end (date | None): The end date for the historical data.
+            interval (str): The data interval (e.g., "1d", "1h", "1wk"). Defaults to "1d".
 
         Raises:
             HTTPException: If the symbol is not found or if there is an error fetching data.
@@ -124,7 +111,9 @@ class YFinanceClient(YFinanceClientInterface):
         """
         symbol = self._normalize(symbol)
         ticker = self._get_ticker(symbol)
-        history = await self._fetch_data("history", ticker.history, symbol, start=start, end=end)
+        history = await self._fetch_data(
+            "history", ticker.history, symbol, start=start, end=end, interval=interval
+        )
         if history is None:
             logger.info("yfinance.client.no_data", extra={"symbol": symbol, "op": "history"})
             raise HTTPException(status_code=404, detail=f"No data for {symbol}")
