@@ -55,7 +55,6 @@ async def fetch_historical(
         extra={"symbol": symbol, "start": start, "end": end, "interval": interval},
     )
 
-
     history_call = client.get_history(symbol, start, end, interval)
 
     if asyncio.iscoroutine(history_call):
