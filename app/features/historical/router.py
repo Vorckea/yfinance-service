@@ -17,7 +17,7 @@ from .service import fetch_historical
 
 router = APIRouter()
 
-ALLOWED_INTERVALS = ("1h", "5h", "12h", "1d", "1wk", "1mo")
+ALLOWED_INTERVALS = ("1h", "1d", "1wk", "1mo")
 
 
 @router.get(
@@ -78,9 +78,9 @@ async def get_historical(
         description="End date (YYYY-MM-DD)",
         examples={"default": {"summary": "End date", "value": "2023-12-31"}},
     ),
-    interval: Literal["1h", "5h", "12h", "1d", "1wk", "1mo"] = Query(
+    interval: Literal["1h", "1d", "1wk", "1mo"] = Query(
         "1d",
-        description='Data aggregation interval ("1h", "5h", "12h", "1d", "1wk", "1mo")',
+        description='Data aggregation interval ("1h", "1d", "1wk", "1mo")',
         examples={"default": {"summary": "Interval", "value": "1d"}},
     ),
 ) -> HistoricalResponse:
