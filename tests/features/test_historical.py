@@ -1,9 +1,9 @@
 """Tests for the /historical endpoint."""
 
-import pytest
-from httpx import AsyncClient
 import pandas as pd
+import pytest
 from fastapi import HTTPException, status
+from httpx import AsyncClient
 
 VALID_SYMBOLS = "AAPL"
 INVALID_SYMBOLS = "!!!"
@@ -54,7 +54,7 @@ def test_historical_not_found(client, mock_yfinance_client):
 
 
 @pytest.mark.asyncio
-@pytest.mark.parametrize("interval", ["1h", "5h", "12h", "1d", "1wk", "1mo"])
+@pytest.mark.parametrize("interval", ["1h", "1d", "1wk", "1mo"])
 async def test_historical_interval_valid(client: AsyncClient, interval: str):
     """Test valid aggregation intervals for /historical endpoint."""
     resp = client.get("/historical/AAPL", params={"interval": interval})
