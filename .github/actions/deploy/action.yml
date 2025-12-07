@@ -57,12 +57,12 @@ runs:
       uses: docker/metadata-action@v5
       with:
         images: ${{ env.IMAGE_NAME }}
-        github_token: ${{ inputs.github_token }}
+        github-token: ${{ inputs.github_token }}
         tags: |
           type=semver,pattern={{version}},value=${{ inputs.release_tag }}
           type=semver,pattern={{major}}.{{minor}},value=${{ inputs.release_tag }}
           type=semver,pattern={{major}},value=${{ inputs.release_tag }}
-          type=raw,value=latest,enable={{is_prerelease != 'true'}}
+          type=raw,value=latest,enable={{ !contains(inputs.release_tag, '-') }}
 
 
     - name: Build and Push Docker Image
