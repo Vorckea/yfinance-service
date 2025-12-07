@@ -52,6 +52,17 @@ runs:
         username: ${{ github.actor }}
         password: ${{ inputs.github_token }}
 
+    - name: Check if stable release
+      id: check_stable
+      shell: bash
+      run: |
+        TAG="${{ inputs.release_tag }}"
+        if [[ "$TAG" == *"-"* ]]; then
+          echo "is_stable=false" >> $GITHUB_OUTPUT
+        else
+          echo "is_stable=true" >> $GITHUB_OUTPUT
+        fi
+
     - name: Extract release version
       id: extract_version
       uses: docker/metadata-action@v5
@@ -62,7 +73,7 @@ runs:
           type=semver,pattern={{version}},value=${{ inputs.release_tag }}
           type=semver,pattern={{major}}.{{minor}},value=${{ inputs.release_tag }}
           type=semver,pattern={{major}},value=${{ inputs.release_tag }}
-          type=raw,value=latest,enable={{ !contains(inputs.release_tag, '-') }}
+          type=raw,value=latest,enable=${{ steps.check_stable.outputs.is_stable }}
 
 
     - name: Build and Push Docker Image
