@@ -65,6 +65,24 @@ class FakeYFinanceClient(YFinanceClientInterface):
         )
         df.index.name = "Date"
         return df
+    
+    async def get_earnings(self, symbol: str, frequency: str = "quarterly"):
+        """Return fake earnings data."""
+        if frequency == "annual":
+            dates = pd.DatetimeIndex(["2024-01-30", "2023-01-31", "2022-01-28"])
+        else:  # quarterly
+            dates = pd.DatetimeIndex(["2024-04-25", "2024-01-25", "2023-10-27", "2023-07-28"])
+        
+        df = pd.DataFrame(
+            {
+                "Reported EPS": [1.95, 1.81, 1.52, 1.62],
+                "Estimated EPS": [1.89, 1.75, 1.50, 1.60],
+                "Surprise": [0.06, 0.06, 0.02, 0.02],
+                "Surprise %": [3.17, 3.43, 1.33, 1.25],
+            },
+            index=dates,
+        )
+        return df
 
     async def ping(self) -> bool:
         """Return a simple True to simulate availability."""

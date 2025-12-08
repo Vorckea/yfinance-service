@@ -127,6 +127,51 @@ class YFinanceClient(YFinanceClientInterface):
             logger.info("yfinance.client.no_data", extra={"symbol": symbol, "op": "history"})
             raise HTTPException(status_code=404, detail=f"No data for {symbol}")
         return history
+    
+    async def get_earnings(
+        self, symbol: str, frequency: str = "quarterly"
+    ) -> pd.DataFrame | None:
+        """Fetch earnings data for a specific stock.
+
+        Args:
+            symbol (str): The stock symbol to fetch earnings for.
+            frequency (str): 'quarterly' or 'annual'. Defaults to 'quarterly'.
+
+        Raises:
+            HTTPException: If the symbol is not found or if there is an error fetching data.
+
+        Returns:
+            pd.DataFrame: Earnings data with rows indexed by date.
+        """
+        symbol = self._normalize(symbol)
+        ticker = self._get_ticker(symbol)
+
+        # Select appropriate method based on frequency
+        if frequency == "annual":
+            fetch_func = ticker.earnings
+        else:
+            fetch_func = ticker.quarterly_earnings
+
+        earnings = await self._fetch_data("earnings", fetch_func, symbol)
+        if earnings is None:
+            logger.info(
+                "yfinance.client.no_data",
+                extra={"symbol": symbol, "op": "earnings", "frequency": frequency},
+            )
+            raise HTTPException(status_code=404, detail=f"No {frequency} earnings data for {symbol}")
+        if not isinstance(earnings, pd.DataFrame):
+            logger.warning(
+                "yfinance.client.invalid_earnings_type",
+                extra={"symbol": symbol, "type": type(earnings), "frequency": frequency},
+            )
+            raise HTTPException(status_code=502, detail="Malformed earnings data from upstream")
+        if earnings.empty:
+            logger.info(
+                "yfinance.client.no_data",
+                extra={"symbol": symbol, "op": "earnings", "frequency": frequency},
+            )
+            raise HTTPException(status_code=404, detail=f"No {frequency} earnings data for {symbol}")
+        return earnings
 
     async def ping(self) -> bool:
         """Check if the YFinance API is reachable.

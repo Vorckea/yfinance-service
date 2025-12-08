@@ -24,6 +24,7 @@
 | **Quote API**          | Fetch latest market quotes (OHLCV) for ticker symbols.  |
 | **Historical API**     | Retrieve historical data within a date range.           |
 | **Info API**           | Get company fundamentals (sector, market cap, etc.).    |
+| **Earnings API**           | Retrieve normalized earnings history with EPS, revenue, and surprise data.    |
 | **Health Check**       | Simple `/health` endpoint to verify service status.     |
 | **Prometheus Metrics** | `/metrics` endpoint for request count, errors, latency. |
 
@@ -32,10 +33,12 @@
 | Endpoint                                                   | Description               | Example                                            |
 | ---------------------------------------------------------- | ------------------------- | -------------------------------------------------- |
 | `GET /quote/{symbol}`                                      | Latest quote for a symbol | `/quote/AAPL`                                      |
+| `GET /quote?symbols={symbol, symbol}`                      | Get quotes for multiple symbols (CSV) in a single request|  `/quote?symbols=AAPL,MSFT`                                                                              |
 | `GET /historical/{symbol}?start=YYYY-MM-DD&end=YYYY-MM-DD` | Historical OHLCV data     | `/historical/AAPL?start=2024-01-01&end=2024-02-01` |
 | `GET /info/{symbol}`                                       | Company details           | `/info/TSLA`                                       |
 | `GET /health`                                              | Health check              | `/health`                                          |
 | `GET /metrics`                                             | Prometheus metrics        | `/metrics`                                         |
+| `GET /earnings/{symbol}?frequency=quarterly or(the symbol) annual`        | Get normalized earnings history with reported/estimated EPS, revenue, and surprise data.| `/earnings/AAPL?frequency=quarterly or(the symbol) annual` |
 
 ## Quick Start
 
@@ -71,6 +74,28 @@ Relevant files:
 
 
 
+## Configuration
+
+### Environment Variables
+
+| Variable | Description | Default | Example |
+|----------|-------------|---------|---------|
+| `MAX_BULK_CONCURRENCY` | Max concurrent requests for bulk quote endpoint | 10 | `MAX_BULK_CONCURRENCY=20` |
+| `EARNINGS_CACHE_TTL` | Cache TTL for earnings data in seconds (0 = disable) | 3600 | `EARNINGS_CACHE_TTL=1800` |
+
+### Examples
+
+```bash
+# Increase bulk quote concurrency to 20
+MAX_BULK_CONCURRENCY=20 poetry run uvicorn app.main:app
+
+# Disable earnings caching
+EARNINGS_CACHE_TTL=0 poetry run uvicorn app.main:app
+
+# Reduce earnings cache to 30 minutes
+EARNINGS_CACHE_TTL=1800 poetry run uvicorn app.main:app
+```
+
 ## Usage Example
 
 Get the latest quote for Apple:
@@ -78,10 +103,28 @@ Get the latest quote for Apple:
 curl http://localhost:8000/quote/AAPL
 ```
 
+Fetch quotes for multiple symbols:
+
+```sh
+curl http://localhost:8000/quote?symbols=AAPL,MSFT,GOOGL
+```
+
 Get company info for Tesla:
 
 ```sh
 curl http://localhost:8000/info/TSLA
+```
+
+Fetch quarterly earnings for Apple:
+
+```sh
+curl http://localhost:8000/earnings/AAPL?frequency=quarterly
+```
+
+Fetch annual earnings for Apple:
+
+```sh
+curl http://localhost:8000/earnings/AAPL?frequency=annual
 ```
 
 ## Monitoring Example:

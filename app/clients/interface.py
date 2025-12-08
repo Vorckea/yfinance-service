@@ -24,6 +24,19 @@ class YFinanceClientInterface(ABC):
         pass
 
     @abstractmethod
+    async def get_earnings(self, symbol: str, frequency: str = "quarterly") -> Any:
+        """Fetch earnings data for a specific stock.
+
+        Args:
+            symbol: The stock symbol.
+            frequency: 'quarterly' or 'annual'.
+
+        Returns:
+            A DataFrame or Mapping with earnings rows.
+        """
+        pass
+
+    @abstractmethod
     async def ping(self) -> bool:
         """Check if the client is working."""
         pass
