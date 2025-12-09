@@ -148,7 +148,7 @@ class YFinanceClient(YFinanceClientInterface):
 
         # Select appropriate method based on frequency
         if frequency == "annual":
-            fetch_func = ticker.earnings
+            fetch_func = ticker.get_earnings
         else:
             fetch_func = ticker.quarterly_earnings
 

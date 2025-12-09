@@ -33,12 +33,12 @@
 | Endpoint                                                   | Description               | Example                                            |
 | ---------------------------------------------------------- | ------------------------- | -------------------------------------------------- |
 | `GET /quote/{symbol}`                                      | Latest quote for a symbol | `/quote/AAPL`                                      |
-| `GET /quote?symbols={symbol, symbol}`                      | Get quotes for multiple symbols (CSV) in a single request|  `/quote?symbols=AAPL,MSFT`                                                                              |
+| `GET /quote?symbols={symbol, symbol}`                      | Quotes for multiple symbols (CSV)|  `/quote?symbols=AAPL,MSFT`                                                                              |
 | `GET /historical/{symbol}?start=YYYY-MM-DD&end=YYYY-MM-DD` | Historical OHLCV data     | `/historical/AAPL?start=2024-01-01&end=2024-02-01` |
 | `GET /info/{symbol}`                                       | Company details           | `/info/TSLA`                                       |
 | `GET /health`                                              | Health check              | `/health`                                          |
 | `GET /metrics`                                             | Prometheus metrics        | `/metrics`                                         |
-| `GET /earnings/{symbol}?frequency=quarterly or(the symbol) annual`        | Get normalized earnings history with reported/estimated EPS, revenue, and surprise data.| `/earnings/AAPL?frequency=quarterly or(the symbol) annual` |
+| `GET /earnings/{symbol}?frequency={period}`        | Normalized earnings history with reported/estimated EPS, revenue, and surprise data.| `/earnings/AAPL?frequency=quarterly` or <br> `/earnings/AAPL?frequency=annual` |
 
 ## Quick Start
 
