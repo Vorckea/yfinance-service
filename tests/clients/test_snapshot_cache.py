@@ -2,6 +2,7 @@ import pytest
 import asyncio
 from app.utils.cache import SnapshotCache
 
+
 @pytest.mark.asyncio
 async def test_snapshot_cache_reuses_recent_value():
     cache = SnapshotCache(maxsize=2, ttl=2)
@@ -23,7 +24,9 @@ async def test_snapshot_cache_reuses_recent_value():
 @pytest.mark.asyncio
 async def test_snapshot_cache_expires_after_ttl(monkeypatch):
     cache = SnapshotCache(maxsize=2, ttl=0)
-    async def fake_fetch(): return {"price": 100}
+
+    async def fake_fetch():
+        return {"price": 100}
 
     await cache.get_or_set("AAPL", fake_fetch())
     result2 = await cache.get_or_set("AAPL", fake_fetch())
