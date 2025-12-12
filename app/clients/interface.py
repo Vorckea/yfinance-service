@@ -25,6 +25,18 @@ class YFinanceClientInterface(ABC):
 
     @abstractmethod
     async def get_earnings(self, symbol: str, frequency: str = "quarterly") -> Any:
+        """
+        Fetch earnings-like data for a specific stock.
+
+        Should return either:
+         - a pandas.DataFrame (index = dates) with columns like:
+            ['EPS Actual','EPS Estimate','Surprise','Surprise %','Revenue', ...]
+         - or another Mapping that fetch_earnings() knows how to parse.
+        """
+        pass
+
+    @abstractmethod
+    async def get_income_statement(self, symbol: str, frequency: str) -> pd.DataFrame | None:
         """Fetch earnings data for a specific stock.
 
         Args:
@@ -35,6 +47,11 @@ class YFinanceClientInterface(ABC):
             A DataFrame or Mapping with earnings rows.
         """
         pass
+
+    @abstractmethod
+    async def get_calendar(self, symbol: str) -> Any:
+        """Return ticker.calendar (may include Earnings Date)."""
+        return {}
 
     @abstractmethod
     async def ping(self) -> bool:

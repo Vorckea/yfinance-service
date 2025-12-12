@@ -1,6 +1,5 @@
 """Global test fixtures and configurations for the FastAPI application."""
 
-
 import pytest
 from fastapi.testclient import TestClient
 from unittest.mock import AsyncMock
@@ -28,7 +27,7 @@ def mock_yfinance_client(mocker):
 def client(mock_yfinance_client):
     """Test client fixture that injects the mocked YFinanceClient."""
     from app.dependencies import get_earnings_cache
-    
+
     app.dependency_overrides[get_yfinance_client] = lambda: mock_yfinance_client
     # Also override cache for snapshot tests
     app.dependency_overrides[get_info_cache] = lambda: SnapshotCache(maxsize=32, ttl=300)
@@ -49,7 +48,7 @@ def fake_yfinance_client():
 def client_fake(fake_yfinance_client):
     """FastAPI test client using the fake YFinance client instead of mock."""
     from app.dependencies import get_earnings_cache
-    
+
     app.dependency_overrides[get_yfinance_client] = lambda: fake_yfinance_client
     app.dependency_overrides[get_info_cache] = lambda: SnapshotCache(maxsize=32, ttl=300)
     app.dependency_overrides[get_earnings_cache] = lambda: SnapshotCache(maxsize=128, ttl=3600)
@@ -77,4 +76,3 @@ def pytest_runtest_setup(item):
 
         app.dependency_overrides[get_yfinance_client] = lambda: FakeYFinanceClient()
         app.dependency_overrides[get_info_cache] = lambda: SnapshotCache(maxsize=32, ttl=300)
-

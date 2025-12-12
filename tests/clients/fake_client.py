@@ -7,8 +7,9 @@ from app.clients.yfinance_client import YFinanceClientInterface
 
 class FakeYFinanceClient(YFinanceClientInterface):
     """Fake client implementing YFinanceClientInterface for stable testing."""
-    
+
     _snapshot_cache = {}
+
     async def get_snapshot(self, symbol: str):
         if symbol in self._snapshot_cache:
             return self._snapshot_cache[symbol]
@@ -28,12 +29,9 @@ class FakeYFinanceClient(YFinanceClientInterface):
         }
         self._snapshot_cache[symbol] = data
         return data
-    
+
     async def get_info(self, symbol: str) -> dict:
         """Return deterministic fake stock info."""
-        # Provide both company info and quote-like fields so existing services
-        # (`fetch_info` and `fetch_quote`) that expect `get_info` to contain
-        # regularMarket* keys will work with this fake client.
         snapshot = await self.get_snapshot(symbol)
         return {
             "symbol": symbol.upper(),
@@ -41,7 +39,6 @@ class FakeYFinanceClient(YFinanceClientInterface):
             "currency": "USD",
             "exchange": "FAKE",
             "marketCap": 123_456_789,
-            # Quote-like upstream keys expected by quote mapping
             "regularMarketPrice": snapshot["current_price"],
             "regularMarketPreviousClose": snapshot["previous_close"],
             "regularMarketOpen": snapshot["open"],
@@ -51,7 +48,7 @@ class FakeYFinanceClient(YFinanceClientInterface):
         }
 
     async def get_history(self, symbol: str, start=None, end=None, interval="1d"):
-        """Return a fake DataFrame with predictable, simple data."""
+        """Return a fake DataFrame with deterministic rows."""
         dates = pd.date_range(start or "2024-01-01", periods=3, freq="D")
         df = pd.DataFrame(
             {
@@ -65,14 +62,14 @@ class FakeYFinanceClient(YFinanceClientInterface):
         )
         df.index.name = "Date"
         return df
-    
+
     async def get_earnings(self, symbol: str, frequency: str = "quarterly"):
-        """Return fake earnings data."""
+        """Return fake quarterly/annual earnings DataFrame."""
         if frequency == "annual":
             dates = pd.DatetimeIndex(["2024-01-30", "2023-01-31", "2022-01-28"])
-        else:  # quarterly
+        else:
             dates = pd.DatetimeIndex(["2024-04-25", "2024-01-25", "2023-10-27", "2023-07-28"])
-        
+
         df = pd.DataFrame(
             {
                 "Reported EPS": [1.95, 1.81, 1.52, 1.62],
@@ -84,6 +81,30 @@ class FakeYFinanceClient(YFinanceClientInterface):
         )
         return df
 
+    async def get_income_statement(self, symbol: str, frequency: str):
+        """Return a minimal deterministic income statement DataFrame."""
+        dates = (
+            pd.DatetimeIndex(["2024-12-31", "2023-12-31"])
+            if frequency == "annual"
+            else pd.DatetimeIndex(["2024-09-30", "2024-06-30", "2024-03-31"])
+        )
+
+        df = pd.DataFrame(
+            {
+                "Total Revenue": [10_000_000, 9_800_000, 9_500_000][: len(dates)],
+                "Net Income": [2_000_000, 1_900_000, 1_850_000][: len(dates)],
+            },
+            index=dates,
+        )
+        return df
+
+    async def get_calendar(self, symbol: str):
+        """Return deterministic fake earnings date."""
+        return {
+            "Earnings Date": [
+                pd.Timestamp("2025-02-15", tz="UTC"),
+            ]
+        }
+
     async def ping(self) -> bool:
-        """Return a simple True to simulate availability."""
         return True

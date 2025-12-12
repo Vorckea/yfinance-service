@@ -2,6 +2,7 @@ import pytest
 import asyncio
 from asyncio import Semaphore
 
+
 @pytest.mark.asyncio
 async def test_concurrent_snapshot_limited(monkeypatch):
     sem = Semaphore(2)

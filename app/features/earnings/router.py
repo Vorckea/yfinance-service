@@ -51,9 +51,9 @@ router = APIRouter()
 )
 async def get_earnings(
     symbol: SymbolParam,
+    client: Annotated[YFinanceClientInterface, Depends(get_yfinance_client)],
+    cache: Annotated[SnapshotCache | None, Depends(get_earnings_cache)] = None,
     frequency: Annotated[Literal["quarterly", "annual"], Query()] = "quarterly",
-    client: Annotated[YFinanceClientInterface, Depends(get_yfinance_client)] = None,
-    cache: Annotated[SnapshotCache, Depends(get_earnings_cache)] = None,
 ) -> EarningsResponse:
     """Get earnings history for a ticker symbol.
 
@@ -70,7 +70,7 @@ async def get_earnings(
         EarningsResponse with normalized earnings rows, next_earnings_date, and last_eps summary.
     """
     cache_key = f"{symbol.upper()}:{frequency}"
-    
+
     # Use cache with get_or_set if cache is enabled
     if cache and cache._maxsize > 0:
         return await cache.get_or_set(cache_key, fetch_earnings(symbol, client, frequency))
