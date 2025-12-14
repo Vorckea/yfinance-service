@@ -115,8 +115,8 @@ CACHE_LOAD_ERRORS = Counter(
     ("cache", "resource"),
 )
 
-CACHE_INFLIGHT = Gauge(
-    "cache_load_inprogress",
+CACHE_INPROGRESS_LOADS = Gauge(
+    "cache_inprogress_loads",
     "Number of in-progress cache loads",
     ("cache", "resource"),
 )
