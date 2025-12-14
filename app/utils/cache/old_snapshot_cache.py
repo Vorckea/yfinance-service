@@ -3,7 +3,7 @@ import time
 from typing import Any
 
 from ...monitoring.metrics import (
-    CACHE_INFLIGHT,
+    CACHE_INPROGRESS_LOADS,
     CACHE_LOAD_DURATION,
     CACHE_LOAD_ERRORS,
 )
@@ -65,7 +65,7 @@ class SnapshotCache:
                 return value
 
             # instrument the load with inflight gauge, duration histogram, and errors counter
-            inflight = CACHE_INFLIGHT.labels(cache="ttl_cache", resource="snapshot")
+            inflight = CACHE_INPROGRESS_LOADS.labels(cache="ttl_cache", resource="snapshot")
             hist = CACHE_LOAD_DURATION.labels(cache="ttl_cache", resource="snapshot")
             errs = CACHE_LOAD_ERRORS.labels(cache="ttl_cache", resource="snapshot")
 
