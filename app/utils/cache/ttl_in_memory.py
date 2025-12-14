@@ -60,6 +60,7 @@ class TTLCache(CacheInterface, Generic[K, V]):
             try:
                 del self._cache[key]
             except KeyError:
+                # Key may have already been removed by another coroutine; safe to ignore
                 pass
             self._expirations.inc()
             self._misses.inc()
