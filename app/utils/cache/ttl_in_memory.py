@@ -59,6 +59,8 @@ class TTLCache(CacheInterface, Generic[K, V]):
             # expired
             try:
                 del self._cache[key]
+                # Clean up the lock for this key to prevent memory leak
+                self._key_locks.pop(key, None)
             except KeyError:
                 pass
             self._expirations.inc()
@@ -82,6 +84,8 @@ class TTLCache(CacheInterface, Generic[K, V]):
                     # avoid counting an eviction of the key we just set
                     if oldest != key:
                         del self._cache[oldest]
+                        # Clean up the lock for the evicted key to prevent memory leak
+                        self._key_locks.pop(oldest, None)
                         self._evictions.inc()
                 except StopIteration:
                     pass
@@ -98,6 +102,8 @@ class TTLCache(CacheInterface, Generic[K, V]):
         async with lock:
             if key in self._cache:
                 self._cache.pop(key, None)
+                # Clean up the lock for this key to prevent memory leak
+                self._key_locks.pop(key, None)
                 self._length.set(len(self._cache))
 
     async def clear(self) -> None:
@@ -108,6 +114,8 @@ class TTLCache(CacheInterface, Generic[K, V]):
             await l.acquire()
         try:
             self._cache.clear()
+            # Clean up all locks when clearing the cache
+            self._key_locks.clear()
             self._length.set(0)
         finally:
             for l in locks:
