@@ -42,7 +42,9 @@ class TTLCache(CacheInterface, Generic[K, V]):
         return time.monotonic()
 
     async def get(self, key: K) -> Optional[V]:
-        # Check clear lock to ensure we don't race with clear()
+        # Acquire clear lock briefly to get/create per-key lock atomically.
+        # This prevents races with clear() and ensures lock consistency.
+        # The critical section is very short (dictionary lookup/insert only).
         async with self._clear_lock:
             # Per-key locking prevents races with concurrent sets/deletes
             lock = self._key_locks.get(key)
@@ -70,7 +72,7 @@ class TTLCache(CacheInterface, Generic[K, V]):
             return None
 
     async def set(self, key: K, value: V) -> None:
-        # Check clear lock to ensure we don't race with clear()
+        # Acquire clear lock briefly to get/create per-key lock atomically
         async with self._clear_lock:
             lock = self._key_locks.get(key)
             if lock is None:
@@ -95,7 +97,7 @@ class TTLCache(CacheInterface, Generic[K, V]):
             self._puts.inc()
 
     async def delete(self, key: K) -> None:
-        # Check clear lock to ensure we don't race with clear()
+        # Acquire clear lock briefly to get/create per-key lock atomically
         async with self._clear_lock:
             lock = self._key_locks.get(key)
             if lock is None:
@@ -108,8 +110,9 @@ class TTLCache(CacheInterface, Generic[K, V]):
                 self._length.set(len(self._cache))
 
     async def clear(self) -> None:
-        # Use a global lock to prevent race conditions when clearing the cache
-        # We don't clear _key_locks to avoid issues with operations holding lock references
+        # Use a global lock to prevent race conditions when clearing the cache.
+        # We don't clear _key_locks to avoid issues with operations that hold lock references.
+        # This means _key_locks grows over time, but is bounded by unique keys accessed.
         async with self._clear_lock:
             self._cache.clear()
             self._length.set(0)
