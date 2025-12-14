@@ -22,6 +22,7 @@ class TTLCache(CacheInterface, Generic[K, V]):
         self._cache_name = cache_name
         self._resource = resource
         self._key_locks: dict[K, asyncio.Lock] = {}
+        self._key_locks_lock = asyncio.Lock()  # Protects access to _key_locks dict
         self._cache: dict[K, tuple[V, float]] = {}
 
         # Labeled metric children for this cache instance
@@ -42,11 +43,13 @@ class TTLCache(CacheInterface, Generic[K, V]):
 
     async def get(self, key: K) -> Optional[V]:
         # Per-key locking prevents races with concurrent sets/deletes
-        lock = self._key_locks.get(key)
-        if lock is None:
-            lock = asyncio.Lock()
-            self._key_locks[key] = lock
+        async with self._key_locks_lock:
+            lock = self._key_locks.get(key)
+            if lock is None:
+                lock = asyncio.Lock()
+                self._key_locks[key] = lock
 
+        should_cleanup_lock = False
         async with lock:
             entry = self._cache.get(key)
             if entry is None:
@@ -59,21 +62,27 @@ class TTLCache(CacheInterface, Generic[K, V]):
             # expired
             try:
                 del self._cache[key]
-                # Clean up the lock for this key to prevent memory leak
-                self._key_locks.pop(key, None)
+                should_cleanup_lock = True
             except KeyError:
                 pass
             self._expirations.inc()
             self._misses.inc()
             self._length.set(len(self._cache))
-            return None
+        
+        # Clean up lock after releasing it to prevent memory leak
+        if should_cleanup_lock:
+            async with self._key_locks_lock:
+                self._key_locks.pop(key, None)
+        return None
 
     async def set(self, key: K, value: V) -> None:
-        lock = self._key_locks.get(key)
-        if lock is None:
-            lock = asyncio.Lock()
-            self._key_locks[key] = lock
+        async with self._key_locks_lock:
+            lock = self._key_locks.get(key)
+            if lock is None:
+                lock = asyncio.Lock()
+                self._key_locks[key] = lock
 
+        evicted_key = None
         async with lock:
             expiry = self._now() + self.ttl
             self._cache[key] = (value, expiry)
@@ -84,39 +93,54 @@ class TTLCache(CacheInterface, Generic[K, V]):
                     # avoid counting an eviction of the key we just set
                     if oldest != key:
                         del self._cache[oldest]
-                        # Clean up the lock for the evicted key to prevent memory leak
-                        self._key_locks.pop(oldest, None)
+                        evicted_key = oldest
                         self._evictions.inc()
                 except StopIteration:
                     pass
             self._length.set(len(self._cache))
             # count this as a put
             self._puts.inc()
+        
+        # Clean up the lock for the evicted key to prevent memory leak
+        if evicted_key is not None:
+            async with self._key_locks_lock:
+                self._key_locks.pop(evicted_key, None)
 
     async def delete(self, key: K) -> None:
-        lock = self._key_locks.get(key)
-        if lock is None:
-            lock = asyncio.Lock()
-            self._key_locks[key] = lock
+        async with self._key_locks_lock:
+            lock = self._key_locks.get(key)
+            if lock is None:
+                lock = asyncio.Lock()
+                self._key_locks[key] = lock
 
+        should_cleanup_lock = False
         async with lock:
             if key in self._cache:
                 self._cache.pop(key, None)
-                # Clean up the lock for this key to prevent memory leak
-                self._key_locks.pop(key, None)
                 self._length.set(len(self._cache))
+                should_cleanup_lock = True
+        
+        # Clean up the lock for this key to prevent memory leak
+        if should_cleanup_lock:
+            async with self._key_locks_lock:
+                self._key_locks.pop(key, None)
 
     async def clear(self) -> None:
-        # Acquire all known locks to prevent races while clearing
-        locks = list(self._key_locks.values())
+        # Acquire lock on key_locks dict first
+        async with self._key_locks_lock:
+            # Acquire all known locks to prevent races while clearing
+            locks = list(self._key_locks.values())
+        
         # Acquire serially to avoid deadlocks
-        for l in locks:
-            await l.acquire()
+        for lock in locks:
+            await lock.acquire()
         try:
             self._cache.clear()
-            # Clean up all locks when clearing the cache
-            self._key_locks.clear()
             self._length.set(0)
         finally:
-            for l in locks:
-                l.release()
+            for lock in locks:
+                lock.release()
+        
+        # Clean up all locks when clearing the cache
+        async with self._key_locks_lock:
+            self._key_locks.clear()
