@@ -79,3 +79,44 @@ CACHE_MISSES = Counter(
     "Cache misses",
     ("cache", "resource"),
 )
+CACHE_EVICTIONS = Counter(
+    "cache_evictions_total",
+    "Cache evictions",
+    ("cache", "resource"),
+)
+CACHE_EXPIRATIONS = Counter(
+    "cache_expirations_total",
+    "Cache expirations",
+    ("cache", "resource"),
+)
+CACHE_LENGTH = Gauge(
+    "cache_length",
+    "Current cache length",
+    ("cache", "resource"),
+)
+
+# Additional cache observability
+CACHE_PUTS = Counter(
+    "cache_puts_total",
+    "Cache puts (writes)",
+    ("cache", "resource"),
+)
+
+CACHE_LOAD_DURATION = Histogram(
+    "cache_load_duration_seconds",
+    "Latency of cache load (awaiting value)",
+    ("cache", "resource"),
+    buckets=(0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1, 2, 5),
+)
+
+CACHE_LOAD_ERRORS = Counter(
+    "cache_load_errors_total",
+    "Cache load errors",
+    ("cache", "resource"),
+)
+
+CACHE_INPROGRESS_LOADS = Gauge(
+    "cache_inprogress_loads",
+    "Number of in-progress cache loads",
+    ("cache", "resource"),
+)
