@@ -10,9 +10,7 @@ K = TypeVar("K", bound=Hashable)
 class CacheInterface(ABC):
     """Abstract async cache interface.
 
-    Implementations should be safe to use from async code and provide a
-    `get_or_load` helper that prevents duplicate concurrent loads for the
-    same key.
+    Implementations should be safe to use from async code.
     """
 
     @abstractmethod

@@ -56,7 +56,7 @@ class TTLCache(CacheInterface, Generic[K, V]):
                 self._misses.inc()
                 return None
             value, expiry = entry
-            if expiry > self._now():
+            if expiry >= self._now():
                 self._hits.inc()
                 return value
             # expired
@@ -64,6 +64,7 @@ class TTLCache(CacheInterface, Generic[K, V]):
                 del self._cache[key]
                 should_cleanup_lock = True
             except KeyError:
+                # Key may have already been removed by another coroutine; safe to ignore
                 pass
             self._expirations.inc()
             self._misses.inc()
@@ -84,19 +85,16 @@ class TTLCache(CacheInterface, Generic[K, V]):
 
         evicted_key = None
         async with lock:
-            expiry = self._now() + self.ttl
-            self._cache[key] = (value, expiry)
-            # enforce max size by evicting oldest insertion
-            if len(self._cache) > self.size:
+            # enforce max size by evicting oldest insertion before inserting new key
+            if len(self._cache) >= self.size:
                 try:
                     oldest = next(iter(self._cache))
-                    # avoid counting an eviction of the key we just set
-                    if oldest != key:
-                        del self._cache[oldest]
-                        evicted_key = oldest
-                        self._evictions.inc()
+                    del self._cache[oldest]
+                    self._evictions.inc()
                 except StopIteration:
                     pass
+            expiry = self._now() + self.ttl
+            self._cache[key] = (value, expiry)
             self._length.set(len(self._cache))
             # count this as a put
             self._puts.inc()
