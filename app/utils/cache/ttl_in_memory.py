@@ -108,10 +108,8 @@ class TTLCache(CacheInterface, Generic[K, V]):
                 self._length.set(len(self._cache))
 
     async def clear(self) -> None:
-        # Use a global lock to prevent deadlock when clearing the cache
-        # This ensures clear() is serialized with respect to other clear() calls
-        # and prevents the deadlock that could occur from acquiring multiple key locks
+        # Use a global lock to prevent race conditions when clearing the cache
+        # We don't clear _key_locks to avoid issues with operations holding lock references
         async with self._clear_lock:
             self._cache.clear()
-            self._key_locks.clear()
             self._length.set(0)
