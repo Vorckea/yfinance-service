@@ -64,7 +64,7 @@ class TTLCache(CacheInterface, Generic[K, V]):
                 self._misses.inc()
                 return None
             value, expiry = entry
-            if expiry >= self._now():
+            if expiry > self._now():
                 self._hits.inc()
                 return value
             # expired
