@@ -23,6 +23,7 @@ class TTLCache(CacheInterface, Generic[K, V]):
         self._resource = resource
         self._key_locks: dict[K, asyncio.Lock] = {}
         self._cache: dict[K, tuple[V, float]] = {}
+        self._clear_lock = asyncio.Lock()
 
         # Labeled metric children for this cache instance
         self._hits = CACHE_HITS.labels(cache=self._cache_name, resource=self._resource)
@@ -41,11 +42,13 @@ class TTLCache(CacheInterface, Generic[K, V]):
         return time.monotonic()
 
     async def get(self, key: K) -> Optional[V]:
-        # Per-key locking prevents races with concurrent sets/deletes
-        lock = self._key_locks.get(key)
-        if lock is None:
-            lock = asyncio.Lock()
-            self._key_locks[key] = lock
+        # Check clear lock to ensure we don't race with clear()
+        async with self._clear_lock:
+            # Per-key locking prevents races with concurrent sets/deletes
+            lock = self._key_locks.get(key)
+            if lock is None:
+                lock = asyncio.Lock()
+                self._key_locks[key] = lock
 
         async with lock:
             entry = self._cache.get(key)
@@ -67,10 +70,12 @@ class TTLCache(CacheInterface, Generic[K, V]):
             return None
 
     async def set(self, key: K, value: V) -> None:
-        lock = self._key_locks.get(key)
-        if lock is None:
-            lock = asyncio.Lock()
-            self._key_locks[key] = lock
+        # Check clear lock to ensure we don't race with clear()
+        async with self._clear_lock:
+            lock = self._key_locks.get(key)
+            if lock is None:
+                lock = asyncio.Lock()
+                self._key_locks[key] = lock
 
         async with lock:
             expiry = self._now() + self.ttl
@@ -90,10 +95,12 @@ class TTLCache(CacheInterface, Generic[K, V]):
             self._puts.inc()
 
     async def delete(self, key: K) -> None:
-        lock = self._key_locks.get(key)
-        if lock is None:
-            lock = asyncio.Lock()
-            self._key_locks[key] = lock
+        # Check clear lock to ensure we don't race with clear()
+        async with self._clear_lock:
+            lock = self._key_locks.get(key)
+            if lock is None:
+                lock = asyncio.Lock()
+                self._key_locks[key] = lock
 
         async with lock:
             if key in self._cache:
@@ -101,14 +108,10 @@ class TTLCache(CacheInterface, Generic[K, V]):
                 self._length.set(len(self._cache))
 
     async def clear(self) -> None:
-        # Acquire all known locks to prevent races while clearing
-        locks = list(self._key_locks.values())
-        # Acquire serially to avoid deadlocks
-        for l in locks:
-            await l.acquire()
-        try:
+        # Use a global lock to prevent deadlock when clearing the cache
+        # This ensures clear() is serialized with respect to other clear() calls
+        # and prevents the deadlock that could occur from acquiring multiple key locks
+        async with self._clear_lock:
             self._cache.clear()
+            self._key_locks.clear()
             self._length.set(0)
-        finally:
-            for l in locks:
-                l.release()
