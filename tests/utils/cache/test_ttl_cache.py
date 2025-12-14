@@ -93,12 +93,12 @@ async def test_ttlcache_expiry_and_metrics():
 async def test_ttlcache_lock_cleanup_on_eviction():
     """Test that locks are cleaned up when keys are evicted."""
     c = TTLCache(2, ttl=60, cache_name="test_lock_evict", resource="test_lock")
-    
+
     # Fill cache
     await c.set("a", 1)
     await c.set("b", 2)
     assert len(c._key_locks) == 2
-    
+
     # Evict oldest key by adding a third
     await c.set("c", 3)
     # Lock for "a" should be cleaned up
@@ -110,11 +110,11 @@ async def test_ttlcache_lock_cleanup_on_eviction():
 async def test_ttlcache_lock_cleanup_on_deletion():
     """Test that locks are cleaned up when keys are explicitly deleted."""
     c = TTLCache(4, ttl=60, cache_name="test_lock_del", resource="test_lock_del")
-    
+
     await c.set("x", 10)
     await c.set("y", 20)
     assert len(c._key_locks) == 2
-    
+
     # Delete a key
     await c.delete("x")
     # Lock for "x" should be cleaned up
@@ -126,10 +126,10 @@ async def test_ttlcache_lock_cleanup_on_deletion():
 async def test_ttlcache_lock_cleanup_on_expiry():
     """Test that locks are cleaned up when keys expire."""
     c = TTLCache(4, ttl=0, cache_name="test_lock_exp", resource="test_lock_exp")
-    
+
     await c.set("expired", 123)
     assert len(c._key_locks) == 1
-    
+
     # Try to get expired key - should trigger cleanup
     result = await c.get("expired")
     assert result is None
@@ -141,12 +141,12 @@ async def test_ttlcache_lock_cleanup_on_expiry():
 async def test_ttlcache_lock_cleanup_on_clear():
     """Test that all locks are cleaned up when cache is cleared."""
     c = TTLCache(4, ttl=60, cache_name="test_lock_clear", resource="test_lock_clear")
-    
+
     await c.set("a", 1)
     await c.set("b", 2)
     await c.set("c", 3)
     assert len(c._key_locks) == 3
-    
+
     # Clear cache
     await c.clear()
     # All locks should be cleaned up
