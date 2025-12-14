@@ -64,6 +64,11 @@ class SnapshotCache:
                             close_fn()
                 except Exception:
                     pass
+                # no further need for this per-key lock
+                try:
+                    self._key_locks.pop(key, None)
+                except Exception:
+                    pass
                 return value
 
             # instrument the load with inflight gauge, duration histogram, and errors counter
@@ -71,20 +76,27 @@ class SnapshotCache:
             hist = CACHE_LOAD_DURATION.labels(cache="ttl_cache", resource="snapshot")
             errs = CACHE_LOAD_ERRORS.labels(cache="ttl_cache", resource="snapshot")
 
-            inflight.inc()
-            start = time.monotonic()
+            # ensure per-key lock mapping is removed regardless of success/error
             try:
-                value = await coro
-            except Exception:
-                errs.inc()
-                raise
-            finally:
-                duration = time.monotonic() - start
+                inflight.inc()
+                start = time.monotonic()
                 try:
-                    hist.observe(duration)
+                    value = await coro
+                except Exception:
+                    errs.inc()
+                    raise
+                finally:
+                    duration = time.monotonic() - start
+                    try:
+                        hist.observe(duration)
+                    except Exception:
+                        pass
+                    inflight.dec()
+
+                await self._store.set(key, value)
+                return value
+            finally:
+                try:
+                    self._key_locks.pop(key, None)
                 except Exception:
                     pass
-                inflight.dec()
-
-            await self._store.set(key, value)
-            return value

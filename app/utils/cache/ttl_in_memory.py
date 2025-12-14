@@ -21,7 +21,7 @@ class TTLCache(CacheInterface, Generic[K, V]):
         self.ttl = ttl
         self._cache_name = cache_name
         self._resource = resource
-        self._key_locks: dict[K, asyncio.Lock] = {}
+        self._lock = asyncio.Lock()
         self._cache: dict[K, tuple[V, float]] = {}
 
         # Labeled metric children for this cache instance
@@ -41,13 +41,7 @@ class TTLCache(CacheInterface, Generic[K, V]):
         return time.monotonic()
 
     async def get(self, key: K) -> Optional[V]:
-        # Per-key locking prevents races with concurrent sets/deletes
-        lock = self._key_locks.get(key)
-        if lock is None:
-            lock = asyncio.Lock()
-            self._key_locks[key] = lock
-
-        async with lock:
+        async with self._lock:
             entry = self._cache.get(key)
             if entry is None:
                 self._misses.inc()
@@ -57,56 +51,30 @@ class TTLCache(CacheInterface, Generic[K, V]):
                 self._hits.inc()
                 return value
             # expired
-            try:
-                del self._cache[key]
-            except KeyError:
-                # Key may have already been removed by another coroutine; safe to ignore
-                pass
+            del self._cache[key]
             self._expirations.inc()
             self._misses.inc()
             self._length.set(len(self._cache))
             return None
 
     async def set(self, key: K, value: V) -> None:
-        lock = self._key_locks.get(key)
-        if lock is None:
-            lock = asyncio.Lock()
-            self._key_locks[key] = lock
-
-        async with lock:
-            # enforce max size by evicting oldest insertion before inserting new key
-            if len(self._cache) >= self.size:
-                try:
-                    oldest = next(iter(self._cache))
-                    del self._cache[oldest]
-                    self._evictions.inc()
-                except StopIteration:
-                    pass
+        async with self._lock:
+            # enforce max size by evicting oldest entry before inserting new key
+            if key not in self._cache and len(self._cache) >= self.size:
+                oldest = next(iter(self._cache))
+                del self._cache[oldest]
+                self._evictions.inc()
             expiry = self._now() + self.ttl
             self._cache[key] = (value, expiry)
             self._length.set(len(self._cache))
-            # count this as a put
             self._puts.inc()
 
     async def delete(self, key: K) -> None:
-        lock = self._key_locks.get(key)
-        if lock is None:
-            lock = asyncio.Lock()
-            self._key_locks[key] = lock
-
-        async with lock:
-            self._cache.pop(key, None)
-            self._length.set(len(self._cache))
+        async with self._lock:
+            if self._cache.pop(key, None) is not None:
+                self._length.set(len(self._cache))
 
     async def clear(self) -> None:
-        # Acquire all known locks to prevent races while clearing
-        locks = list(self._key_locks.values())
-        # Acquire serially to avoid deadlocks
-        for l in locks:
-            await l.acquire()
-        try:
+        async with self._lock:
             self._cache.clear()
             self._length.set(0)
-        finally:
-            for l in locks:
-                l.release()
