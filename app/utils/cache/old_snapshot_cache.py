@@ -25,8 +25,6 @@ class SnapshotCache:
         self._store: TTLCache[str, Any] = TTLCache(
             size=maxsize, ttl=ttl, cache_name="ttl_cache", resource="snapshot"
         )
-        self._ttl = ttl
-        self._maxsize = maxsize
         self._key_locks: dict[str, asyncio.Lock] = {}
 
     async def get_or_set(self, key: str, coro):
