@@ -3,7 +3,9 @@ import time
 from typing import Any
 
 from ...monitoring.metrics import (
-    CACHE_INFLIGHT,
+    CACHE_INPROGRESS_LOADS as CACHE_INFLIGHT,
+)
+from ...monitoring.metrics import (
     CACHE_LOAD_DURATION,
     CACHE_LOAD_ERRORS,
 )
