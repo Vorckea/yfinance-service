@@ -74,18 +74,16 @@ class TTLCache(CacheInterface, Generic[K, V]):
             self._key_locks[key] = lock
 
         async with lock:
-            expiry = self._now() + self.ttl
-            self._cache[key] = (value, expiry)
-            # enforce max size by evicting oldest insertion
-            if len(self._cache) > self.size:
+            # enforce max size by evicting oldest insertion before inserting new key
+            if len(self._cache) >= self.size:
                 try:
                     oldest = next(iter(self._cache))
-                    # avoid counting an eviction of the key we just set
-                    if oldest != key:
-                        del self._cache[oldest]
-                        self._evictions.inc()
+                    del self._cache[oldest]
+                    self._evictions.inc()
                 except StopIteration:
                     pass
+            expiry = self._now() + self.ttl
+            self._cache[key] = (value, expiry)
             self._length.set(len(self._cache))
             # count this as a put
             self._puts.inc()
