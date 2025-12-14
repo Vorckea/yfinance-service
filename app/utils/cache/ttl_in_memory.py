@@ -14,6 +14,23 @@ from .interface import CacheInterface, K, V
 
 
 class TTLCache(CacheInterface, Generic[K, V]):
+    """
+    An in-memory cache with time-to-live (TTL) expiration and FIFO eviction policy.
+
+    This cache evicts the oldest inserted item when the maximum size is reached,
+    following a FIFO (first-in, first-out) policy. It does not implement a
+    least-recently-used (LRU) eviction strategy.
+
+    The eviction order relies on the insertion order of Python's built-in dict,
+    which is guaranteed to be preserved in Python 3.7 and later.
+
+    Thread-safety is ensured for asynchronous use cases by protecting all cache
+    operations with an asyncio.Lock.
+
+    The `cache_name` and `resource` parameters are used to label Prometheus metrics
+    for cache hits, misses, evictions, expirations, length, and puts, allowing
+    for fine-grained monitoring of cache usage and performance.
+    """
     def __init__(
         self, size: int, ttl: int, *, cache_name: str = "ttl_cache", resource: str = "generic"
     ) -> None:
