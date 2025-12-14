@@ -97,9 +97,8 @@ class TTLCache(CacheInterface, Generic[K, V]):
             self._key_locks[key] = lock
 
         async with lock:
-            if key in self._cache:
-                self._cache.pop(key, None)
-                self._length.set(len(self._cache))
+            self._cache.pop(key, None)
+            self._length.set(len(self._cache))
 
     async def clear(self) -> None:
         # Acquire all known locks to prevent races while clearing
