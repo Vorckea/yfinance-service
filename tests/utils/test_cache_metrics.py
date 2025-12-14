@@ -3,7 +3,9 @@ import asyncio
 import pytest
 
 from app.monitoring.metrics import (
-    CACHE_INFLIGHT,
+    CACHE_INPROGRESS_LOADS as CACHE_INFLIGHT,
+)
+from app.monitoring.metrics import (
     CACHE_LOAD_DURATION,
     CACHE_LOAD_ERRORS,
     CACHE_PUTS,
