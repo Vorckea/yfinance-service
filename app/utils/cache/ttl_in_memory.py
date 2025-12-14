@@ -90,6 +90,7 @@ class TTLCache(CacheInterface, Generic[K, V]):
                 try:
                     oldest = next(iter(self._cache))
                     del self._cache[oldest]
+                    evicted_key = oldest
                     self._evictions.inc()
                 except StopIteration:
                     pass
