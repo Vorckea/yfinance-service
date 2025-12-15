@@ -70,5 +70,5 @@ async def test_historical_interval_valid(client: AsyncClient, interval: str):
 async def test_historical_interval_invalid(client: AsyncClient, interval: str):
     """Test invalid aggregation intervals for /historical endpoint."""
     resp = client.get("/historical/AAPL", params={"interval": interval})
-    assert resp.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY, f"Expected 422 for {interval}"
+    assert resp.status_code == status.HTTP_422_UNPROCESSABLE_CONTENT, f"Expected 422 for {interval}"
     assert "interval" in resp.text
