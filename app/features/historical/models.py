@@ -11,6 +11,7 @@ class HistoricalPrice(BaseModel):
     model_config = ConfigDict(frozen=True)
 
     date: datetime.date = Field(..., description="Date of the price")
+    timestamp: datetime.datetime = Field(..., description="Timestamp of the price")
     open: float = Field(..., description="Opening price")
     high: float = Field(..., description="Highest price")
     low: float = Field(..., description="Lowest price")

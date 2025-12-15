@@ -1,7 +1,7 @@
 """Service layer for fetching historical stock data."""
 
 import asyncio
-from datetime import date
+from datetime import datetime, timezone, date
 
 import pandas as pd
 
@@ -37,6 +37,7 @@ def _map_history(df: pd.DataFrame) -> list[HistoricalPrice]:
             low=float(low_),
             close=float(close_),
             volume=int(volume_) if pd.notna(volume_) else None,
+            timestamp=datetime.fromtimestamp(ts.timestamp(), timezone.utc).replace(microsecond=0)
         )
         for ts, open_, high_, low_, close_, volume_ in df_selected.itertuples(index=True, name=None)
     ]
