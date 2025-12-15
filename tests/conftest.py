@@ -7,7 +7,7 @@ from unittest.mock import AsyncMock
 
 from app.main import app
 from app.dependencies import get_yfinance_client, get_info_cache
-from app.utils.cache import SnapshotCache
+from app.utils.cache import TTLCache
 
 from tests.clients.fake_client import FakeYFinanceClient
 
@@ -28,7 +28,7 @@ def client(mock_yfinance_client):
     """Test client fixture that injects the mocked YFinanceClient."""
     app.dependency_overrides[get_yfinance_client] = lambda: mock_yfinance_client
     # Also override cache for snapshot tests
-    app.dependency_overrides[get_info_cache] = lambda: SnapshotCache(maxsize=32, ttl=300)
+    app.dependency_overrides[get_info_cache] = lambda: TTLCache(maxsize=32, ttl=300)
     with TestClient(app) as c:
         yield c
     app.dependency_overrides.clear()
@@ -44,7 +44,7 @@ def fake_yfinance_client():
 def client_fake(fake_yfinance_client):
     """FastAPI test client using the fake YFinance client instead of mock."""
     app.dependency_overrides[get_yfinance_client] = lambda: fake_yfinance_client
-    app.dependency_overrides[get_info_cache] = lambda: SnapshotCache(maxsize=32, ttl=300)
+    app.dependency_overrides[get_info_cache] = lambda: TTLCache(maxsize=32, ttl=300)
     with TestClient(app) as c:
         yield c
     app.dependency_overrides.clear()
@@ -68,5 +68,5 @@ def pytest_runtest_setup(item):
         from app.main import app
 
         app.dependency_overrides[get_yfinance_client] = lambda: FakeYFinanceClient()
-        app.dependency_overrides[get_info_cache] = lambda: SnapshotCache(maxsize=32, ttl=300)
+        app.dependency_overrides[get_info_cache] = lambda: TTLCache(maxsize=32, ttl=300)
 
