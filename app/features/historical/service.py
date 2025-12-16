@@ -24,9 +24,11 @@ def _map_history(df: pd.DataFrame) -> list[HistoricalPrice]:
             extra={"missing": list(expected_cols - set(df.columns))},
         )
         return []
-
-    if getattr(df.index, "tz", None) is not None:
-        df = df.tz_convert(None)
+    
+    if getattr(df.index, "tz", None) is None:
+        df.index = df.index.tz_localize("UTC")
+    else:
+        df.index = df.index.tz_convert("UTC")
 
     df_selected = df[["Open", "High", "Low", "Close", "Volume"]]
     return [
