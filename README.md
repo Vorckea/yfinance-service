@@ -17,6 +17,7 @@
 - **Production-ready**: Includes Prometheus metrics and health checks.
 - **Simple setup**: Run with Docker, Poetry, or Docker Compose (Grafana/Prometheus included).
 - **Extendable**: Built on FastAPI; easy to add routes or middleware.
+- **Caching & Multithread**: Faster, more reliable responses. 
 
 ## Features
 | Feature                | Description                                             |
