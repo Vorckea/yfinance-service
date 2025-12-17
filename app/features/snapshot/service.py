@@ -11,22 +11,23 @@ Caching strategy:
 import asyncio
 
 from ...clients.interface import YFinanceClientInterface
-from ...utils.cache import SnapshotCache
+from ...utils.cache.interface import CacheInterface
 from ...utils.logger import logger
 from ..info.service import fetch_info
 from ..quote.service import fetch_quote
 from .models import SnapshotResponse
 
 
+
 async def fetch_snapshot(
-    symbol: str, client: YFinanceClientInterface, info_cache: SnapshotCache | None = None
+    symbol: str, client: YFinanceClientInterface, info_cache: CacheInterface | None = None
 ) -> SnapshotResponse:
     """Fetch combined info and quote for a symbol in a single response.
 
     Args:
         symbol (str): The stock symbol to fetch.
         client (YFinanceClientInterface): The YFinance client to use.
-        info_cache (SnapshotCache, optional): Cache for info responses. If provided, info is cached.
+        info_cache (CacheInterface, optional): Cache for info responses. If provided, info is cached.
 
     Returns:
         SnapshotResponse: Combined info and quote data.
@@ -41,13 +42,21 @@ async def fetch_snapshot(
     # Fetch info (possibly cached) and quote (always fresh) concurrently.
     # If either fails (raises HTTPException with 502), the exception propagates and the
     # entire endpoint returns 502, for consistent error semantics.
-    if info_cache:
-        info_coro = info_cache.get_or_set(symbol, fetch_info(symbol, client))
-    else:
-        info_coro = fetch_info(symbol, client)
+    async def fetch_info_with_cache():
+        if not info_cache:
+            return await fetch_info(symbol,client)
+
+        cached = await info_cache.get(symbol)
+
+        if cached is not None:
+            return cached
+
+        info = await fetch_info(symbol, client)
+        await info_cache.set(symbol, info)
+        return info
 
     info, quote = await asyncio.gather(
-        info_coro,
+        fetch_info_with_cache(),
         fetch_quote(symbol, client),
     )
 
