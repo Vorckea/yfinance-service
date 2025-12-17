@@ -6,7 +6,7 @@ authors = [
     {name = "Vorckea",email = "akselschrader@gmail.com"}
 ]
 readme = "README.md"
-requires-python = ">=3.10"
+requires-python = ">=3.13"
 dependencies = [
     "fastapi (>=0.116.1,<0.117.0)",
     "yfinance (>=0.2.65,<0.3.0)",

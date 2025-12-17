@@ -8,15 +8,9 @@ import numpy as np
 
 import pandas as pd
 
-from app.clients.yfinance_client import YFinanceClient
-
-
 from ...clients.interface import YFinanceClientInterface
 from ...utils.logger import logger
 from .models import EarningRow, EarningsResponse
-
-yf_client = YFinanceClient()
-
 
 def safe_date(x: Any) -> Optional[date]:
     if x is None:

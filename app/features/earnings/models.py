@@ -1,16 +1,13 @@
 """Earnings data models."""
 
-from pydantic import BaseModel, ConfigDict, Field, Extra
+from pydantic import BaseModel, ConfigDict, Field
 from datetime import date
-from typing import Optional
 
 
 class EarningRow(BaseModel):
     """A single earnings report row."""
 
-    model_config = {
-        "extra": "ignore",
-    }
+    model_config = ConfigDict(extra= "ignore")
 
     earnings_date: date | None = Field(None, description="Date of the earnings report")
     reported_eps: float | None = Field(None, description="Reported earnings per share")
@@ -25,12 +22,13 @@ class EarningRow(BaseModel):
 class EarningsResponse(BaseModel):
     """Earnings history response for a symbol."""
 
-    model_config = {
-        "extra": "ignore",
-    }
+    model_config = ConfigDict(extra= "ignore")
 
     symbol: str
     frequency: str
     rows: list[EarningRow]
     next_earnings_date: date | None = None
-    last_eps: float | None = None
+    last_eps: float | None = Field(
+        default=None,
+        description="The most recent non-null reported EPS from the earnings history"
+    )

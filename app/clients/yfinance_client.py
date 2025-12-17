@@ -4,7 +4,7 @@ import asyncio
 from collections.abc import Callable
 from datetime import date
 from functools import lru_cache
-from typing import Any, TypeVar
+from typing import Any, TypeVar, Dict
 
 import pandas as pd
 import yfinance as yf
@@ -195,9 +195,38 @@ class YFinanceClient(YFinanceClientInterface):
     async def get_income_statement(self, symbol: str, frequency: str) -> pd.DataFrame | None:
         return await self.get_earnings(symbol, frequency)
 
-    async def get_calendar(self, symbol: str) -> Any:
+
+    async def get_calendar(self, symbol: str) -> Dict[str, Any]:
+        symbol = self._normalize(symbol)
         ticker = self._get_ticker(symbol)
-        return ticker.calendar
+
+        try:
+            calendar_data = await self._fetch_data(
+                op="calendar",
+                fetch_func=lambda: ticker.calendar,
+                symbol=symbol
+            )
+
+            if calendar_data is None:
+                logger.info("yfinance.client.no_data", extra={"symbol": symbol, "op": "calendar"})
+                raise HTTPException(status_code=404, detail=f"No calendar data for {symbol}")
+
+            if not isinstance(calendar_data, dict):
+                logger.warning(
+                    "yfinance.client.invalid_calendar_type",
+                    extra={"symbol": symbol, "type": type(calendar_data)},
+                )
+                raise HTTPException(status_code=502, detail="Malformed data from upstream")
+
+            return calendar_data
+
+        except HTTPException:
+            raise
+        except Exception as e:
+            logger.warning(
+                "yfinance.client.calendar_failed", extra={"symbol": symbol, "error": str(e)}
+            )
+            raise HTTPException(status_code=500, detail="Failed to fetch calendar data") from e
 
     async def ping(self) -> bool:
         """Check if the YFinance API is reachable.

@@ -72,8 +72,13 @@ async def get_earnings(
     cache_key = f"{symbol.upper()}:{frequency}"
 
     # Use cache with get_or_set if cache is enabled
-    if cache and cache._maxsize > 0:
-        return await cache.get_or_set(cache_key, fetch_earnings(symbol, client, frequency))
-    else:
-        # No caching; fetch directly
-        return await fetch_earnings(symbol, client, frequency)
+    result = None
+    if cache:
+        result = await cache.get_or_set(cache_key, fetch_earnings(symbol, client, frequency))
+
+    if result is not None:
+        return result
+
+    # Fallback if cache is disabled or empty
+    return await fetch_earnings(symbol, client, frequency)
+
