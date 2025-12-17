@@ -27,16 +27,6 @@ def safe_date(x: Any) -> Optional[date]:
             return None
     return None
 
-
-def safe_float(x: Any) -> Optional[float]:
-    if x is None or (isinstance(x, float) and np.isnan(x)):
-        return None
-    try:
-        return float(x)
-    except Exception:
-        return None
-
-
 def safe_int(x: Any) -> Optional[int]:
     if x is None:
         return None
@@ -59,76 +49,94 @@ def _index_to_date(idx) -> Optional[date]:
     return idx
 
 
-def _extract_eps_and_revenue_from_row(series: pd.Series) -> tuple[Optional[float], Optional[float]]:
-    """Robust EPS extractor handling multiple yfinance field conventions."""
+def safe_float(val: Any) -> Optional[float]:
+    if val is None or pd.isna(val):
+        return None
+    if isinstance(val, (int, float)):
+        return float(val)
+    try:
+        return float(val)
+    except Exception:
+        raise ValueError(f"Invalid numeric value: {val}")
 
-    for col in ("Diluted EPS", "Basic EPS", "EPS", "Reported EPS", "EPS Actual"):
-        if col in series.index and pd.notna(series.get(col)):
-            try:
-                return safe_float(series.get(col)), (
-                    safe_float(
-                        series.get(
-                            series.index.intersection(
-                                ["Total Revenue", "Revenue", "Operating Revenue"]
-                            ).tolist()[0]
-                        )
-                    )
-                    if any(
-                        c in series.index for c in ["Total Revenue", "Revenue", "Operating Revenue"]
-                    )
-                    else None
-                )
-            except Exception:
-                pass
 
-    # compute EPS from Net Income and Shares
-    income_cols = ["Net Income", "NetIncome", "Net Income Common Stockholders"]
-    share_cols = [
+def _extract_eps_and_revenue_from_row(
+    series: pd.Series,
+) -> tuple[Optional[float], Optional[float]]:
+    """
+    Robust EPS extractor handling multiple yfinance field conventions.
+
+    Behavior (intentional):
+    - Raises KeyError if NO EPS columns exist at all
+    - Raises ValueError for corrupt EPS values
+    - Gracefully handles missing revenue
+    """
+
+    eps_cols = ("Diluted EPS", "Basic EPS", "EPS", "Reported EPS", "EPS Actual")
+    revenue_cols = ("Total Revenue", "Revenue", "Operating Revenue")
+
+    # Direct EPS columns (STRICT) ----
+    eps_found = False
+
+    for col in eps_cols:
+        if col in series.index:
+            eps_found = True
+            if pd.notna(series[col]):
+                reported_eps = safe_float(series[col])
+
+                revenue = None
+                for rcol in revenue_cols:
+                    if rcol in series.index and pd.notna(series[rcol]):
+                        revenue = safe_float(series[rcol])
+                        break
+
+                return reported_eps, revenue
+
+    if not eps_found:
+        raise KeyError(f"Missing EPS column. Tried: {eps_cols}")
+
+    # Compute EPS from Net Income / Shares ----
+    income_cols = (
+        "Net Income",
+        "NetIncome",
+        "Net Income Common Stockholders",
+    )
+    share_cols = (
         "Weighted Average Shs Out",
         "Weighted Average Shares",
         "Weighted Average Shs Out Dil",
         "Weighted Average Shares Dil",
         "Average Shares",
         "Shares Outstanding",
-    ]
+    )
+
     net_income = None
-    for f in income_cols:
-        if f in series.index and pd.notna(series.get(f)):
-            net_income = series.get(f)
+    for col in income_cols:
+        if col in series.index and pd.notna(series[col]):
+            net_income = safe_float(series[col])
             break
 
     if net_income is not None:
-        for s in share_cols:
-            if s in series.index:
-                shares = series.get(s)
+        for col in share_cols:
+            if col in series.index and pd.notna(series[col]):
+                shares = safe_float(series[col])
+                if shares and shares > 0:
+                    eps = net_income / shares
 
-                if shares is None or pd.isna(shares) or shares == 0:
-                    continue
+                    revenue = None
+                    for rcol in revenue_cols:
+                        if rcol in series.index and pd.notna(series[rcol]):
+                            revenue = safe_float(series[rcol])
+                            break
 
-                shares_f = float(shares)
+                    return eps, revenue
 
-                # Get revenue column
-                revenue_col_candidates = ["Total Revenue", "Revenue", "Operating Revenue"]
-                revenue_cols = series.index.intersection(revenue_col_candidates)
-
-                revenue_f: float | None = None
-                if len(revenue_cols) > 0:
-                    revenue_val = series.get(revenue_cols[0])
-                    if revenue_val is not None and pd.notna(revenue_val):
-                        revenue_f = float(revenue_val)
-
-                try:
-                    return float(net_income) / shares_f, revenue_f
-                except Exception:
-                    continue
-
-    # fallback revenue only
-    for rev_col in ("Total Revenue", "Revenue", "Operating Revenue"):
-        if rev_col in series.index and pd.notna(series.get(rev_col)):
-            return None, safe_float(series.get(rev_col))
+    # Revenue-only fallback ----
+    for col in revenue_cols:
+        if col in series.index and pd.notna(series[col]):
+            return None, safe_float(series[col])
 
     return None, None
-
 
 async def fetch_earnings(
     symbol: str, client: YFinanceClientInterface, frequency: str = "quarterly"
@@ -164,7 +172,7 @@ async def fetch_earnings(
     if "earnings_date" in df.columns:
         df = df.set_index("earnings_date")
     # coerce index to timestamps where possible
-    df.index = pd.to_datetime(df.index, errors="coerce")
+    df.index = pd.to_datetime(df.index, errors="coerce", utc=True).tz_convert(None)
 
     # Now map rows in thread (CPU-bound)
     def map_df_to_rows(local_df: pd.DataFrame):
@@ -223,19 +231,16 @@ async def fetch_earnings(
 
     # 2. Fallback to get_info()["nextEarningsDate"]
     if next_earnings_date is None:
-        info = await client.get_info(symbol)
-        ts = info.get("nextEarningsDate") if isinstance(info, dict) else None
-
-        if ts:
-            try:
+        try:
+            info = await client.get_info(symbol)
+            ts = info.get("nextEarningsDate") if isinstance(info, dict) else None
+            if ts:
                 next_earnings_date = safe_date(
                     datetime.fromtimestamp(ts, tz=timezone.utc).strftime("%Y-%m-%d")
                 )
-
-            except Exception:
-                logger.warning(
-                    "earnings.fetch.invalid_info_nextEarningsDate", extra={"symbol": symbol}
-                )
+        except Exception:
+            logger.warning("earnings.fetch.info_failed", extra={"symbol": symbol})
+            next_earnings_date = None
 
     # 3. Final fallback
     if next_earnings_date is None:
