@@ -8,7 +8,7 @@ from httpx import AsyncClient
 VALID_SYMBOLS = "AAPL"
 INVALID_SYMBOLS = "!!!"
 NOT_FOUND_SYMBOL = "ZZZZZZZZZZ"
-
+TIMESTAMP = "2024-08-01T00:00:00Z"
 
 def test_historical_valid_symbol(client, mock_yfinance_client):
     """Test case for a valid symbol."""
@@ -20,7 +20,7 @@ def test_historical_valid_symbol(client, mock_yfinance_client):
             "Close": [151.0, 152.0],
             "Volume": [1000000, 1100000],
         },
-        index=pd.to_datetime(["2024-08-01", "2024-08-02"]),
+        index=pd.to_datetime(["2024-08-01", "2024-08-02"]).tz_localize("UTC"),
     )
     response = client.get(f"/historical/{VALID_SYMBOLS}?start=2024-08-01&end=2024-08-02")
     assert response.status_code == 200
@@ -28,6 +28,7 @@ def test_historical_valid_symbol(client, mock_yfinance_client):
     assert data["symbol"] == VALID_SYMBOLS.upper()
     assert len(data["prices"]) == 2
     assert data["prices"][0]["date"] == "2024-08-01"
+    assert data["prices"][0]["timestamp"] == TIMESTAMP
     assert data["prices"][0]["open"] == 150.0
     assert data["prices"][0]["high"] == 152.0
     assert data["prices"][0]["low"] == 149.0
@@ -70,5 +71,5 @@ async def test_historical_interval_valid(client: AsyncClient, interval: str):
 async def test_historical_interval_invalid(client: AsyncClient, interval: str):
     """Test invalid aggregation intervals for /historical endpoint."""
     resp = client.get("/historical/AAPL", params={"interval": interval})
-    assert resp.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY, f"Expected 422 for {interval}"
+    assert resp.status_code == status.HTTP_422_UNPROCESSABLE_CONTENT, f"Expected 422 for {interval}"
     assert "interval" in resp.text
