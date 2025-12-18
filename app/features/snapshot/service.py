@@ -52,7 +52,10 @@ async def fetch_snapshot(
             return cached
 
         info = await fetch_info(symbol, client)
-        await info_cache.set(symbol, info)
+        try:
+            await info_cache.set(symbol, info)
+        except Exception:
+            logger.exception("snapshot.set.cache failed", extra={"symbol":symbol})
         return info
 
     info, quote = await asyncio.gather(
