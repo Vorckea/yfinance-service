@@ -110,6 +110,7 @@ async def test_get_history_non_dataframe(monkeypatch):
 
     assert excinfo.value.status_code == 502
 
+
 @pytest.mark.asyncio
 @pytest.mark.usefakeclient
 async def test_historical_fake_client(client_fake):

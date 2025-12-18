@@ -11,6 +11,7 @@ from app.features.snapshot.service import fetch_snapshot
 VALID_SYMBOL = "AAPL"
 INVALID_SYMBOL = "!!!"
 
+
 # Tests for the HTTP endpoint (GET /snapshot/{symbol})
 def test_snapshot_valid_symbol_success(client, mock_yfinance_client):
     """Test successful snapshot fetch for a valid symbol."""
@@ -104,9 +105,11 @@ def test_snapshot_quote_fetch_fails_returns_502(client, mock_yfinance_client):
 
     response = client.get(f"/snapshot/{VALID_SYMBOL}")
     assert response.status_code == 502
-    assert "Missing required fields" in response.json()["detail"] or "Malformed" in response.json()[
-        "detail"
-    ]
+    assert (
+        "Missing required fields" in response.json()["detail"]
+        or "Malformed" in response.json()["detail"]
+    )
+
 
 # Tests for the service function (fetch_snapshot)
 @pytest.mark.asyncio
