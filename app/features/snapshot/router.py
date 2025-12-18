@@ -10,7 +10,7 @@ from fastapi import APIRouter, Depends
 from ...clients.interface import YFinanceClientInterface
 from ...common.validation import SymbolParam
 from ...dependencies import get_info_cache, get_yfinance_client
-from ...utils.cache import TTLCache
+from ...utils.cache.interface import CacheInterface
 from .models import SnapshotResponse
 from .service import fetch_snapshot
 
@@ -79,7 +79,7 @@ router = APIRouter()
 async def get_snapshot(
     symbol: SymbolParam,
     client: Annotated[YFinanceClientInterface, Depends(get_yfinance_client)],
-    info_cache: Annotated[TTLCache, Depends(get_info_cache)],
+    info_cache: Annotated[CacheInterface, Depends(get_info_cache)],
 ) -> SnapshotResponse:
     """Get both company information and latest market quote for a ticker symbol."""
     return await fetch_snapshot(symbol, client, info_cache)
