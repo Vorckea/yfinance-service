@@ -7,12 +7,12 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI, Response
 from prometheus_client import CONTENT_TYPE_LATEST, generate_latest
 
+from app.features.earnings.router import router as earnings_router
 from app.features.health.router import router as health_router
 from app.features.historical.router import router as historical_router
 from app.features.info.router import router as info_router
 from app.features.quote.router import router as quote_router
 from app.features.snapshot.router import router as snapshot_router
-from app.features.earnings.router import router as earnings_router
 from app.monitoring.http_middleware import http_metrics_middleware
 from app.monitoring.metrics import BUILD_INFO, SERVICE_UPTIME
 
@@ -28,7 +28,7 @@ async def lifespan(app: FastAPI):
         contact_email = app.contact.get("email")
     BUILD_INFO.info(
         {
-            "version": "0.0.18",
+            "version": "0.0.20",
             "python_version": sys.version.split()[0],
             "contact_name": contact_name or "unknown",
             "contact_email": contact_email or "unknown",
