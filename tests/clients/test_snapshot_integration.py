@@ -4,7 +4,7 @@ from unittest.mock import AsyncMock
 from app.main import app
 from app.dependencies import get_yfinance_client, get_info_cache
 from tests.clients.fake_client import FakeYFinanceClient
-from app.utils.cache import SnapshotCache
+from app.utils.cache import TTLCache
 
 
 @pytest.mark.asyncio
@@ -33,16 +33,20 @@ async def test_snapshot_staging():
 @pytest.mark.integration
 async def test_snapshot_info_caching():
     """Integration test: verify quote is fetched fresh on each request (via get_snapshot calls)."""
-    call_counts = {"get_snapshot_called": 0}
+    call_counts = {"get_info": 0, "get_quote": 0}
     
     class CountingFakeClient(FakeYFinanceClient):
+        async def get_info(self, symbol: str):
+            call_counts["get_info"] += 1
+            return await super().get_info(symbol)
+        
         async def get_snapshot(self, symbol: str):
-            call_counts["get_snapshot_called"] += 1
+            call_counts["get_quote"] +=1
             return await super().get_snapshot(symbol)
 
     counting_client = CountingFakeClient()
     # Use a shared cache instance for this test
-    info_cache = SnapshotCache(maxsize=32, ttl=60)
+    info_cache = TTLCache(size=32, ttl=60, cache_name="ttl_cache", resource="snapshot")
 
     app.dependency_overrides[get_yfinance_client] = lambda: counting_client
     app.dependency_overrides[get_info_cache] = lambda: info_cache
@@ -52,18 +56,21 @@ async def test_snapshot_info_caching():
         # First request: fetch snapshot
         resp1 = await client.get("/snapshot/AAPL")
         assert resp1.status_code == 200
-        get_snapshot_calls_first = call_counts["get_snapshot_called"]
-        assert get_snapshot_calls_first >= 1, "Expected at least one snapshot call"
+        #get_snapshot_calls_first = call_counts["get_snapshot_called"]
+        #assert get_snapshot_calls_first >= 1, "Expected at least one snapshot call"
 
         # Second request: quote should be fresh (snapshot called again)
         resp2 = await client.get("/snapshot/AAPL")
         assert resp2.status_code == 200
+
+        assert call_counts["get_info"] == 1, "Info should be cached and fetched only once"
+        assert call_counts["get_quote"] == 2, "Quote should be fetched fresh on each request"
         
         # Snapshot/quote should have been called again (always fresh)
-        assert call_counts["get_snapshot_called"] > get_snapshot_calls_first, (
-            f"Expected get_snapshot to be called fresh on second request, "
-            f"but total calls: {call_counts['get_snapshot_called']}, after first: {get_snapshot_calls_first}"
-        )
+        #assert call_counts["get_snapshot_called"] > get_snapshot_calls_first, (
+        #    f"Expected get_snapshot to be called fresh on second request, "
+        #    f"but total calls: {call_counts['get_snapshot_called']}, after first: {get_snapshot_calls_first}"
+        #)
 
     app.dependency_overrides.clear()
 
