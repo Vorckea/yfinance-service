@@ -16,4 +16,4 @@ def get_yfinance_client() -> YFinanceClientInterface:
 def get_info_cache() -> TTLCache:
     """Get a shared TTL cache for info responses (company metadata is relatively stable)."""
     # 5-minute TTL for info; quote data is fetched fresh each time.
-    return TTLCache(size=256, ttl=300, cache_name="tll_cache", resource="snapshot")
+    return TTLCache(size=256, ttl=300, cache_name="ttl_cache", resource="snapshot")
