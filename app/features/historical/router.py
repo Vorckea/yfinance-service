@@ -40,6 +40,7 @@ ALLOWED_INTERVALS = ("1h", "1d", "1wk", "1mo")
                         "prices": [
                             {
                                 "date": "2023-01-01",
+                                "timestamp": "2023-01-01T14:30:00Z",
                                 "open": 150.0,
                                 "high": 155.0,
                                 "low": 148.0,
@@ -48,6 +49,7 @@ ALLOWED_INTERVALS = ("1h", "1d", "1wk", "1mo")
                             },
                             {
                                 "date": "2023-01-02",
+                                "timestamp": "2023-01-02T15:30:00Z",
                                 "open": 154.0,
                                 "high": 156.0,
                                 "low": 152.0,

@@ -79,9 +79,11 @@ async def test_snapshot_info_caching():
 @pytest.mark.integration
 async def test_snapshot_error_propagation():
     """Integration test: 502 error from info or quote should propagate."""
+
     class FailingFakeClient(FakeYFinanceClient):
         async def get_info(self, symbol: str):
             from fastapi import HTTPException
+
             raise HTTPException(status_code=502, detail="Upstream error")
 
     failing_client = FailingFakeClient()
@@ -95,4 +97,3 @@ async def test_snapshot_error_propagation():
         assert "Upstream error" in data["detail"]
 
     app.dependency_overrides.clear()
-
