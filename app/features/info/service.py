@@ -62,10 +62,6 @@ async def fetch_info(
 
     info: Mapping[str, Any] | None = await client.get_info(symbol)
 
-    if not info:
-        logger.error("info.fetch.no_data", extra={"symbol": symbol})
-        raise HTTPException(status_code=404, detail="No info data found for symbol")
-
     logger.info("info.fetch.success", extra={"symbol": symbol})
     result = _map_info(symbol, info)
 
