@@ -9,7 +9,8 @@ from fastapi import APIRouter, Depends
 
 from ...clients.interface import YFinanceClientInterface
 from ...common.validation import SymbolParam
-from ...dependencies import get_yfinance_client
+from ...dependencies import get_info_cache, get_yfinance_client
+from ...utils.cache.interface import CacheInterface
 from .models import InfoResponse
 from .service import fetch_info
 
@@ -62,7 +63,9 @@ router = APIRouter()
     },
 )
 async def get_info(
-    symbol: SymbolParam, client: Annotated[YFinanceClientInterface, Depends(get_yfinance_client)]
+    symbol: SymbolParam,
+    client: Annotated[YFinanceClientInterface, Depends(get_yfinance_client)],
+    info_cache: Annotated[CacheInterface, Depends(get_info_cache)],
 ) -> InfoResponse:
     """Get detailed information about a company for a given ticker symbol."""
-    return await fetch_info(symbol, client)
+    return await fetch_info(symbol, client, info_cache)

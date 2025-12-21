@@ -18,7 +18,6 @@ from ..quote.service import fetch_quote
 from .models import SnapshotResponse
 
 
-
 async def fetch_snapshot(
     symbol: str, client: YFinanceClientInterface, info_cache: CacheInterface | None = None
 ) -> SnapshotResponse:
@@ -42,24 +41,8 @@ async def fetch_snapshot(
     # Fetch info (possibly cached) and quote (always fresh) concurrently.
     # If either fails (raises HTTPException with 502), the exception propagates and the
     # entire endpoint returns 502, for consistent error semantics.
-    async def fetch_info_with_cache():
-        if not info_cache:
-            return await fetch_info(symbol,client)
-
-        cached = await info_cache.get(symbol)
-
-        if cached is not None:
-            return cached
-
-        info = await fetch_info(symbol, client)
-        try:
-            await info_cache.set(symbol, info)
-        except Exception:
-            logger.exception("snapshot.set.cache failed", extra={"symbol":symbol})
-        return info
-
     info, quote = await asyncio.gather(
-        fetch_info_with_cache(),
+        fetch_info(symbol, client, info_cache),
         fetch_quote(symbol, client),
     )
 
