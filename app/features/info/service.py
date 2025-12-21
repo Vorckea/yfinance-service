@@ -57,7 +57,7 @@ async def fetch_info(
     if info_cache:
         cached = await info_cache.get(symbol)
         if cached is not None:
-            logger.info(msg="info.fetch.cache.hit", extra={"symbol": symbol})
+            logger.info("info.fetch.cache.hit", extra={"symbol": symbol})
             return cached
 
     info: Mapping[str, Any] | None = await client.get_info(symbol)
