@@ -25,8 +25,9 @@ runs:
     - name: Set up environment variables
       shell: bash
       run: |
-        OWNER=$(echo "${{ github.repository }}" | tr '[:upper:]' '[:lower:]')
-        echo "IMAGE_NAME=ghcr.io/${OWNER}/${{ github.event.repository.name }}" >> $GITHUB_ENV
+        OWNER=$(echo "${{ github.repository_owner }}" | tr '[:upper:]' '[:lower:]')
+        REPO=$(echo "${{ github.event.repository.name }}" | tr '[:upper:]' '[:lower:]')
+        echo "IMAGE_NAME=ghcr.io/${OWNER}/${REPO}" >> $GITHUB_ENV
         echo "TAG=${{ inputs.release_tag }}" >> $GITHUB_ENV
     
     - name: Verify release tag is semver
