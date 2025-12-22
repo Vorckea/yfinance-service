@@ -1,6 +1,6 @@
 """Tests for historical data mapping."""
 
-from datetime import datetime
+from datetime import datetime, timezone
 
 import numpy as np
 import pandas as pd
@@ -46,6 +46,7 @@ def test_map_history_timezone_aware():
     assert len(result) == 1
     # timezone-aware index → only date returned
     assert result[0].date.isoformat() == "2024-01-01"
+    assert result[0].timestamp == datetime(2024, 1, 1, 15, 30, tzinfo=timezone.utc)
 
 
 def test_map_history_nan_volume_becomes_none():

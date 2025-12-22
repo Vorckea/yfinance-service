@@ -4,7 +4,7 @@ import asyncio
 from collections.abc import Callable
 from datetime import date
 from functools import lru_cache
-from typing import Any, TypeVar
+from typing import Any, TypeVar, Dict
 
 import pandas as pd
 import yfinance as yf
@@ -127,6 +127,106 @@ class YFinanceClient(YFinanceClientInterface):
             logger.info("yfinance.client.no_data", extra={"symbol": symbol, "op": "history"})
             raise HTTPException(status_code=404, detail=f"No data for {symbol}")
         return history
+
+    async def get_earnings(self, symbol: str, frequency: str = "quarterly") -> pd.DataFrame | None:
+        symbol = self._normalize(symbol)
+        ticker = self._get_ticker(symbol)
+
+        try:
+
+            if hasattr(ticker, "get_earnings"):
+                df = await self._fetch_data(
+                    "get_earnings",
+                    lambda: ticker.get_earnings(
+                        freq=frequency if frequency == "quarterly" else "annual"
+                    ),
+                    symbol,
+                )
+                if df is not None and (isinstance(df, pd.DataFrame) and not df.empty):
+                    return df
+
+            if hasattr(ticker, "earnings_dates"):
+                df2 = await self._fetch_data(
+                    "earnings_dates", lambda: ticker.earnings_dates, symbol
+                )
+                if df2 is not None and not df2.empty:
+
+                    df2 = df2.reset_index().rename(columns={"index": "earnings_date"})
+
+                    df2 = df2.set_index("earnings_date")
+                    return df2
+
+            if hasattr(ticker, "quarterly_earnings"):
+                q = await self._fetch_data(
+                    "quarterly_earnings", lambda: ticker.quarterly_earnings, symbol
+                )
+                if q is not None and isinstance(q, pd.DataFrame) and not q.empty:
+                    return q
+        except HTTPException:
+            raise
+        except Exception as e:
+            logger.warning(
+                "yfinance.client.earnings_try_failed", extra={"symbol": symbol, "error": str(e)}
+            )
+
+        try:
+            if frequency == "annual":
+                stmt = await self._fetch_data("income_stmt", lambda: ticker.income_stmt, symbol)
+            else:
+                stmt = await self._fetch_data(
+                    "quarterly_income_stmt", lambda: ticker.quarterly_income_stmt, symbol
+                )
+
+            if stmt is None or stmt.empty:
+                return None
+
+            df_stmt = stmt.T.copy()
+            df_stmt.index.name = "earnings_date"
+
+            return df_stmt
+        except HTTPException:
+            raise
+        except Exception as e:
+            logger.warning(
+                "yfinance.client.income_stmt_failed", extra={"symbol": symbol, "error": str(e)}
+            )
+            return None
+
+    async def get_income_statement(self, symbol: str, frequency: str) -> pd.DataFrame | None:
+        return await self.get_earnings(symbol, frequency)
+
+
+    async def get_calendar(self, symbol: str) -> Dict[str, Any]:
+        symbol = self._normalize(symbol)
+        ticker = self._get_ticker(symbol)
+
+        try:
+            calendar_data = await self._fetch_data(
+                op="calendar",
+                fetch_func=lambda: ticker.calendar,
+                symbol=symbol
+            )
+
+            if calendar_data is None:
+                logger.info("yfinance.client.no_data", extra={"symbol": symbol, "op": "calendar"})
+                raise HTTPException(status_code=404, detail=f"No calendar data for {symbol}")
+
+            if not isinstance(calendar_data, dict):
+                logger.warning(
+                    "yfinance.client.invalid_calendar_type",
+                    extra={"symbol": symbol, "type": type(calendar_data)},
+                )
+                raise HTTPException(status_code=502, detail="Malformed data from upstream")
+
+            return calendar_data
+
+        except HTTPException:
+            raise
+        except Exception as e:
+            logger.warning(
+                "yfinance.client.calendar_failed", extra={"symbol": symbol, "error": str(e)}
+            )
+            raise HTTPException(status_code=500, detail="Failed to fetch calendar data") from e
 
     async def ping(self) -> bool:
         """Check if the YFinance API is reachable.
