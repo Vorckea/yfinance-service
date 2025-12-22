@@ -4,9 +4,14 @@ on:
     workflow_dispatch:
         inputs:
             release_tag:
-                description: 'Release tag (e.g. 0.0.21)'
+                description: 'Docker image tag (e.g. 0.0.21 or v0.0.21)'
                 required: true
                 type: string
+            ref:
+                description: 'Git ref to build from (branch/tag/SHA). Leave empty to use tag from release_tag.'
+                required: false
+                type: string
+                default: ''
     pull_request:
         types: [closed]
         branches: [main]
@@ -60,7 +65,7 @@ jobs:
           - name: Checkout code
             uses: actions/checkout@v6
             with:
-              ref: ${{ github.event_name == 'workflow_dispatch' && format('refs/tags/{0}', inputs.release_tag) || github.ref }}
+              ref: ${{ github.event_name == 'workflow_dispatch' && (inputs.ref || format('refs/tags/{0}', inputs.release_tag)) || github.ref }}
 
           - name: Build and Push Docker Image
             id: build_and_push
