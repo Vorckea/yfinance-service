@@ -28,7 +28,7 @@ async def lifespan(app: FastAPI):
         contact_email = app.contact.get("email")
     BUILD_INFO.info(
         {
-            "version": "0.0.20",
+            "version": "0.0.21",
             "python_version": sys.version.split()[0],
             "contact_name": contact_name or "unknown",
             "contact_email": contact_email or "unknown",
