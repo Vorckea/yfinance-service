@@ -5,8 +5,6 @@ Backlog TODOs inline mark potential improvements (caching, resiliency, data qual
 
 from typing import Any, Mapping
 
-from fastapi import HTTPException
-
 from ...clients.interface import YFinanceClientInterface
 from ...utils.cache.interface import CacheInterface
 from ...utils.logger import logger
@@ -60,10 +58,11 @@ async def fetch_info(
             logger.info("info.fetch.cache.hit", extra={"symbol": symbol})
             return cached
 
-    info: Mapping[str, Any] | None = await client.get_info(symbol)
+    info: Mapping[str, Any] = await client.get_info(symbol)
 
     logger.info("info.fetch.success", extra={"symbol": symbol})
-    result = _map_info(symbol, info)
+
+    result = InfoResponse.model_validate({"symbol": symbol, **info})
 
     if info_cache:
         try:

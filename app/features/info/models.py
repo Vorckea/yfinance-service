@@ -1,12 +1,18 @@
 """Models for stock information responses."""
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import AliasGenerator, BaseModel, ConfigDict, Field
+from pydantic.alias_generators import to_camel
 
 
 class InfoResponse(BaseModel):
     """Model for storing information about the application."""
 
-    model_config = ConfigDict(frozen=True, extra="ignore")
+    model_config = ConfigDict(
+        frozen=True,
+        extra="ignore",
+        alias_generator=AliasGenerator(validation_alias=to_camel),
+        populate_by_name=True,
+    )
 
     symbol: str = Field(..., description="Ticker symbol (e.g., AAPL)")
     short_name: str | None = Field(None, description="Short company name")
@@ -16,7 +22,11 @@ class InfoResponse(BaseModel):
     industry: str | None = Field(None, description="Company industry")
     country: str | None = Field(None, description="Country of the company")
     website: str | None = Field(None, description="Company website")
-    description: str | None = Field(None, description="Business summary")
+    description: str | None = Field(
+        None,
+        description="Business summary",
+        validation_alias="longBusinessSummary",
+    )
     market_cap: int | None = Field(None, description="Market capitalization")
     shares_outstanding: int | None = Field(None, description="Shares outstanding")
     dividend_yield: float | None = Field(None, description="Dividend yield")
@@ -25,5 +35,5 @@ class InfoResponse(BaseModel):
     current_price: float | None = Field(None, description="Current market price")
     trailing_pe: float | None = Field(None, description="Trailing P/E ratio")
     beta: float | None = Field(None, description="Beta value")
-    address: str | None = Field(None, description="Company address")
+    address: str | None = Field(None, description="Company address", validation_alias="address1")
     currency: str | None = Field(None, description="Currency of the stock")
