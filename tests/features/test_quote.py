@@ -67,7 +67,7 @@ async def test_fetch_quote_upstream_empty():
     with pytest.raises(HTTPException) as exc:
         await fetch_quote("AAPL", client)
     assert exc.value.status_code == 502
-    assert "No data from upstream" in exc.value.detail  # change expected string
+    assert "Upstream data is empty" in exc.value.detail
 
 
 @pytest.mark.asyncio
@@ -78,7 +78,7 @@ async def test_fetch_quote_missing_required_fields():
     with pytest.raises(HTTPException) as exc:
         await fetch_quote("AAPL", client)
     assert exc.value.status_code == 502
-    assert "Missing required fields" in exc.value.detail
+    assert "Malformed quote data" in exc.value.detail
     assert "AAPL" in exc.value.detail
 
 
@@ -96,7 +96,7 @@ async def test_fetch_quote_malformed_numbers():
     with pytest.raises(HTTPException) as exc:
         await fetch_quote("AAPL", client)
     assert exc.value.status_code == 502
-    assert "Malformed numeric data" in exc.value.detail
+    assert "Malformed quote data" in exc.value.detail
 
 
 @pytest.mark.asyncio
