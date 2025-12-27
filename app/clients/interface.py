@@ -12,7 +12,7 @@ class YFinanceClientInterface(ABC):
     """Interface for a client that interacts with the Yahoo Finance API."""
 
     @abstractmethod
-    async def get_info(self, symbol: str) -> Mapping[str, Any] | None:
+    async def get_info(self, symbol: str) -> Mapping[str, Any]:
         """Fetch information about a specific stock."""
         pass
 
@@ -25,8 +25,7 @@ class YFinanceClientInterface(ABC):
 
     @abstractmethod
     async def get_earnings(self, symbol: str, frequency: str = "quarterly") -> Any:
-        """
-        Fetch earnings-like data for a specific stock.
+        """Fetch earnings-like data for a specific stock.
 
         Should return either:
          - a pandas.DataFrame (index = dates) with columns like:
@@ -45,6 +44,7 @@ class YFinanceClientInterface(ABC):
 
         Returns:
             A DataFrame or Mapping with earnings rows.
+
         """
         pass
 

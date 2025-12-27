@@ -65,7 +65,7 @@ class YFinanceClient(YFinanceClientInterface):
     def _normalize(self, symbol: str) -> str:
         return (symbol or "").upper().strip()
 
-    async def get_info(self, symbol: str) -> YFinanceData | None:
+    async def get_info(self, symbol: str) -> YFinanceData:
         """Fetch information about a specific stock.
 
         Args:
