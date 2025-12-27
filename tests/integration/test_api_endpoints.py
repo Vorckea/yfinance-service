@@ -4,7 +4,7 @@ import pytest
 from app.dependencies import get_info_cache, get_yfinance_client
 from app.main import app
 from app.utils.cache import TTLCache
-from tests.clients.fake_client import FakeYFinanceClient
+from tests.unit.clients.fake_client import FakeYFinanceClient
 
 
 @pytest.mark.asyncio
