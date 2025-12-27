@@ -12,10 +12,12 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from ...clients.interface import YFinanceClientInterface
 from ...common.validation import SymbolParam
 from ...dependencies import get_yfinance_client
+from ...settings import get_settings
 from .models import QuoteResponse, SymbolErrorModel
 from .service import fetch_quote
 
 router = APIRouter()
+settings = get_settings()
 
 
 @router.get(
@@ -57,7 +59,7 @@ async def get_quote(
     return await fetch_quote(symbol, client)
 
 
-MAX_CONCURRENCY = 10
+MAX_CONCURRENCY = settings.max_bulk_concurrency
 
 
 @router.get(
