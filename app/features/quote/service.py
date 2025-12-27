@@ -12,13 +12,6 @@ from .models import QuoteResponse
 Info = Mapping[str, Any]
 
 
-def _ensure_info_present(info: Info | None, symbol: str) -> Info:
-    if not info:
-        logger.warning("quote.fetch.no_upstream_data", extra={"symbol": symbol})
-        raise HTTPException(status_code=502, detail="No data from upstream")
-    return info
-
-
 async def fetch_quote(symbol: str, client: YFinanceClientInterface) -> QuoteResponse:
     """Fetch stock quote information.
 
@@ -40,12 +33,10 @@ async def fetch_quote(symbol: str, client: YFinanceClientInterface) -> QuoteResp
     logger.info("quote.fetch.start", extra={"symbol": symbol})
 
     info = await client.get_info(symbol)
-    info = _ensure_info_present(info, symbol)
 
-    # Additional guard: fail if info is empty or all fields are None
-    if not any(info.values()):
-        logger.warning("quote.fetch.empty_upstream_data", extra={"symbol": symbol})
-        raise HTTPException(status_code=502, detail="Upstream data is empty")
+    if not info:
+        logger.info("quote.fetch.no_data", extra={"symbol": symbol})
+        raise HTTPException(status_code=502, detail="No data from upstream")
 
     try:
         mapped = QuoteResponse.model_validate({"symbol": symbol, **dict(info)})

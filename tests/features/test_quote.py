@@ -67,7 +67,7 @@ async def test_fetch_quote_upstream_empty():
     with pytest.raises(HTTPException) as exc:
         await fetch_quote("AAPL", client)
     assert exc.value.status_code == 502
-    assert "Upstream data is empty" in exc.value.detail
+    assert "No data from upstream" in exc.value.detail
 
 
 @pytest.mark.asyncio
