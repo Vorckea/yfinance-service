@@ -83,12 +83,17 @@ Relevant files:
 ### Environment Variables
 
 | Variable | Description | Default | Example |
-|----------|-------------|---------|---------|
-| `MAX_BULK_CONCURRENCY` | Max concurrent requests for bulk quote endpoint | 10 | `MAX_BULK_CONCURRENCY=20` |
-| `EARNINGS_CACHE_TTL` | Cache TTL for earnings data in seconds (0 = disable) | 3600 | `EARNINGS_CACHE_TTL=1800` |
+|---|---|----|---|
+| `LOG_LEVEL` | Logging level (CRITICAL/ERROR/WARNING/INFO/DEBUG/NOTSET) | `INFO` | `LOG_LEVEL=DEBUG` |
+| `MAX_BULK_CONCURRENCY` | Max concurrent requests for bulk quote endpoint | `10` | `MAX_BULK_CONCURRENCY=20` |
+| `EARNINGS_CACHE_TTL` | Cache TTL for earnings data in seconds (0 = disable caching) | `3600` | `EARNINGS_CACHE_TTL=1800` |
+| `EARNINGS_CACHE_MAXSIZE` | Max entries for earnings cache | `128` | `EARNINGS_CACHE_MAXSIZE=256` |
+| `INFO_CACHE_TTL` | Cache TTL for company info (seconds) | `300` | `INFO_CACHE_TTL=300` |
+| `INFO_CACHE_MAXSIZE` | Max entries for info cache | `256` | `INFO_CACHE_MAXSIZE=512` |
 
 ### Examples
 
+Running natively (example)
 ```bash
 # Increase bulk quote concurrency to 20
 MAX_BULK_CONCURRENCY=20 poetry run uvicorn app.main:app
@@ -98,6 +103,72 @@ EARNINGS_CACHE_TTL=0 poetry run uvicorn app.main:app
 
 # Reduce earnings cache to 30 minutes
 EARNINGS_CACHE_TTL=1800 poetry run uvicorn app.main:app
+```
+
+Docker compose (example)
+```yaml
+services:
+  yfinance-service:
+    build: .
+    image: ghcr.io/vorckea/yfinance-service:latest
+    env_file: .env       # local use only; do not commit secrets to repo
+    environment:
+      - LOG_LEVEL=INFO
+      - MAX_BULK_CONCURRENCY=10
+      - EARNINGS_CACHE_TTL=3600
+    ports:
+      - "8000:8000"
+```
+
+Kubernetes (example)
+```yaml
+# configmap.yaml (non-sensitive configuration)
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: yfinance-config
+data:
+  LOG_LEVEL: "INFO"
+  MAX_BULK_CONCURRENCY: "10"
+  EARNINGS_CACHE_TTL: "3600"
+
+# deployment.yaml (connects ConfigMap as env vars and uses a Secret for sensitive values)
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: yfinance-service
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: yfinance-service
+  template:
+    metadata:
+      labels:
+        app: yfinance-service
+    spec:
+      containers:
+        - name: yfinance-service
+          image: ghcr.io/vorckea/yfinance-service:latest
+          ports:
+            - containerPort: 8000
+          envFrom:
+            - configMapRef:
+                name: yfinance-config
+            # - secretRef:   # Example for sensitive values
+            #     name: yfinance-secret
+          readinessProbe:
+            httpGet:
+              path: /ready
+              port: 8000
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8000
+            initialDelaySeconds: 15
+            periodSeconds: 20
 ```
 
 ## Usage Example
