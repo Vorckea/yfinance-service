@@ -7,6 +7,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI, Response
 from prometheus_client import CONTENT_TYPE_LATEST, generate_latest
 
+from app.dependencies import get_settings
 from app.features.earnings.router import router as earnings_router
 from app.features.health.router import router as health_router
 from app.features.historical.router import router as historical_router
@@ -15,11 +16,15 @@ from app.features.quote.router import router as quote_router
 from app.features.snapshot.router import router as snapshot_router
 from app.monitoring.http_middleware import http_metrics_middleware
 from app.monitoring.metrics import BUILD_INFO, SERVICE_UPTIME
+from app.utils.logger import configure_logging
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Lifespan context manager to initialize application state."""
+    # Set up logging from settings
+    configure_logging(get_settings())
+
     app.state.start_time = time.time()
     contact_name = None
     contact_email = None
