@@ -9,7 +9,7 @@ logger = logging.getLogger("yfinance-service")
 
 def configure_logging(settings: Settings) -> None:
     """Configure root service logger using runtime settings."""
-    level = settings.log_level
+    level = settings.log_level.value
 
     cfg = {
         "version": 1,
