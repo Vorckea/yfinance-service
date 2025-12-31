@@ -10,7 +10,7 @@ SymbolParam = Annotated[
     str,
     Path(
         ...,
-        description="Ticker symbol (1-10 alphanumeric, may include . or -)",
+        description="Ticker symbol (1-20 alphanumeric, may include . = or -)",
         examples="AAPL",
         pattern=SYMBOL_REGEX,
         min_length=1,
