@@ -4,7 +4,7 @@ Backlog TODOs inline track pagination, validation, and rate limiting improvement
 """
 
 from datetime import date
-from typing import Annotated, Literal
+from typing import Annotated, Literal, get_args
 
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.params import Query
@@ -17,7 +17,7 @@ from .service import fetch_historical
 
 router = APIRouter()
 
-ALLOWED_INTERVALS = (
+ALLOWED_INTERVALS = Literal[
     "1m",
     "2m",
     "5m",
@@ -30,7 +30,7 @@ ALLOWED_INTERVALS = (
     "1wk",
     "1mo",
     "3mo",
-)
+]
 
 
 @router.get(
@@ -93,9 +93,9 @@ async def get_historical(
         description="End date (YYYY-MM-DD)",
         examples={"default": {"summary": "End date", "value": "2023-12-31"}},
     ),
-    interval: Literal["1h", "1d", "1wk", "1mo"] = Query(
+    interval: ALLOWED_INTERVALS = Query(
         "1d",
-        description='Data aggregation interval ("1h", "1d", "1wk", "1mo")',
+        description=f"Data aggregation interval. Allowed: {', '.join(get_args(ALLOWED_INTERVALS))}",
         examples={"default": {"summary": "Interval", "value": "1d"}},
     ),
 ) -> HistoricalResponse:
@@ -106,9 +106,5 @@ async def get_historical(
     if start and end and start > end:
         raise HTTPException(status_code=400, detail="start must be before or equal to end")
 
-    if interval not in ALLOWED_INTERVALS:
-        raise HTTPException(
-            status_code=400,
-            detail=f"Unsupported interval '{interval}'. Allowed: {', '.join(ALLOWED_INTERVALS)}",
-        )
+    # `interval` is validated by Pydantic/FastAPI via the `ALLOWED_INTERVALS_LITERAL` type alias.
     return await fetch_historical(symbol, start, end, client, interval=interval)
