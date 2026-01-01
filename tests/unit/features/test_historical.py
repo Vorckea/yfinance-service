@@ -10,6 +10,7 @@ INVALID_SYMBOLS = "!!!"
 NOT_FOUND_SYMBOL = "ZZZZZZZZZZ"
 TIMESTAMP = "2024-08-01T00:00:00Z"
 
+
 def test_historical_valid_symbol(client, mock_yfinance_client):
     """Test case for a valid symbol."""
     mock_yfinance_client.get_history.return_value = pd.DataFrame(
@@ -67,7 +68,7 @@ async def test_historical_interval_valid(client: AsyncClient, interval: str):
 
 
 @pytest.mark.asyncio
-@pytest.mark.parametrize("interval", ["5min", "2h", "3mo", "xyz"])
+@pytest.mark.parametrize("interval", ["5min", "2h", "xyz", "10d"])
 async def test_historical_interval_invalid(client: AsyncClient, interval: str):
     """Test invalid aggregation intervals for /historical endpoint."""
     resp = client.get("/historical/AAPL", params={"interval": interval})
