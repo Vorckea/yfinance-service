@@ -1,22 +1,34 @@
 """Logger configuration for the yfinance-service application."""
 
-import logging
-from typing import Any
+import logging.config
 
 from ..settings import Settings
 
 logger = logging.getLogger("yfinance-service")
 
 
-def configure_logging(settings: Settings | Any) -> None:
+def configure_logging(settings: Settings) -> None:
     """Configure root service logger using runtime settings."""
-    log_level = getattr(settings, "log_level", "INFO")
-    logger.setLevel(getattr(logging, log_level, logging.INFO))
+    level = settings.log_level.value
 
-    if not logger.hasHandlers():
-        handler = logging.StreamHandler()
-        formatter = logging.Formatter(
-            "%(asctime)s %(levelname)s %(name)s %(message)s [%(pathname)s:%(lineno)d]"
-        )
-        handler.setFormatter(formatter)
-        logger.addHandler(handler)
+    cfg = {
+        "version": 1,
+        "disable_existing_loggers": False,
+        "formatters": {
+            "default": {
+                "format": "%(asctime)s %(levelname)s %(name)s %(message)s [%(pathname)s:%(lineno)d]",
+            },
+        },
+        "handlers": {
+            "console": {
+                "class": "logging.StreamHandler",
+                "formatter": "default",
+                "level": level,
+            },
+        },
+        "root": {
+            "handlers": ["console"],
+            "level": level,
+        },
+    }
+    logging.config.dictConfig(cfg)
