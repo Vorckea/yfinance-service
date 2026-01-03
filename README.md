@@ -90,6 +90,8 @@ Relevant files:
 | `EARNINGS_CACHE_MAXSIZE` | Max entries for earnings cache | `128` | `EARNINGS_CACHE_MAXSIZE=256` |
 | `INFO_CACHE_TTL` | Cache TTL for company info (seconds) | `300` | `INFO_CACHE_TTL=300` |
 | `INFO_CACHE_MAXSIZE` | Max entries for info cache | `256` | `INFO_CACHE_MAXSIZE=512` |
+| `CORS_ENABLED` | Enable CORS | `False` | `CORS_ENABLED=True` |
+| `CORS_ALLOWED_ORIGINS` | Allowed origins (comma-separated list) | `*` (Any) | `CORS_ALLOWED_ORIGINS="https://example.org,https://www.example.org"` |
 
 ### Examples
 

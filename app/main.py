@@ -60,6 +60,17 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
+settings = get_settings()
+if settings.cors_enabled:
+    from fastapi.middleware.cors import CORSMiddleware
+
+    app.add_middleware(
+        middleware_class=CORSMiddleware,
+        allow_origins=settings.cors_allowed_origins,
+        allow_methods=["*"],
+        allow_headers=["*"],
+    )
+
 # Unified logging + metrics middleware
 app.middleware("http")(http_metrics_middleware)
 
