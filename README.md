@@ -28,6 +28,7 @@
 | **Info API**           | Get company fundamentals (sector, market cap, etc.).    |
 | **Earnings API**       | Retrieve normalized earnings history with EPS, revenue, and surprise data.    |
 | **Snapshot API**       | Combined info + quote in a single request with caching. |
+| **Splits API**         |	Retrieve historical stock split data (dates and ratios) for ticker symbols.  |
 | **Health Check**       | `/health` and `/ready` endpoints for liveness & readiness probes. |
 | **Prometheus Metrics** | `/metrics` endpoint for request count, errors, latency, cache stats. |
 
@@ -44,6 +45,7 @@
 | `GET /earnings/{symbol}?frequency={period}`        | Earnings history (EPS, revenue, surprise) | `/earnings/AAPL?frequency=quarterly` |
 | `GET /snapshot/{symbol}`                                   | Combined info + quote     | `/snapshot/AAPL`                                   |
 | `GET /ready`                                               | Readiness check (yfinance connectivity) | `/ready`                             |
+| `GET /splits/{symbol}	`                                    | List of stock splits (date and ratio) for the given symbol  | `/splits/AAPL`   |
 
 ## Quick Start
 
