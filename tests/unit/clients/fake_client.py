@@ -109,3 +109,9 @@ class FakeYFinanceClient(YFinanceClientInterface):
     async def ping(self) -> bool:
         """Return True to indicate the fake client is always available."""
         return True
+
+    async def get_splits(self, symbol: str) -> pd.Series:
+        """Deterministic fake implementation of the new splits method."""
+        import pandas as pd
+        # Providing a default empty series prevents integration tests from crashing
+        return pd.Series(dtype=float)

@@ -94,6 +94,7 @@ Relevant files:
 | `INFO_CACHE_MAXSIZE` | Max entries for info cache | `256` | `INFO_CACHE_MAXSIZE=512` |
 | `CORS_ENABLED` | Enable CORS | `False` | `CORS_ENABLED=True` |
 | `CORS_ALLOWED_ORIGINS` | Allowed origins (comma-separated list) | `*` (Any) | `CORS_ALLOWED_ORIGINS="https://example.org,https://www.example.org"` |
+| `SPLITS_CACHE_TTL` |Time-to-live (in seconds) for the stock splits cache| `3600` | `SPLITS_CACHE_TTL=1800` |
 
 ### Examples
 

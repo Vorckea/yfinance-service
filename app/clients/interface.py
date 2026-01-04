@@ -57,3 +57,8 @@ class YFinanceClientInterface(ABC):
     async def ping(self) -> bool:
         """Check if the client is working."""
         pass
+
+    @abstractmethod
+    async def get_splits(self, symbol: str) -> pd.Series:
+        """Fetch historical stock splits for a specific stock."""
+        pass

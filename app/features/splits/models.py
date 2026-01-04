@@ -1,9 +1,5 @@
 from pydantic import BaseModel, Field
 
 class StockSplit(BaseModel):
-    date: str
-    ratio: float
-
-class SplitsRequest(BaseModel):
-    # This regex ensures the symbol is 1-5 uppercase letters
-    symbol: str = Field(..., pattern=r"^[A-Z]{1,5}$")
+    date: str = Field(..., description="The date of the stock split")
+    ratio: float = Field(..., description="The split ratio (e.g., 2.0 for a 2-for-1 split)")
