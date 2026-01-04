@@ -11,7 +11,8 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 
 from ...clients.interface import YFinanceClientInterface
 from ...common.validation import SymbolParam
-from ...dependencies import get_yfinance_client
+from ...dependencies import get_settings, get_yfinance_client
+from ...settings import Settings
 from .models import QuoteResponse, SymbolErrorModel
 from .service import fetch_quote
 
@@ -51,13 +52,12 @@ router = APIRouter()
     },
 )
 async def get_quote(
-    symbol: SymbolParam, client: Annotated[YFinanceClientInterface, Depends(get_yfinance_client)]
+    symbol: SymbolParam,
+    client: Annotated[YFinanceClientInterface, Depends(get_yfinance_client)],
+    settings: Annotated[Settings, Depends(get_settings)],
 ) -> QuoteResponse:
     """Get the latest market quote for a given ticker symbol."""
     return await fetch_quote(symbol, client)
-
-
-MAX_CONCURRENCY = 10
 
 
 @router.get(
@@ -71,6 +71,7 @@ MAX_CONCURRENCY = 10
 async def get_quotes(
     symbols: Annotated[str, Query(..., description="Comma-separated list of ticker symbols")],
     client: Annotated[YFinanceClientInterface, Depends(get_yfinance_client)],
+    settings: Annotated[Settings, Depends(get_settings)],
 ) -> Dict[str, Union[QuoteResponse, SymbolErrorModel]]:
     """Fetch latest quotes for multiple symbols in a single request.
 
@@ -80,6 +81,8 @@ async def get_quotes(
     - The route returns HTTP 200 regardless of per-symbol failures; individual failures are reported
     per-symbol.
     """
+    MAX_CONCURRENCY = settings.max_bulk_concurrency
+
     # Early guard for empty/whitespace-only param
     if not symbols or not symbols.strip():
         raise HTTPException(status_code=400, detail="Empty symbols list")

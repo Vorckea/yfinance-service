@@ -1,6 +1,17 @@
 name: CD Pipeline
 
 on:
+    workflow_dispatch:
+        inputs:
+            release_tag:
+                description: 'Docker image tag (e.g. 0.0.21 or v0.0.21)'
+                required: true
+                type: string
+            ref:
+                description: 'Git ref to build from (branch/tag/SHA). Leave empty to use tag from release_tag.'
+                required: false
+                type: string
+                default: ''
     pull_request:
         types: [closed]
         branches: [main]
@@ -18,6 +29,7 @@ jobs:
     tag-and-release:
       runs-on: ubuntu-latest
       if: >
+          github.event_name == 'pull_request' &&
           github.event.pull_request.merged == true &&
             (
               startsWith(github.event.pull_request.head.ref, 'release/') ||
@@ -42,6 +54,7 @@ jobs:
 
     build-and-push:
         needs: tag-and-release
+        if: always() && (needs.tag-and-release.result == 'success' || github.event_name == 'workflow_dispatch')
         runs-on: ubuntu-latest
         permissions:
           contents: read
@@ -51,11 +64,13 @@ jobs:
         steps:
           - name: Checkout code
             uses: actions/checkout@v6
+            with:
+              ref: ${{ github.event_name == 'workflow_dispatch' && (inputs.ref || format('refs/tags/{0}', inputs.release_tag)) || github.ref }}
 
           - name: Build and Push Docker Image
             id: build_and_push
             uses: ./.github/actions/deploy
             with:
-                release_tag: ${{ needs.tag-and-release.outputs.release_tag }}
-                release_name: ${{ needs.tag-and-release.outputs.release_name }}
+                release_tag: ${{ github.event_name == 'workflow_dispatch' && inputs.release_tag || needs.tag-and-release.outputs.release_tag }}
+                release_name: ${{ github.event_name == 'workflow_dispatch' && inputs.release_tag || needs.tag-and-release.outputs.release_name }}
                 github_token: ${{ secrets.GITHUB_TOKEN }}

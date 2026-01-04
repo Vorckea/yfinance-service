@@ -8,7 +8,7 @@ from fastapi.testclient import TestClient
 from app.dependencies import get_info_cache, get_yfinance_client
 from app.main import app
 from app.utils.cache import SnapshotCache, TTLCache
-from tests.clients.fake_client import FakeYFinanceClient
+from tests.unit.clients.fake_client import FakeYFinanceClient
 
 
 @pytest.fixture(scope="function")
@@ -72,7 +72,7 @@ def pytest_runtest_setup(item):
         # Override FastAPI dependency before the test runs
         from app.dependencies import get_info_cache, get_yfinance_client
         from app.main import app
-        from tests.clients.fake_client import FakeYFinanceClient
+        from tests.unit.clients.fake_client import FakeYFinanceClient
 
         app.dependency_overrides[get_yfinance_client] = lambda: FakeYFinanceClient()
         app.dependency_overrides[get_info_cache] = lambda: TTLCache(size=32, ttl=300)

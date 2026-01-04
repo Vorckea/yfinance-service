@@ -7,6 +7,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI, Response
 from prometheus_client import CONTENT_TYPE_LATEST, generate_latest
 
+from app.dependencies import get_settings
 from app.features.earnings.router import router as earnings_router
 from app.features.health.router import router as health_router
 from app.features.historical.router import router as historical_router
@@ -15,11 +16,15 @@ from app.features.quote.router import router as quote_router
 from app.features.snapshot.router import router as snapshot_router
 from app.monitoring.http_middleware import http_metrics_middleware
 from app.monitoring.metrics import BUILD_INFO, SERVICE_UPTIME
+from app.utils.logger import configure_logging
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Lifespan context manager to initialize application state."""
+    # Set up logging from settings
+    configure_logging(get_settings())
+
     app.state.start_time = time.time()
     contact_name = None
     contact_email = None
@@ -28,7 +33,7 @@ async def lifespan(app: FastAPI):
         contact_email = app.contact.get("email")
     BUILD_INFO.info(
         {
-            "version": "0.0.21",
+            "version": "0.0.22",
             "python_version": sys.version.split()[0],
             "contact_name": contact_name or "unknown",
             "contact_email": contact_email or "unknown",
@@ -39,7 +44,7 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(
     title="YFinance Proxy Service",
-    version="0.0.18",
+    version="0.0.22",
     description=(
         "A FastAPI proxy for yfinance. Provides endpoints to fetch stock quotes and "
         "historical data."
@@ -54,6 +59,17 @@ app = FastAPI(
     },
     lifespan=lifespan,
 )
+
+settings = get_settings()
+if settings.cors_enabled:
+    from fastapi.middleware.cors import CORSMiddleware
+
+    app.add_middleware(
+        middleware_class=CORSMiddleware,
+        allow_origins=settings.cors_allowed_origins,
+        allow_methods=["*"],
+        allow_headers=["*"],
+    )
 
 # Unified logging + metrics middleware
 app.middleware("http")(http_metrics_middleware)

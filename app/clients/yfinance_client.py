@@ -4,7 +4,7 @@ import asyncio
 from collections.abc import Callable
 from datetime import date
 from functools import lru_cache
-from typing import Any, TypeVar, Dict
+from typing import Any, Dict, TypeVar
 
 import pandas as pd
 import yfinance as yf
@@ -65,7 +65,7 @@ class YFinanceClient(YFinanceClientInterface):
     def _normalize(self, symbol: str) -> str:
         return (symbol or "").upper().strip()
 
-    async def get_info(self, symbol: str) -> YFinanceData | None:
+    async def get_info(self, symbol: str) -> YFinanceData:
         """Fetch information about a specific stock.
 
         Args:
@@ -133,7 +133,6 @@ class YFinanceClient(YFinanceClientInterface):
         ticker = self._get_ticker(symbol)
 
         try:
-
             if hasattr(ticker, "get_earnings"):
                 df = await self._fetch_data(
                     "get_earnings",
@@ -150,7 +149,6 @@ class YFinanceClient(YFinanceClientInterface):
                     "earnings_dates", lambda: ticker.earnings_dates, symbol
                 )
                 if df2 is not None and not df2.empty:
-
                     df2 = df2.reset_index().rename(columns={"index": "earnings_date"})
 
                     df2 = df2.set_index("earnings_date")
@@ -195,7 +193,6 @@ class YFinanceClient(YFinanceClientInterface):
     async def get_income_statement(self, symbol: str, frequency: str) -> pd.DataFrame | None:
         return await self.get_earnings(symbol, frequency)
 
-
     async def get_calendar(self, symbol: str) -> Dict[str, Any]:
         symbol = self._normalize(symbol)
         ticker = self._get_ticker(symbol)
@@ -204,7 +201,7 @@ class YFinanceClient(YFinanceClientInterface):
             calendar_data = await self._fetch_data(
                 op="calendar",
                 fetch_func=lambda: ticker.calendar,
-                symbol=symbol
+                symbol=symbol,
             )
 
             if calendar_data is None:

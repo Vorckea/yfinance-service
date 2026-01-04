@@ -25,8 +25,9 @@ runs:
     - name: Set up environment variables
       shell: bash
       run: |
-        OWNER=$(echo "${{ github.repository }}" | tr '[:upper:]' '[:lower:]')
-        echo "IMAGE_NAME=ghcr.io/${OWNER}/${{ github.event.repository.name }}" >> $GITHUB_ENV
+        OWNER=$(echo "${{ github.repository_owner }}" | tr '[:upper:]' '[:lower:]')
+        REPO=$(echo "${{ github.event.repository.name }}" | tr '[:upper:]' '[:lower:]')
+        echo "IMAGE_NAME=ghcr.io/${OWNER}/${REPO}" >> $GITHUB_ENV
         echo "TAG=${{ inputs.release_tag }}" >> $GITHUB_ENV
     
     - name: Verify release tag is semver
@@ -88,8 +89,12 @@ runs:
         tags: ${{ steps.extract_version.outputs.tags }}
         cache-from: type=gha
         cache-to: type=gha,mode=max
-
-    - name: Generate SBOM
+        sbom: true
+        provenance: mode=max
+        
+    # SBOM & Provenance are attached to the image via BuildKit (sbom: true, provenance: mode=max)
+    # Generate a downloadable copy of the SBOM as a workflow artifact
+    - name: Generate SBOM artifact
       uses: anchore/sbom-action@v0
       with:
         image: ${{ env.IMAGE_NAME }}@${{ steps.push.outputs.digest }}
@@ -101,13 +106,6 @@ runs:
       with:
         name: sbom-cyclonedx
         path: sbom.cyclonedx.json
-
-    - name: Generate artifact attestation
-      uses: actions/attest-build-provenance@v3
-      with:
-        subject-name: ${{ env.IMAGE_NAME }}
-        subject-digest: ${{ steps.push.outputs.digest }}
-        push-to-registry: true
 
     - name: Scan image with Trivy (vuln check)
       uses: aquasecurity/trivy-action@0.33.1
