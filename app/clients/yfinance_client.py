@@ -247,8 +247,11 @@ class YFinanceClient(YFinanceClientInterface):
         
         splits = await self._fetch_data("splits", lambda: ticker.splits, symbol)
         
-        if splits is None:
-            logger.info("yfinance.client.no_data", extra={"symbol": symbol, "op": "splits"})
-            return pd.Series(dtype=float)
+        if splits is None or splits.empty:
+            logger.info("yfinance.client.no_data", extra={"symbol": symbol})
+            raise HTTPException(
+                status_code=404, 
+                detail=f"No split data found for symbol: {symbol}"
+            )
             
         return splits

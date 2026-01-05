@@ -111,7 +111,7 @@ class FakeYFinanceClient(YFinanceClientInterface):
         return True
 
     async def get_splits(self, symbol: str) -> pd.Series:
-        """Deterministic fake implementation of the new splits method."""
+        """Deterministic fake implementation of the get_splits method."""
         import pandas as pd
         # Providing a default empty series prevents integration tests from crashing
         return pd.Series(dtype=float)
