@@ -92,6 +92,35 @@ Relevant files:
 | `INFO_CACHE_MAXSIZE` | Max entries for info cache | `256` | `INFO_CACHE_MAXSIZE=512` |
 | `CORS_ENABLED` | Enable CORS | `False` | `CORS_ENABLED=True` |
 | `CORS_ALLOWED_ORIGINS` | Allowed origins (comma-separated list) | `*` (Any) | `CORS_ALLOWED_ORIGINS="https://example.org,https://www.example.org"` |
+| `API_KEY_ENABLED` | Enable API key authentication | `False` | `API_KEY_ENABLED=True` |
+| `API_KEY` | API key for authentication (required if enabled) | `""` | `API_KEY=your-secret-key-here` |
+
+### API Key Authentication
+
+Optionally protect endpoints with API key authentication:
+
+```bash
+# Enable authentication
+API_KEY_ENABLED=true
+API_KEY=your-secret-key-here
+```
+
+**Usage:**
+```bash
+# Include API key in X-API-Key header
+curl -H "X-API-Key: your-secret-key-here" http://localhost:8000/quote/AAPL
+```
+**Protected endpoints:**
+- `/quote/*` - Stock quotes
+- `/historical/*` - Historical data
+- `/info/*` - Company information
+- `/snapshot/*` - Combined snapshots
+- `/earnings/*` - Earnings data
+
+**Unprotected endpoints:**
+- `/health`, `/ready` - Health checks
+- `/metrics` - Prometheus metrics
+- `/docs`, `/redoc` - API documentation
 
 ### Examples
 
@@ -105,6 +134,9 @@ EARNINGS_CACHE_TTL=0 poetry run uvicorn app.main:app
 
 # Reduce earnings cache to 30 minutes
 EARNINGS_CACHE_TTL=1800 poetry run uvicorn app.main:app
+
+# Enable API key authentication
+API_KEY_ENABLED=true API_KEY=my-secret-key poetry run uvicorn app.main:app
 ```
 
 Docker compose (example)
@@ -118,12 +150,23 @@ services:
       - LOG_LEVEL=INFO
       - MAX_BULK_CONCURRENCY=10
       - EARNINGS_CACHE_TTL=3600
+      - API_KEY_ENABLED=true
+      - API_KEY=${API_KEY}  # Load from .env file or environment
     ports:
       - "8000:8000"
 ```
 
 Kubernetes (example)
 ```yaml
+# secret.yaml (sensitive values like API keys)
+apiVersion: v1
+kind: Secret
+metadata:
+  name: yfinance-secret
+type: Opaque
+stringData:
+  API_KEY: "your-secret-key-here"
+
 # configmap.yaml (non-sensitive configuration)
 apiVersion: v1
 kind: ConfigMap
@@ -133,6 +176,7 @@ data:
   LOG_LEVEL: "INFO"
   MAX_BULK_CONCURRENCY: "10"
   EARNINGS_CACHE_TTL: "3600"
+  API_KEY_ENABLED: "true"
 
 # deployment.yaml (connects ConfigMap as env vars and uses a Secret for sensitive values)
 apiVersion: apps/v1
@@ -157,8 +201,8 @@ spec:
           envFrom:
             - configMapRef:
                 name: yfinance-config
-            # - secretRef:   # Example for sensitive values
-            #     name: yfinance-secret
+            - secretRef:
+                name: yfinance-secret
           readinessProbe:
             httpGet:
               path: /ready
@@ -177,7 +221,11 @@ spec:
 
 Get the latest quote for Apple:
 ```sh
+# Without authentication (if API_KEY_ENABLED=false)
 curl http://localhost:8000/quote/AAPL
+
+# With authentication (if API_KEY_ENABLED=true)
+curl -H "X-API-Key: your-secret-key-here" http://localhost:8000/quote/AAPL
 ```
 
 **Response:**
