@@ -28,7 +28,8 @@ class Settings(BaseSettings):
     info_cache_ttl: int = Field(300, env="INFO_CACHE_TTL", ge=0)
     info_cache_maxsize: int = Field(256, env="INFO_CACHE_MAXSIZE", ge=0)
     splits_cache_ttl: int = Field(3600, env="SPLITS_CACHE_TTL", ge=0)
-
+    splits_cache_maxsize: int = Field(256, env="SPLITS_CACHE_MAXSIZE", ge=0)
+    
     # CORS (Opt-in)
     cors_enabled: bool = Field(False, env="CORS_ENABLED")
     cors_allowed_origins: list[str] = Field(
