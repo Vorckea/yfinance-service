@@ -23,11 +23,22 @@ class Settings(BaseSettings):
 
     log_level: LogLevel = Field(LogLevel.INFO, env="LOG_LEVEL")
     max_bulk_concurrency: int = Field(10, env="MAX_BULK_CONCURRENCY", ge=1)
+
+    # Request timeout
+    request_timeout: int = Field(30, env="REQUEST_TIMEOUT", ge=1)
+    
+    # Earnings cache settings
     earnings_cache_ttl: int = Field(3600, env="EARNINGS_CACHE_TTL", ge=0)
     earnings_cache_maxsize: int = Field(128, env="EARNINGS_CACHE_MAXSIZE", ge=0)
+    
+    # Info cache settings
     info_cache_ttl: int = Field(300, env="INFO_CACHE_TTL", ge=0)
     info_cache_maxsize: int = Field(256, env="INFO_CACHE_MAXSIZE", ge=0)
-
+    
+    # Ticker cache settings
+    ticker_cache_ttl: int = Field(60, env="TICKER_CACHE_TTL", ge=0)
+    ticker_cache_maxsize: int = Field(512, env="TICKER_CACHE_MAXSIZE", ge=0)
+    
     # CORS (Opt-in)
     cors_enabled: bool = Field(False, env="CORS_ENABLED")
     cors_allowed_origins: list[str] = Field(

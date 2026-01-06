@@ -10,7 +10,12 @@ from .utils.cache import SnapshotCache, TTLCache
 @lru_cache
 def get_yfinance_client() -> YFinanceClient:
     """Get a cached instance of the YFinance client."""
-    return YFinanceClient()
+    settings = get_settings()
+    return YFinanceClient(
+        timeout=settings.request_timeout,
+        ticker_cache_size=settings.ticker_cache_maxsize,
+        ticker_cache_ttl=settings.ticker_cache_ttl,
+    )
 
 
 @lru_cache

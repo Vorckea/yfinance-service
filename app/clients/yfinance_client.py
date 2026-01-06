@@ -3,7 +3,6 @@
 import asyncio
 from collections.abc import Callable
 from datetime import date
-from functools import lru_cache
 from typing import Any, Dict, TypeVar
 
 import pandas as pd
@@ -11,6 +10,7 @@ import yfinance as yf
 from fastapi import HTTPException
 
 from app.clients.interface import YFinanceClientInterface
+from app.utils.cache import TTLCache
 
 from ..monitoring.instrumentation import observe
 from ..utils.logger import logger
@@ -22,20 +22,39 @@ T = TypeVar("T")
 class YFinanceClient(YFinanceClientInterface):
     """Client for interacting with the Yahoo Finance API."""
 
-    def __init__(self, timeout: int = 30, ticker_cache_size: int = 512):
+    def __init__(
+        self, 
+        timeout: int = 30, 
+        ticker_cache_size: int = 512,
+        ticker_cache_ttl: int = 60):
         """Initialize the YFinanceClient.
 
         Args:
             timeout (int, optional): The maximum time to wait for a response. Defaults to 30.
             ticker_cache_size (int, optional): The maximum number of cached ticker objects. Defaults
-                to 512.
+                to 256.
 
         """
         self._timeout = timeout
-        self._get_ticker = lru_cache(maxsize=ticker_cache_size)(self._ticker_factory)
+        self._ticker_cache = TTLCache(
+            size=ticker_cache_size,
+            ttl=ticker_cache_ttl,
+            cache_name="ticker_cache",
+            resource="ticker"
+        )
 
     def _ticker_factory(self, symbol: str) -> yf.Ticker:
         return yf.Ticker(symbol)
+    
+    async def _get_ticker(self, symbol: str) -> yf.Ticker:
+        """Get a ticker from cache or create a new one."""
+        cached = await self._ticker_cache.get(symbol)
+        if cached is not None:
+            return cached
+        
+        ticker = self._ticker_factory(symbol)
+        await self._ticker_cache.set(symbol, ticker)
+        return ticker
 
     async def _fetch_data(
         self, op: str, fetch_func: Callable[..., T], symbol: str, *args, **kwargs
@@ -79,7 +98,7 @@ class YFinanceClient(YFinanceClientInterface):
 
         """
         symbol = self._normalize(symbol)
-        ticker = self._get_ticker(symbol)
+        ticker = await self._get_ticker(symbol)
         info = await self._fetch_data("info", ticker.get_info, symbol)
         if not info:
             logger.info("yfinance.client.no_data", extra={"symbol": symbol, "op": "info"})
@@ -110,7 +129,7 @@ class YFinanceClient(YFinanceClientInterface):
 
         """
         symbol = self._normalize(symbol)
-        ticker = self._get_ticker(symbol)
+        ticker = await self._get_ticker(symbol)
         history = await self._fetch_data(
             "history", ticker.history, symbol, start=start, end=end, interval=interval
         )
@@ -130,7 +149,7 @@ class YFinanceClient(YFinanceClientInterface):
 
     async def get_earnings(self, symbol: str, frequency: str = "quarterly") -> pd.DataFrame | None:
         symbol = self._normalize(symbol)
-        ticker = self._get_ticker(symbol)
+        ticker = await self._get_ticker(symbol)
 
         try:
             if hasattr(ticker, "get_earnings"):
@@ -195,7 +214,7 @@ class YFinanceClient(YFinanceClientInterface):
 
     async def get_calendar(self, symbol: str) -> Dict[str, Any]:
         symbol = self._normalize(symbol)
-        ticker = self._get_ticker(symbol)
+        ticker = await self._get_ticker(symbol)
 
         try:
             calendar_data = await self._fetch_data(
@@ -234,7 +253,8 @@ class YFinanceClient(YFinanceClientInterface):
         """
         probe_symbol = "AAPL"
         try:
-            await self._fetch_data("ping", self._get_ticker(probe_symbol).get_info, probe_symbol)
+            ticker = await self._get_ticker(probe_symbol) 
+            await self._fetch_data("ping", ticker.get_info, probe_symbol)
             return True
         except HTTPException:
             return False
