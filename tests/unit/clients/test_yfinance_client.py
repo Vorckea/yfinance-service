@@ -49,7 +49,11 @@ async def test_get_info_non_dict(monkeypatch):
     """Simulate malformed info (non-dict) -> should raise HTTP 502."""
     client = YFinanceClient()
     ticker_mock = type("TickerMock", (), {"get_info": lambda self: ["invalid"]})()
-    monkeypatch.setattr(client, "_get_ticker", lambda symbol: ticker_mock)
+
+    async def mock_get_ticker(symbol):
+        return ticker_mock
+
+    monkeypatch.setattr(client, "_get_ticker", mock_get_ticker)
 
     async def mock_fetch_data(*a, **kw):
         return ["invalid"]
@@ -66,6 +70,12 @@ async def test_get_info_non_dict(monkeypatch):
 async def test_get_info_empty(monkeypatch):
     """Simulate missing info (None or empty dict) -> should raise HTTP 404."""
     client = YFinanceClient()
+    ticker_mock = type("TickerMock", (), {"get_info": lambda self: None})()
+
+    async def mock_get_ticker(symbol):
+        return ticker_mock
+
+    monkeypatch.setattr(client, "_get_ticker", mock_get_ticker)
 
     async def mock_fetch_data(*a, **kw):
         return None
@@ -82,7 +92,13 @@ async def test_get_info_empty(monkeypatch):
 async def test_get_history_empty_df(monkeypatch):
     """Simulate empty history -> should raise HTTP 404."""
     client = YFinanceClient()
+    ticker_mock = type("TickerMock", (), {"history": lambda self, **kw: pd.DataFrame()})()
     empty_df = pd.DataFrame()
+
+    async def mock_get_ticker(symbol):
+        return ticker_mock
+
+    monkeypatch.setattr(client, "_get_ticker", mock_get_ticker)
 
     async def mock_fetch_data(*a, **kw):
         return empty_df
@@ -99,6 +115,12 @@ async def test_get_history_empty_df(monkeypatch):
 async def test_get_history_non_dataframe(monkeypatch):
     """Simulate malformed history (not a DataFrame) -> should raise HTTP 502."""
     client = YFinanceClient()
+    ticker_mock = type("TickerMock", (), {"history": lambda self, **kw: {"not": "df"}})()
+
+    async def mock_get_ticker(symbol):
+        return ticker_mock
+
+    monkeypatch.setattr(client, "_get_ticker", mock_get_ticker)
 
     async def mock_fetch_data(*a, **kw):
         return {"not": "df"}
