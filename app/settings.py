@@ -37,6 +37,10 @@ class Settings(BaseSettings):
         env="CORS_ALLOWED_ORIGINS",
     )
 
+    # API Key Authentication (Opt-in)
+    api_key_enabled: bool = Field(False, env="API_KEY_ENABLED")
+    api_key: str = Field("", env="API_KEY")
+
     @field_validator("log_level", mode="before")
     def _upper(cls, v: str) -> str:
         return v.upper()
