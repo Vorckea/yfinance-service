@@ -14,6 +14,7 @@ from app.features.historical.router import router as historical_router
 from app.features.info.router import router as info_router
 from app.features.quote.router import router as quote_router
 from app.features.snapshot.router import router as snapshot_router
+from app.features.splits.router import router as splits_router
 from app.monitoring.http_middleware import http_metrics_middleware
 from app.monitoring.metrics import BUILD_INFO, SERVICE_UPTIME
 from app.utils.logger import configure_logging
@@ -87,6 +88,9 @@ app.include_router(historical_router, prefix="/historical", tags=["historical"])
 app.include_router(info_router, prefix="/info", tags=["info"])
 app.include_router(snapshot_router, prefix="/snapshot", tags=["snapshot"])
 app.include_router(earnings_router, prefix="/earnings", tags=["earnings"])
+
+# Splits endpoint
+app.include_router(splits_router, prefix = "/splits", tags = ["splits"])
 
 # Health check endpoint
 app.include_router(health_router, tags=["health"])

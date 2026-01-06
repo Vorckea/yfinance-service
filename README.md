@@ -28,6 +28,7 @@
 | **Info API**           | Get company fundamentals (sector, market cap, etc.).    |
 | **Earnings API**       | Retrieve normalized earnings history with EPS, revenue, and surprise data.    |
 | **Snapshot API**       | Combined info + quote in a single request with caching. |
+| **Splits API**         |	Retrieve historical stock split data (dates and ratios) for ticker symbols.  |
 | **Health Check**       | `/health` and `/ready` endpoints for liveness & readiness probes. |
 | **Prometheus Metrics** | `/metrics` endpoint for request count, errors, latency, cache stats. |
 
@@ -44,6 +45,7 @@
 | `GET /earnings/{symbol}?frequency={period}`        | Earnings history (EPS, revenue, surprise) | `/earnings/AAPL?frequency=quarterly` |
 | `GET /snapshot/{symbol}`                                   | Combined info + quote     | `/snapshot/AAPL`                                   |
 | `GET /ready`                                               | Readiness check (yfinance connectivity) | `/ready`                             |
+| `GET /splits/{symbol}	`                                    | List of stock splits (date and ratio) for the given symbol  | `/splits/AAPL`   |
 
 ## Quick Start
 
@@ -92,6 +94,7 @@ Relevant files:
 | `INFO_CACHE_MAXSIZE` | Max entries for info cache | `256` | `INFO_CACHE_MAXSIZE=512` |
 | `CORS_ENABLED` | Enable CORS | `False` | `CORS_ENABLED=True` |
 | `CORS_ALLOWED_ORIGINS` | Allowed origins (comma-separated list) | `*` (Any) | `CORS_ALLOWED_ORIGINS="https://example.org,https://www.example.org"` |
+| `SPLITS_CACHE_TTL` |Time-to-live (in seconds) for the stock splits cache| `3600` | `SPLITS_CACHE_TTL=1800` |
 | `API_KEY_ENABLED` | Enable API key authentication | `False` | `API_KEY_ENABLED=True` |
 | `API_KEY` | API key for authentication (required if enabled) | `""` | `API_KEY=your-secret-key-here` |
 

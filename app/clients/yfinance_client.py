@@ -34,6 +34,7 @@ class YFinanceClient(YFinanceClientInterface):
         self._timeout = timeout
         self._get_ticker = lru_cache(maxsize=ticker_cache_size)(self._ticker_factory)
 
+
     def _ticker_factory(self, symbol: str) -> yf.Ticker:
         return yf.Ticker(symbol)
 
@@ -238,3 +239,19 @@ class YFinanceClient(YFinanceClientInterface):
             return True
         except HTTPException:
             return False
+
+    async def get_splits(self, symbol: str) -> pd.Series:
+        """Fetch stock splits for a specific stock."""
+        symbol = self._normalize(symbol)
+        ticker = self._get_ticker(symbol)
+        
+        splits = await self._fetch_data("splits", lambda: ticker.splits, symbol)
+        
+        if splits is None or splits.empty:
+            logger.info("yfinance.client.no_data", extra={"symbol": symbol})
+            raise HTTPException(
+                status_code=404, 
+                detail=f"No split data found for symbol: {symbol}"
+            )
+            
+        return splits
