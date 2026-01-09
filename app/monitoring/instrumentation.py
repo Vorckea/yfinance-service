@@ -3,17 +3,25 @@
 import asyncio
 import time
 from contextlib import asynccontextmanager
+from typing import Optional
 
 from .metrics import YF_LATENCY, YF_REQUESTS
 
 
 @asynccontextmanager
-async def observe(op: str, outcome_on_error: str = "error"):
+async def observe(
+    op: str,
+    outcome_on_error: str = "error",
+    attempt: Optional[int] = None,
+    max_attempts: Optional[int] = None,
+):
     """Observe a yfinance operation for metrics.
 
     Args:
         op (str): Operation name (e.g., 'quote', 'info')
         outcome_on_error (str, optional): Outcome label for errors. Defaults to "error".
+        attempt (int, optional): Current attempt number (0-indexed) for retry tracking.
+        max_attempts (int, optional): Total number of attempts for this operation.
 
     """
     start = time.monotonic()
@@ -28,7 +36,12 @@ async def observe(op: str, outcome_on_error: str = "error"):
         raise
     except (asyncio.TimeoutError, TimeoutError):
         try:
-            YF_REQUESTS.labels(operation=op, outcome="timeout").inc()
+            # Label as 'retry' if not the last attempt, otherwise 'timeout'
+            if attempt is not None and max_attempts is not None and attempt < max_attempts - 1:
+                outcome = "retry"
+            else:
+                outcome = "timeout"
+            YF_REQUESTS.labels(operation=op, outcome=outcome).inc()
         except Exception:
             pass
         raise
