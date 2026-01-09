@@ -2,12 +2,39 @@
 
 import asyncio
 from datetime import datetime, timezone, date
+from typing import Any
 
 import pandas as pd
 
 from ...clients.interface import YFinanceClientInterface
 from ...utils.logger import logger
 from .models import HistoricalPrice, HistoricalResponse
+
+
+def _safe_float(val: Any) -> float:
+    """Convert value to float, defaulting to 0 if invalid.
+    
+    OHLC prices should never be 0, but we use 0 as error sentinel
+    to allow partial data when yfinance has quality issues.
+    """
+    if val is None or pd.isna(val):
+        return 0.0
+    try:
+        return float(val)
+    except (ValueError, TypeError):
+        logger.warning("historical.invalid_price", extra={"value": val, "type": type(val).__name__})
+        return 0.0
+
+
+def _safe_int(val: Any) -> int | None:
+    """Convert value to int, returning None if invalid."""
+    if val is None or pd.isna(val):
+        return None
+    try:
+        return int(float(val))
+    except (ValueError, TypeError):
+        logger.warning("historical.invalid_volume", extra={"value": val, "type": type(val).__name__})
+        return None
 
 
 def _map_history(df: pd.DataFrame) -> list[HistoricalPrice]:
@@ -26,19 +53,19 @@ def _map_history(df: pd.DataFrame) -> list[HistoricalPrice]:
         return []
     
     if getattr(df.index, "tz", None) is None:
-        df.index = df.index.tz_localize("UTC")
+        df.index = pd.DatetimeIndex(df.index).tz_localize("UTC")
     else:
-        df.index = df.index.tz_convert("UTC")
+        df.index = pd.DatetimeIndex(df.index).tz_convert("UTC")
 
     df_selected = df[["Open", "High", "Low", "Close", "Volume"]]
     return [
         HistoricalPrice(
             date=ts.date(),
-            open=float(open_),
-            high=float(high_),
-            low=float(low_),
-            close=float(close_),
-            volume=int(volume_) if pd.notna(volume_) else None,
+            open=_safe_float(open_),
+            high=_safe_float(high_),
+            low=_safe_float(low_),
+            close=_safe_float(close_),
+            volume=_safe_int(volume_),
             timestamp=datetime.fromtimestamp(ts.timestamp(), timezone.utc).replace(microsecond=0)
         )
         for ts, open_, high_, low_, close_, volume_ in df_selected.itertuples(index=True, name=None)

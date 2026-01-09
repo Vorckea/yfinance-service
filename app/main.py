@@ -88,9 +88,5 @@ app.include_router(historical_router, prefix="/historical", tags=["historical"])
 app.include_router(info_router, prefix="/info", tags=["info"])
 app.include_router(snapshot_router, prefix="/snapshot", tags=["snapshot"])
 app.include_router(earnings_router, prefix="/earnings", tags=["earnings"])
-
-# Splits endpoint
-app.include_router(splits_router, prefix = "/splits", tags = ["splits"])
-
-# Health check endpoint
-app.include_router(health_router, tags=["health"])
+app.include_router(splits_router, prefix="/splits", tags=["splits"]) # Splits endpoint
+app.include_router(health_router, tags=["health"])                   # Health check endpoint

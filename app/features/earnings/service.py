@@ -50,14 +50,24 @@ def _index_to_date(idx) -> Optional[date]:
 
 
 def safe_float(val: Any) -> Optional[float]:
+    """Convert value to float, returning None if conversion fails.
+    
+    Args:
+        val: Value to convert.
+    
+    Returns:
+        float if conversion succeeds, None otherwise.
+    """
     if val is None or pd.isna(val):
         return None
     if isinstance(val, (int, float)):
         return float(val)
     try:
         return float(val)
-    except Exception:
-        raise ValueError(f"Invalid numeric value: {val}")
+    except (ValueError, TypeError):
+        # Gracefully return None instead of raising - allows earnings data
+        # with some missing/corrupt fields to still be partially served
+        return None
 
 
 def _extract_eps_and_revenue_from_row(
@@ -120,6 +130,7 @@ def _extract_eps_and_revenue_from_row(
         for col in share_cols:
             if col in series.index and pd.notna(series[col]):
                 shares = safe_float(series[col])
+                # shares must be positive
                 if shares and shares > 0:
                     eps = net_income / shares
 
@@ -185,15 +196,19 @@ async def fetch_earnings(
             surprise = None
             surprise_pct = None
             for c in ("EPS Estimate", "Estimated EPS", "EPS Est", "EPS Forecast"):
-                if c in row.index and pd.notna(row.get(c)):
-                    est = safe_float(row.get(c))
-                    break
+                if c in row.index:
+                    val = row.iloc[row.index.get_loc(c)]
+                    if pd.notna(val):
+                        est = safe_float(val)
+                        break
             for c in ("Surprise", "Surprise %"):
-                if c in row.index and pd.notna(row.get(c)):
-                    if c == "Surprise":
-                        surprise = safe_float(row.get(c))
-                    else:
-                        surprise_pct = safe_float(row.get(c))
+                if c in row.index and pd.notna(row.index.get_loc(c)):
+                    val = row.iloc[row.index.get_loc(c)]
+                    if pd.notna(val):
+                        if c == "Surprise":
+                            surprise = safe_float(val)
+                        else:
+                            surprise_pct = safe_float(val)
 
             rows.append(
                 EarningRow(
