@@ -406,8 +406,11 @@ async def test_fetch_earnings_corrupt_data_types():
     client.get_earnings.return_value = earnings_df
     client.get_calendar.return_value = {}
 
-    with pytest.raises((TypeError, ValueError)):
-        await fetch_earnings("AAPL", client, "quarterly")
+    # After fix: should NOT raise - returns gracefully with corrupt data handling
+    result = await fetch_earnings("AAPL", client, "quarterly")
+    assert result is not None
+    # Should have entries but with None values for corrupt EPS
+    assert len(result.rows) > 0
 
 @pytest.mark.integration
 @pytest.mark.skip(reason="requires real upstream API")

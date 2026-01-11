@@ -1,6 +1,7 @@
 """Client for interacting with the Yahoo Finance API."""
 
 import asyncio
+import random
 from collections.abc import Callable
 from datetime import date
 from typing import Any, Dict, TypeVar
@@ -10,6 +11,7 @@ import yfinance as yf
 from fastapi import HTTPException
 
 from app.clients.interface import YFinanceClientInterface
+from app.settings import get_settings
 from app.utils.cache import TTLCache
 
 from ..monitoring.instrumentation import observe
@@ -31,11 +33,15 @@ class YFinanceClient(YFinanceClientInterface):
 
         Args:
             timeout (int, optional): The maximum time to wait for a response. Defaults to 30.
-            ticker_cache_size (int, optional): The maximum number of cached ticker objects. Defaults
-                to 256.
+            ticker_cache_size (int, optional): The maximum number of cached ticker objects. Defaults to 512.
+            ticker_cache_ttl (int, optional): TTL for cached ticker objects in seconds. Short TTL
+                (5-10s) recommended to balance connection pooling with fresh data. Defaults to 60.
 
         """
         self._timeout = timeout
+        # Use a SHORT TTL (typically 5-10 seconds) for ticker cache to prevent stale data
+        # while still allowing connection reuse within batch/concurrent operations.
+        # Note: Cache TTL should be configured LOW via TICKER_CACHE_TTL env var.
         self._ticker_cache = TTLCache(
             size=ticker_cache_size,
             ttl=ticker_cache_ttl,
@@ -48,7 +54,15 @@ class YFinanceClient(YFinanceClientInterface):
         return yf.Ticker(symbol)
     
     async def _get_ticker(self, symbol: str) -> yf.Ticker:
-        """Get a ticker from cache or create a new one."""
+        """Get a ticker instance, using cache for short-term connection pooling.
+        
+        Uses a short-lived cache (default 60s, should be set to 5-10s via env) to:
+        - Reuse TCP connections for concurrent requests to same symbol
+        - Prevent stale data by not caching across request batches
+        
+        The TTL must be SHORT to avoid returning stale market data from yfinance's
+        internal cache within the Ticker object.
+        """
         cached = await self._ticker_cache.get(symbol)
         if cached is not None:
             return cached
@@ -60,27 +74,88 @@ class YFinanceClient(YFinanceClientInterface):
     async def _fetch_data(
         self, op: str, fetch_func: Callable[..., T], symbol: str, *args, **kwargs
     ) -> T:
-        try:
-            async with observe(op):
-                return await asyncio.wait_for(
-                    asyncio.to_thread(fetch_func, *args, **kwargs), self._timeout
+        """Fetch data from yfinance with exponential backoff retry logic.
+        
+        Args:
+            op (str): Operation name (e.g., 'info', 'history')
+            fetch_func (Callable): The function to call to fetch data
+            symbol (str): The stock symbol being fetched
+            *args: Positional arguments to pass to fetch_func
+            **kwargs: Keyword arguments to pass to fetch_func
+            
+        Returns:
+            T: The result from fetch_func
+            
+        Raises:
+            HTTPException: If the operation fails after all retries or on non-transient errors
+        """
+        max_retries = get_settings().max_retries
+        backoff_base = get_settings().retry_backoff_base
+        backoff_max = get_settings().retry_backoff_max
+        
+        last_exception: Exception | None = None
+        
+        for attempt in range(max_retries + 1):
+            try:
+                async with observe(op, attempt=attempt, max_attempts=max_retries + 1):
+                    return await asyncio.wait_for(
+                        asyncio.to_thread(fetch_func, *args, **kwargs), self._timeout
+                    )
+            except (ConnectionError, TimeoutError, asyncio.TimeoutError) as e:
+                # Transient errors - eligible for retry
+                last_exception = e
+                is_last_attempt = attempt >= max_retries
+                
+                if is_last_attempt:
+                    # Last attempt - raise the error
+                    logger.warning(
+                        "yfinance.client.timeout.final",
+                        extra={"symbol": symbol, "op": op, "attempt": attempt + 1, "error": str(e)}
+                    )
+                    raise HTTPException(status_code=503, detail="Upstream timeout") from e
+                else:
+                    # Calculate backoff with exponential increase and jitter
+                    backoff_seconds = min(
+                        backoff_base * (2 ** attempt),
+                        backoff_max
+                    )
+                    # Add jitter: random value between 0 and backoff_seconds
+                    jitter = random.uniform(0, backoff_seconds)
+                    wait_time = backoff_seconds + jitter
+                    
+                    logger.warning(
+                        "yfinance.client.timeout.retry",
+                        extra={
+                            "symbol": symbol,
+                            "op": op,
+                            "attempt": attempt + 1,
+                            "max_attempts": max_retries + 1,
+                            "backoff_seconds": backoff_seconds,
+                            "wait_time": wait_time,
+                            "error": str(e)
+                        }
+                    )
+                    await asyncio.sleep(wait_time)
+                    continue
+                    
+            except asyncio.CancelledError as e:
+                logger.warning("yfinance.client.cancelled", extra={"symbol": symbol, "op": op})
+                raise HTTPException(status_code=499, detail="Request cancelled") from e
+            except HTTPException:
+                # Re-raise HTTPExceptions produced by callers/other layers unchanged.
+                raise
+            except Exception as e:
+                # Non-transient errors - fail immediately
+                logger.exception(
+                    "yfinance.client.unexpected",
+                    extra={"symbol": symbol, "op": op, "error": str(e)}
                 )
-        except (ConnectionError, TimeoutError, asyncio.TimeoutError) as e:
-            logger.warning(
-                "yfinance.client.timeout", extra={"symbol": symbol, "op": op, "error": str(e)}
-            )
-            raise HTTPException(status_code=503, detail="Upstream timeout") from e
-        except asyncio.CancelledError as e:
-            logger.warning("yfinance.client.cancelled", extra={"symbol": symbol, "op": op})
-            raise HTTPException(status_code=499, detail="Request cancelled") from e
-        except HTTPException:
-            # Re-raise HTTPExceptions produced by callers/other layers unchanged.
-            raise
-        except Exception as e:
-            logger.exception(
-                "yfinance.client.unexpected", extra={"symbol": symbol, "op": op, "error": str(e)}
-            )
-            raise HTTPException(status_code=500, detail="Unexpected error fetching data") from e
+                raise HTTPException(status_code=500, detail="Unexpected error fetching data") from e
+        
+        # Should not reach here, but just in case
+        if last_exception:
+            raise HTTPException(status_code=503, detail="Upstream timeout") from last_exception
+        raise HTTPException(status_code=500, detail="Unexpected error fetching data")
 
     def _normalize(self, symbol: str) -> str:
         return (symbol or "").upper().strip()
@@ -211,6 +286,22 @@ class YFinanceClient(YFinanceClientInterface):
             return None
 
     async def get_income_statement(self, symbol: str, frequency: str) -> pd.DataFrame | None:
+        """Fetch income statement data for a symbol.
+        
+        Args:
+            symbol (str): The stock symbol to fetch income statement for.
+            frequency (str): 'quarterly' or 'annual'.
+            
+        Returns:
+            pd.DataFrame | None: The income statement data, or None if not available.
+            
+        Raises:
+            HTTPException: If data fetch fails after retries.
+            
+        Note:
+            This is a convenience wrapper around get_earnings that applies the same
+            error handling and retry logic.
+        """
         return await self.get_earnings(symbol, frequency)
 
     async def get_calendar(self, symbol: str) -> Dict[str, Any]:
@@ -257,17 +348,18 @@ class YFinanceClient(YFinanceClientInterface):
             ticker = await self._get_ticker(probe_symbol) 
             await self._fetch_data("ping", ticker.get_info, probe_symbol)
             return True
-        except HTTPException:
+        except Exception:
             return False
 
     async def get_splits(self, symbol: str) -> pd.Series:
         """Fetch stock splits for a specific stock."""
         symbol = self._normalize(symbol)
-        ticker = self._get_ticker(symbol)
+        ticker = await self._get_ticker(symbol)
         
         splits = await self._fetch_data("splits", lambda: ticker.splits, symbol)
         
-        if splits is None or splits.empty:
+        # Check if splits is None or empty (empty Series has len() == 0)
+        if splits is None or (isinstance(splits, pd.Series) and splits.empty):
             logger.info("yfinance.client.no_data", extra={"symbol": symbol})
             raise HTTPException(
                 status_code=404, 
