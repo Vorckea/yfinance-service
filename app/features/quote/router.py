@@ -9,7 +9,6 @@ from typing import Annotated, Dict, Union
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 
-from ...utils.logger import logger
 from ...auth import check_api_key
 from ...clients.interface import YFinanceClientInterface
 from ...common.validation import SymbolParam
@@ -55,7 +54,8 @@ router = APIRouter(dependencies=[Depends(check_api_key)])
 )
 async def get_quote(
     symbol: SymbolParam,
-    client: Annotated[YFinanceClientInterface, Depends(get_yfinance_client)],    
+    client: Annotated[YFinanceClientInterface, Depends(get_yfinance_client)],
+    settings: Annotated[Settings, Depends(get_settings)],
 ) -> QuoteResponse:
     """Get the latest market quote for a given ticker symbol."""
     return await fetch_quote(symbol, client)
@@ -107,13 +107,12 @@ async def get_quotes(
                 # Sanitizing detail and status_code before constructing the Pydantic model
                 detail = exc.detail
                 try:
-                    # Prioritize simple string representation; if complex, JSON-encode it
+                    # Prioratize simple string representation; if complex, JSON-encode it
                     if isinstance(detail, (str, int, float, bool)):
                         err_str = str(detail)
                     else:
                         err_str = json.dumps(detail, default=str)
-                except Exception as json_err:
-                    logger.warning("quote.bulk.json_encode_error", extra={"error": str(json_err)})
+                except Exception:
                     err_str = str(detail)
 
                 status_code = (
@@ -121,27 +120,18 @@ async def get_quotes(
                 )
                 try:
                     status_code = int(status_code)
-                except (ValueError, TypeError):
+                except Exception:
                     status_code = 502
 
                 try:
                     return sym, SymbolErrorModel(error=err_str, status_code=status_code)
-                except Exception as model_err:
-                    logger.warning(
-                        "quote.bulk.model_error",
-                        extra={"symbol": sym, "error": str(model_err), "detail": err_str}
-                    )
-                    # Fallback to plain dict if model construction fails
+                except Exception:
+                    # Fallback to plain dict if model construction unexpectedly fails
                     return sym, {"error": err_str, "status_code": status_code}
             except Exception as exc:  # pragma: no cover - defensive
-                logger.exception("quote.bulk.unexpected_error", extra={"symbol": sym})
                 try:
                     return sym, SymbolErrorModel(error=str(exc), status_code=500)
-                except Exception as model_err:
-                    logger.warning(
-                        "quote.bulk.fallback_error",
-                        extra={"symbol": sym, "error": str(model_err)}
-                    )
+                except Exception:
                     return sym, {"error": str(exc), "status_code": 500}
 
     tasks = [_fetch(s) for s in requested]
@@ -151,9 +141,7 @@ async def get_quotes(
     out: dict[str, object] = {}
     for sym, value in results:
         # Pydantic models (QuoteResponse or SymbolErrorModel) expose model_dump
-        if isinstance(value, dict):
-            out[sym] = value
-        elif hasattr(value, "model_dump") and callable(getattr(value, "model_dump", None)):
+        if hasattr(value, "model_dump"):
             out[sym] = value.model_dump(exclude_none=True)
         else:
             out[sym] = value

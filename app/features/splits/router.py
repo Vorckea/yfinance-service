@@ -12,7 +12,7 @@ router = APIRouter()
 @router.get("/{symbol}", response_model=list[StockSplit])
 async def read_splits(
     symbol: SymbolParam,
-    client: Annotated[YFinanceClientInterface, Depends(get_yfinance_client)],
-    cache: Annotated[CacheInterface, Depends(get_splits_cache)],
+    client: Annotated[YFinanceClientInterface, Depends(get_yfinance_client)] = None,
+    cache: Annotated[CacheInterface, Depends(get_splits_cache)] = None,
 ):
     return await get_splits(symbol.upper(), client, cache)

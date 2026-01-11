@@ -42,9 +42,7 @@ class Settings(BaseSettings):
     info_cache_maxsize: int = Field(256, alias="INFO_CACHE_MAXSIZE", ge=0)
     
     # Ticker cache settings
-    # NOTE: Short TTL (5s) prevents stale data from yfinance's internal Ticker cache
-    # while still enabling connection pooling within concurrent/batch request windows
-    ticker_cache_ttl: int = Field(5, alias="TICKER_CACHE_TTL", ge=0)
+    ticker_cache_ttl: int = Field(60, alias="TICKER_CACHE_TTL", ge=0)
     ticker_cache_maxsize: int = Field(512, alias="TICKER_CACHE_MAXSIZE", ge=0)
     splits_cache_ttl: int = Field(3600, alias="SPLITS_CACHE_TTL", ge=0)
     splits_cache_maxsize: int = Field(256, alias="SPLITS_CACHE_MAXSIZE", ge=0)
@@ -61,12 +59,8 @@ class Settings(BaseSettings):
     api_key: str = Field("", alias="API_KEY")
 
     @field_validator("log_level", mode="before")
-    def _upper(cls, v) -> str:
-        """Convert log level to uppercase (handles non-string inputs gracefully)."""
-        if isinstance(v, str):
-            return v.upper()
-        # If not a string, convert to string first then uppercase
-        return str(v).upper() if v is not None else "INFO"
+    def _upper(cls, v: str) -> str:
+        return v.upper()
 
 @lru_cache
 def get_settings() -> Settings:

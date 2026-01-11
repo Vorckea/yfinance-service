@@ -33,15 +33,11 @@ class YFinanceClient(YFinanceClientInterface):
 
         Args:
             timeout (int, optional): The maximum time to wait for a response. Defaults to 30.
-            ticker_cache_size (int, optional): The maximum number of cached ticker objects. Defaults to 512.
-            ticker_cache_ttl (int, optional): TTL for cached ticker objects in seconds. Short TTL
-                (5-10s) recommended to balance connection pooling with fresh data. Defaults to 60.
+            ticker_cache_size (int, optional): The maximum number of cached ticker objects. Defaults
+                to 256.
 
         """
         self._timeout = timeout
-        # Use a SHORT TTL (typically 5-10 seconds) for ticker cache to prevent stale data
-        # while still allowing connection reuse within batch/concurrent operations.
-        # Note: Cache TTL should be configured LOW via TICKER_CACHE_TTL env var.
         self._ticker_cache = TTLCache(
             size=ticker_cache_size,
             ttl=ticker_cache_ttl,
@@ -54,15 +50,7 @@ class YFinanceClient(YFinanceClientInterface):
         return yf.Ticker(symbol)
     
     async def _get_ticker(self, symbol: str) -> yf.Ticker:
-        """Get a ticker instance, using cache for short-term connection pooling.
-        
-        Uses a short-lived cache (default 60s, should be set to 5-10s via env) to:
-        - Reuse TCP connections for concurrent requests to same symbol
-        - Prevent stale data by not caching across request batches
-        
-        The TTL must be SHORT to avoid returning stale market data from yfinance's
-        internal cache within the Ticker object.
-        """
+        """Get a ticker from cache or create a new one."""
         cached = await self._ticker_cache.get(symbol)
         if cached is not None:
             return cached
@@ -286,22 +274,6 @@ class YFinanceClient(YFinanceClientInterface):
             return None
 
     async def get_income_statement(self, symbol: str, frequency: str) -> pd.DataFrame | None:
-        """Fetch income statement data for a symbol.
-        
-        Args:
-            symbol (str): The stock symbol to fetch income statement for.
-            frequency (str): 'quarterly' or 'annual'.
-            
-        Returns:
-            pd.DataFrame | None: The income statement data, or None if not available.
-            
-        Raises:
-            HTTPException: If data fetch fails after retries.
-            
-        Note:
-            This is a convenience wrapper around get_earnings that applies the same
-            error handling and retry logic.
-        """
         return await self.get_earnings(symbol, frequency)
 
     async def get_calendar(self, symbol: str) -> Dict[str, Any]:
@@ -348,18 +320,17 @@ class YFinanceClient(YFinanceClientInterface):
             ticker = await self._get_ticker(probe_symbol) 
             await self._fetch_data("ping", ticker.get_info, probe_symbol)
             return True
-        except Exception:
+        except HTTPException:
             return False
 
     async def get_splits(self, symbol: str) -> pd.Series:
         """Fetch stock splits for a specific stock."""
         symbol = self._normalize(symbol)
-        ticker = await self._get_ticker(symbol)
+        ticker = self._get_ticker(symbol)
         
         splits = await self._fetch_data("splits", lambda: ticker.splits, symbol)
         
-        # Check if splits is None or empty (empty Series has len() == 0)
-        if splits is None or (isinstance(splits, pd.Series) and splits.empty):
+        if splits is None or splits.empty:
             logger.info("yfinance.client.no_data", extra={"symbol": symbol})
             raise HTTPException(
                 status_code=404, 

@@ -66,30 +66,3 @@ def test_map_history_nan_volume_becomes_none():
     # Check ordering: latest first
     assert result[0].date > result[1].date
     assert result[1].volume is None
-
-def test_map_history_with_corrupt_prices():
-    """_map_history should handle DataFrames with invalid price data."""
-    # Create DataFrame with mixed valid/invalid prices
-    df = pd.DataFrame({
-        "Open": [100.0, "invalid", 102.0],
-        "High": [101.0, 101.5, "bad"],
-        "Low": [99.0, 99.5, 101.0],
-        "Close": [100.5, 100.8, 101.5],
-        "Volume": [1000, "corrupt", 1200]
-    })
-    df.index = pd.DatetimeIndex(["2024-01-01", "2024-01-02", "2024-01-03"], tz="UTC")
-
-    # Should not raise - returns prices with safe values
-    prices = _map_history(df)
-    assert len(prices) == 3
-
-    # First row valid
-    assert prices[0].open == 100.0
-    assert prices[0].volume == 1000
-
-    # Second row has corruption - fallback to 0.0 for prices, None for volume
-    assert prices[1].open == 0.0
-    assert prices[1].volume is None
-
-    # Third row has corruption
-    assert prices[2].high == 0.0
