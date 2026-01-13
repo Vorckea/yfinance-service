@@ -26,7 +26,12 @@ class Settings(BaseSettings):
 
     # Request timeout
     request_timeout: int = Field(30, env="REQUEST_TIMEOUT", ge=1)
-    
+
+    # Retry settings for yfinance fetch operations
+    max_retries: int = Field(3, env="MAX_RETRIES", ge=0)
+    retry_backoff_base: float = Field(1.0, env="RETRY_BACKOFF_BASE", gt=0)
+    retry_backoff_max: float = Field(32.0, env="RETRY_BACKOFF_MAX", gt=0)
+
     # Earnings cache settings
     earnings_cache_ttl: int = Field(3600, env="EARNINGS_CACHE_TTL", ge=0)
     earnings_cache_maxsize: int = Field(128, env="EARNINGS_CACHE_MAXSIZE", ge=0)
