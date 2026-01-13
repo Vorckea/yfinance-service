@@ -1,7 +1,6 @@
 """Client for interacting with the Yahoo Finance API."""
 
 import asyncio
-import random
 from collections.abc import Callable
 from datetime import date
 from typing import Any, Dict, TypeVar
@@ -11,7 +10,6 @@ import yfinance as yf
 from fastapi import HTTPException
 
 from app.clients.interface import YFinanceClientInterface
-from app.settings import get_settings
 from app.utils.cache import TTLCache
 
 from ..monitoring.instrumentation import observe
@@ -62,88 +60,27 @@ class YFinanceClient(YFinanceClientInterface):
     async def _fetch_data(
         self, op: str, fetch_func: Callable[..., T], symbol: str, *args, **kwargs
     ) -> T:
-        """Fetch data from yfinance with exponential backoff retry logic.
-        
-        Args:
-            op (str): Operation name (e.g., 'info', 'history')
-            fetch_func (Callable): The function to call to fetch data
-            symbol (str): The stock symbol being fetched
-            *args: Positional arguments to pass to fetch_func
-            **kwargs: Keyword arguments to pass to fetch_func
-            
-        Returns:
-            T: The result from fetch_func
-            
-        Raises:
-            HTTPException: If the operation fails after all retries or on non-transient errors
-        """
-        max_retries = get_settings().max_retries
-        backoff_base = get_settings().retry_backoff_base
-        backoff_max = get_settings().retry_backoff_max
-        
-        last_exception: Exception | None = None
-        
-        for attempt in range(max_retries + 1):
-            try:
-                async with observe(op, attempt=attempt, max_attempts=max_retries + 1):
-                    return await asyncio.wait_for(
-                        asyncio.to_thread(fetch_func, *args, **kwargs), self._timeout
-                    )
-            except (ConnectionError, TimeoutError, asyncio.TimeoutError) as e:
-                # Transient errors - eligible for retry
-                last_exception = e
-                is_last_attempt = attempt >= max_retries
-                
-                if is_last_attempt:
-                    # Last attempt - raise the error
-                    logger.warning(
-                        "yfinance.client.timeout.final",
-                        extra={"symbol": symbol, "op": op, "attempt": attempt + 1, "error": str(e)}
-                    )
-                    raise HTTPException(status_code=503, detail="Upstream timeout") from e
-                else:
-                    # Calculate backoff with exponential increase and jitter
-                    backoff_seconds = min(
-                        backoff_base * (2 ** attempt),
-                        backoff_max
-                    )
-                    # Add jitter: random value between 0 and backoff_seconds
-                    jitter = random.uniform(0, backoff_seconds)
-                    wait_time = backoff_seconds + jitter
-                    
-                    logger.warning(
-                        "yfinance.client.timeout.retry",
-                        extra={
-                            "symbol": symbol,
-                            "op": op,
-                            "attempt": attempt + 1,
-                            "max_attempts": max_retries + 1,
-                            "backoff_seconds": backoff_seconds,
-                            "wait_time": wait_time,
-                            "error": str(e)
-                        }
-                    )
-                    await asyncio.sleep(wait_time)
-                    continue
-                    
-            except asyncio.CancelledError as e:
-                logger.warning("yfinance.client.cancelled", extra={"symbol": symbol, "op": op})
-                raise HTTPException(status_code=499, detail="Request cancelled") from e
-            except HTTPException:
-                # Re-raise HTTPExceptions produced by callers/other layers unchanged.
-                raise
-            except Exception as e:
-                # Non-transient errors - fail immediately
-                logger.exception(
-                    "yfinance.client.unexpected",
-                    extra={"symbol": symbol, "op": op, "error": str(e)}
+        try:
+            async with observe(op):
+                return await asyncio.wait_for(
+                    asyncio.to_thread(fetch_func, *args, **kwargs), self._timeout
                 )
-                raise HTTPException(status_code=500, detail="Unexpected error fetching data") from e
-        
-        # Should not reach here, but just in case
-        if last_exception:
-            raise HTTPException(status_code=503, detail="Upstream timeout") from last_exception
-        raise HTTPException(status_code=500, detail="Unexpected error fetching data")
+        except (ConnectionError, TimeoutError, asyncio.TimeoutError) as e:
+            logger.warning(
+                "yfinance.client.timeout", extra={"symbol": symbol, "op": op, "error": str(e)}
+            )
+            raise HTTPException(status_code=503, detail="Upstream timeout") from e
+        except asyncio.CancelledError as e:
+            logger.warning("yfinance.client.cancelled", extra={"symbol": symbol, "op": op})
+            raise HTTPException(status_code=499, detail="Request cancelled") from e
+        except HTTPException:
+            # Re-raise HTTPExceptions produced by callers/other layers unchanged.
+            raise
+        except Exception as e:
+            logger.exception(
+                "yfinance.client.unexpected", extra={"symbol": symbol, "op": op, "error": str(e)}
+            )
+            raise HTTPException(status_code=500, detail="Unexpected error fetching data") from e
 
     def _normalize(self, symbol: str) -> str:
         return (symbol or "").upper().strip()
