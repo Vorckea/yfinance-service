@@ -9,6 +9,7 @@ from typing import Annotated, Dict, Union
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 
+from ...auth import check_api_key
 from ...clients.interface import YFinanceClientInterface
 from ...common.validation import SymbolParam
 from ...dependencies import get_settings, get_yfinance_client
@@ -16,7 +17,7 @@ from ...settings import Settings
 from .models import QuoteResponse, SymbolErrorModel
 from .service import fetch_quote
 
-router = APIRouter()
+router = APIRouter(dependencies=[Depends(check_api_key)])
 
 
 @router.get(
