@@ -48,13 +48,16 @@ class YFinanceClient(YFinanceClientInterface):
 
     def _ticker_factory(self, symbol: str) -> yf.Ticker:
         return yf.Ticker(symbol)
-    
-    async def _get_ticker(self, symbol: str) -> yf.Ticker:
+
+    async def _get_ticker(self, symbol: str, no_cache: bool = False) -> yf.Ticker:
         """Get a ticker from cache or create a new one."""
+        if no_cache:
+            return self._ticker_factory(symbol)
+
         cached = await self._ticker_cache.get(symbol)
         if cached is not None:
             return cached
-        
+
         ticker = self._ticker_factory(symbol)
         await self._ticker_cache.set(symbol, ticker)
         return ticker
@@ -174,6 +177,35 @@ class YFinanceClient(YFinanceClientInterface):
             )
             raise HTTPException(status_code=502, detail="Malformed data from upstream")
         return info
+
+    async def get_news(self, symbol: str, count: int, tab: str) -> list[YFinanceData]:
+        """Fetch news for a specific stock.
+
+        Args:
+            symbol (str): The stock symbol to fetch news for.
+            count (int): The number of news articles to fetch.
+            tab (str): News type: news, press releases, or all.
+
+        Raises:
+            HTTPException: If the symbol is not found or if there is an error fetching data.
+
+        Returns:
+            Any: The news data for the stock.
+
+        """
+        symbol = self._normalize(symbol)
+        ticker = await self._get_ticker(symbol, no_cache=True)
+        # We don't use cache to avoid caching in yf.Ticker.get_news, which does not check arguments
+        news = await self._fetch_data("news", ticker.get_news, symbol, count=count, tab=tab)
+        if not news:
+            logger.info("yfinance.client.no_data", extra={"symbol": symbol, "op": "news"})
+            raise HTTPException(status_code=404, detail=f"No data for {symbol}")
+        if not isinstance(news, list):
+            logger.warning(
+                "yfinance.client.invalid_info_type", extra={"symbol": symbol, "type": type(news)},
+            )
+            raise HTTPException(status_code=502, detail="Malformed data form upstream")
+        return news
 
     async def get_history(
         self, symbol: str, start: date | None, end: date | None, interval: str = "1d"

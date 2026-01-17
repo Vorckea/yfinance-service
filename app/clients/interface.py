@@ -17,6 +17,11 @@ class YFinanceClientInterface(ABC):
         pass
 
     @abstractmethod
+    async def get_news(self, symbol: str, count: int, tab: str) -> list[Mapping[str, Any]]:
+        """Fetch news articles for a specific stock."""
+        pass
+
+    @abstractmethod
     async def get_history(
         self, symbol: str, start: date | None, end: date | None, interval: str = "1d"
     ) -> pd.DataFrame | None:
