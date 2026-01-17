@@ -12,6 +12,7 @@ from app.features.earnings.router import router as earnings_router
 from app.features.health.router import router as health_router
 from app.features.historical.router import router as historical_router
 from app.features.info.router import router as info_router
+from app.features.news.router import router as news_router
 from app.features.quote.router import router as quote_router
 from app.features.snapshot.router import router as snapshot_router
 from app.features.splits.router import router as splits_router
@@ -88,6 +89,7 @@ app.include_router(historical_router, prefix="/historical", tags=["historical"])
 app.include_router(info_router, prefix="/info", tags=["info"])
 app.include_router(snapshot_router, prefix="/snapshot", tags=["snapshot"])
 app.include_router(earnings_router, prefix="/earnings", tags=["earnings"])
+app.include_router(news_router, prefix="/news", tags=["news"])
 
 # Splits endpoint
 app.include_router(splits_router, prefix="/splits", tags=["splits"])
