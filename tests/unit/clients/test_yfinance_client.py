@@ -1,13 +1,14 @@
 """Tests for YFinanceClient error handling."""
 
 import asyncio
-import pytest
-import pandas as pd
 
+import pandas as pd
+import pytest
 from fastapi import HTTPException
 
 from app.clients.yfinance_client import YFinanceClient
 from app.settings import Settings
+
 
 @pytest.mark.asyncio
 async def test_fetch_data_upstream_timeout(monkeypatch):
@@ -258,6 +259,40 @@ async def test_get_info_empty(monkeypatch):
 
     with pytest.raises(HTTPException) as excinfo:
         await client.get_info("AAPL")
+
+    assert excinfo.value.status_code == 404
+
+
+@pytest.mark.asyncio
+async def test_get_news_non_list(monkeypatch):
+    """Simulate malformed news (not a list) -> should raise HTTP 502."""
+    client = YFinanceClient()
+    ticker_mock = type("TickerMock", (), {"get_news": lambda self, **kw: {"not": "list"}})()
+
+    async def mock_get_ticker(*args, **kwargs):
+        return ticker_mock
+
+    monkeypatch.setattr(client, "_get_ticker", mock_get_ticker)
+
+    with pytest.raises(HTTPException) as excinfo:
+        await client.get_news("AAPL", 5, "news")
+
+    assert excinfo.value.status_code == 502
+
+
+@pytest.mark.asyncio
+async def test_get_news_empty_list(monkeypatch):
+    """Simulate empty news list -> should raise HTTP 404."""
+    client = YFinanceClient()
+    ticker_mock = type("TickerMock", (), {"get_news": lambda self, **kw: []})()
+
+    async def mock_get_ticker(*args, **kwargs):
+        return ticker_mock
+
+    monkeypatch.setattr(client, "_get_ticker", mock_get_ticker)
+
+    with pytest.raises(HTTPException) as excinfo:
+        await client.get_news("AAPL", 5, "news")
 
     assert excinfo.value.status_code == 404
 
