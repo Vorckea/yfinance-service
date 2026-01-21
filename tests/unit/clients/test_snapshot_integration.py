@@ -160,6 +160,27 @@ async def test_info_endpoint_with_fake_client():
 
 @pytest.mark.asyncio
 @pytest.mark.integration
+async def test_news_endpoint_with_fake_client():
+    """Integration test: verify news endpoint works with fake client."""
+    app.dependency_overrides[get_yfinance_client] = lambda: FakeYFinanceClient()
+
+    transport = httpx.ASGITransport(app=app)
+    async with httpx.AsyncClient(transport=transport, base_url="http://test") as client:
+        resp = await client.get("/news/AAPL?count=5&tab=news")
+        assert resp.status_code == 200, resp.text
+        data = resp.json()
+
+        # Verify news response structure
+        assert "news" in data
+        assert len(data["news"]) == 1 # FakeClient returns 1 news item
+        assert "content" in data["news"][0]
+        assert isinstance(data["news"], list)
+
+    app.dependency_overrides.clear()
+
+
+@pytest.mark.asyncio
+@pytest.mark.integration
 async def test_historical_endpoint_with_fake_client():
     """Integration test: verify historical endpoint works with fake client."""
     app.dependency_overrides[get_yfinance_client] = lambda: FakeYFinanceClient()

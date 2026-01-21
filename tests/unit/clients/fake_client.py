@@ -115,3 +115,26 @@ class FakeYFinanceClient(YFinanceClientInterface):
         import pandas as pd
         # Providing a default empty series prevents integration tests from crashing
         return pd.Series(dtype=float)
+
+    async def get_news(self, symbol: str, count: int, tab: str) -> list[Mapping[str, Any]]:
+        """Return deterministic fake news items."""
+        return [
+            {
+                "id": "c3618287-ab77-4707-9611-2472b0a47a20",
+                "content": {
+                    "id": "c3618287-ab77-4707-9611-2472b0a47a20",
+                    "contentType": "STORY",
+                    "title": (
+                        "Warren Buffett is stepping down as Berkshire Hathaway CEO."
+                        "It's one of several big C-suite shake-ups in 2026."
+                    ),
+                    "description": "",
+                    "summary": "These CEOs are taking the helm in 2026.",
+                    "pubDate": "2025-12-31T17:56:38Z",
+                    "displayTime": "2026-01-03T14:07:21Z",
+                    "isHosted": "true",
+                    "bypassModal": "false",
+                    "previewUrl": "null"
+                },
+            },
+        ]

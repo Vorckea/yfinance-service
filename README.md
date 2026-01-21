@@ -26,6 +26,7 @@
 | **Quote API**          | Fetch latest market quotes (OHLCV) for ticker symbols.  |
 | **Historical API**     | Retrieve historical data with flexible intervals (1h, 1d, 1wk, 1mo). |
 | **Info API**           | Get company fundamentals (sector, market cap, etc.).    |
+| **News API**           | Get news about company 
 | **Earnings API**       | Retrieve normalized earnings history with EPS, revenue, and surprise data.    |
 | **Snapshot API**       | Combined info + quote in a single request with caching. |
 | **Splits API**         |	Retrieve historical stock split data (dates and ratios) for ticker symbols.  |
@@ -40,6 +41,7 @@
 | `GET /quote?symbols=SYM1,SYM2`                             | Bulk quotes (CSV)         | `/quote?symbols=AAPL,MSFT`                         |
 | `GET /historical/{symbol}?start=&end=&interval=`           | Historical OHLCV data     | `/historical/AAPL?start=2024-01-01&end=2024-02-01&interval=1d` |
 | `GET /info/{symbol}`                                       | Company details           | `/info/TSLA`                                       |
+| `GET /news/{symbol}?count={count}&tab={tab}` | Company news (Allowed tab values are `news` (default), `press-releases` and `all`) | `/news/TSLA?count=5&tab=news` |
 | `GET /health`                                              | Health check              | `/health`                                          |
 | `GET /metrics`                                             | Prometheus metrics        | `/metrics`                                         |
 | `GET /earnings/{symbol}?frequency={period}`        | Earnings history (EPS, revenue, surprise) | `/earnings/AAPL?frequency=quarterly` |
