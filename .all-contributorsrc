@@ -90,6 +90,15 @@
       "contributions": [
         "code"
       ]
+    },
+    {
+      "login": "danielm-05",
+      "name": "Daniel",
+      "avatar_url": "https://avatars.githubusercontent.com/u/78458132?v=4",
+      "profile": "https://github.com/danielm-05",
+      "contributions": [
+        "code"
+      ]
     }
   ],
   "contributorsPerLine": 7,
