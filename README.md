@@ -29,7 +29,7 @@
 | **Quote API**          | Fetch latest market quotes (OHLCV) for ticker symbols.  |
 | **Historical API**     | Retrieve historical data with flexible intervals (1h, 1d, 1wk, 1mo). |
 | **Info API**           | Get company fundamentals (sector, market cap, etc.).    |
-| **News API**           | Get news about company 
+| **News API**           | Get news about company
 | **Earnings API**       | Retrieve normalized earnings history with EPS, revenue, and surprise data.    |
 | **Snapshot API**       | Combined info + quote in a single request with caching. |
 | **Splits API**         |	Retrieve historical stock split data (dates and ratios) for ticker symbols.  |
@@ -296,7 +296,7 @@ Aksel Heggland Schrader ([@Vorckea](https://github.com/Vorckea))
 ---
 
 **Keywords**: yfinance docker, yahoo finance api, stock market api, yfinance rest api, yfinance microservice, stock data api, financial data api, python finance api, fastapi stock api
-## Contributors ✨
+## Contributors
 
 Thanks goes to these wonderful people ([emoji key](https://allcontributors.org/docs/en/emoji-key)):
 
@@ -310,7 +310,7 @@ Thanks goes to these wonderful people ([emoji key](https://allcontributors.org/d
       <td align="center" valign="top" width="14.28%"><a href="https://github.com/Jarvis2001"><img src="https://avatars.githubusercontent.com/u/40858007?v=4?s=75" width="75px;" alt="Makarand More"/><br /><sub><b>Makarand More</b></sub></a><br /><a href="https://github.com/Vorckea/yfinance-service/commits?author=Jarvis2001" title="Code">💻</a></td>
       <td align="center" valign="top" width="14.28%"><a href="https://github.com/LaryStef"><img src="https://avatars.githubusercontent.com/u/120743460?v=4?s=75" width="75px;" alt="Tim"/><br /><sub><b>Tim</b></sub></a><br /><a href="https://github.com/Vorckea/yfinance-service/commits?author=LaryStef" title="Code">💻</a></td>
       <td align="center" valign="top" width="14.28%"><a href="https://github.com/Warkstee"><img src="https://avatars.githubusercontent.com/u/89970432?v=4?s=75" width="75px;" alt="Warkstee"/><br /><sub><b>Warkstee</b></sub></a><br /><a href="https://github.com/Vorckea/yfinance-service/commits?author=Warkstee" title="Code">💻</a></td>
-      <td align="center" valign="top" width="14.28%"><a href="https://syl.rest/"><img src="https://avatars.githubusercontent.com/u/16215967?v=4?s=75" width="75px;" alt="blake b. / syl"/><br /><sub><b>blake b. / syl</b></sub></a><br /><a href="https://github.com/Vorckea/yfinance-service/commits?author=sylvexn" title="Code">💻</a></td>
+      <td align="center" valign="top" width="14.28%"><a href="https://github.com/sylvexn"><img src="https://avatars.githubusercontent.com/u/16215967?v=4?s=75" width="75px;" alt="blake b. / syl"/><br /><sub><b>blake b. / syl</b></sub></a><br /><a href="https://github.com/Vorckea/yfinance-service/commits?author=sylvexn" title="Code">💻</a></td>
       <td align="center" valign="top" width="14.28%"><a href="https://github.com/harsh21234i"><img src="https://avatars.githubusercontent.com/u/151563948?v=4?s=75" width="75px;" alt="HARSH THAKARE"/><br /><sub><b>HARSH THAKARE</b></sub></a><br /><a href="https://github.com/Vorckea/yfinance-service/commits?author=harsh21234i" title="Code">💻</a></td>
       <td align="center" valign="top" width="14.28%"><a href="https://github.com/Harshinfomaticae"><img src="https://avatars.githubusercontent.com/u/227554349?v=4?s=75" width="75px;" alt="Harshinfomaticae"/><br /><sub><b>Harshinfomaticae</b></sub></a><br /><a href="https://github.com/Vorckea/yfinance-service/commits?author=Harshinfomaticae" title="Code">💻</a></td>
     </tr>
@@ -321,15 +321,6 @@ Thanks goes to these wonderful people ([emoji key](https://allcontributors.org/d
       <td align="center" valign="top" width="14.28%"><a href="https://github.com/MuriloZF"><img src="https://avatars.githubusercontent.com/u/166302769?v=4?s=75" width="75px;" alt="Murilo Zimerman Fortaleza"/><br /><sub><b>Murilo Zimerman Fortaleza</b></sub></a><br /><a href="https://github.com/Vorckea/yfinance-service/commits?author=MuriloZF" title="Code">💻</a></td>
     </tr>
   </tbody>
-  <tfoot>
-    <tr>
-      <td align="center" size="13px" colspan="7">
-        <img src="https://raw.githubusercontent.com/all-contributors/all-contributors-cli/1b8533af435da9854653492b1327a23a4dbd0a10/assets/logo-small.svg">
-          <a href="https://all-contributors.js.org/docs/en/bot/usage">Add your contributions</a>
-        </img>
-      </td>
-    </tr>
-  </tfoot>
 </table>
 
 <!-- markdownlint-restore -->
@@ -338,3 +329,4 @@ Thanks goes to these wonderful people ([emoji key](https://allcontributors.org/d
 <!-- ALL-CONTRIBUTORS-LIST:END -->
 
 This project follows the [all-contributors](https://github.com/all-contributors/all-contributors) specification. Contributions of any kind welcome!
+
