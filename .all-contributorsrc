@@ -1,0 +1,115 @@
+{
+  "projectName": "yfinance-service",
+  "projectOwner": "Vorckea",
+  "repoType": "github",
+  "repoHost": "https://github.com",
+  "files": [
+    "README.md"
+  ],
+  "imageSize": 75,
+  "commit": true,
+  "commitConvention": "gitmoji",
+  "contributors": [
+    {
+      "login": "Vorckea",
+      "name": "Aksel Heggland Schrader",
+      "avatar_url": "https://avatars.githubusercontent.com/u/97853282?v=4",
+      "profile": "https://github.com/Vorckea",
+      "contributions": [
+        "code"
+      ]
+    },
+    {
+      "login": "Jarvis2001",
+      "name": "Makarand More",
+      "avatar_url": "https://avatars.githubusercontent.com/u/40858007?v=4",
+      "profile": "https://github.com/Jarvis2001",
+      "contributions": [
+        "code"
+      ]
+    },
+    {
+      "login": "LaryStef",
+      "name": "Tim",
+      "avatar_url": "https://avatars.githubusercontent.com/u/120743460?v=4",
+      "profile": "https://github.com/LaryStef",
+      "contributions": [
+        "code"
+      ]
+    },
+    {
+      "login": "Warkstee",
+      "name": "Warkstee",
+      "avatar_url": "https://avatars.githubusercontent.com/u/89970432?v=4",
+      "profile": "https://github.com/Warkstee",
+      "contributions": [
+        "code"
+      ]
+    },
+    {
+      "login": "sylvexn",
+      "name": "blake b. / syl",
+      "avatar_url": "https://avatars.githubusercontent.com/u/16215967?v=4",
+      "profile": "https://syl.rest/",
+      "contributions": [
+        "code"
+      ]
+    },
+    {
+      "login": "harsh21234i",
+      "name": "HARSH THAKARE",
+      "avatar_url": "https://avatars.githubusercontent.com/u/151563948?v=4",
+      "profile": "https://github.com/harsh21234i",
+      "contributions": [
+        "code"
+      ]
+    },
+    {
+      "login": "Harshinfomaticae",
+      "name": "Harshinfomaticae",
+      "avatar_url": "https://avatars.githubusercontent.com/u/227554349?v=4",
+      "profile": "https://github.com/Harshinfomaticae",
+      "contributions": [
+        "code"
+      ]
+    },
+    {
+      "login": "Sujatha03092004",
+      "name": "Sujatha",
+      "avatar_url": "https://avatars.githubusercontent.com/u/172926500?v=4",
+      "profile": "https://github.com/Sujatha03092004",
+      "contributions": [
+        "code"
+      ]
+    },
+    {
+      "login": "cnaples79",
+      "name": "Chase Naples",
+      "avatar_url": "https://avatars.githubusercontent.com/u/28323262?v=4",
+      "profile": "https://github.com/cnaples79",
+      "contributions": [
+        "code"
+      ]
+    },
+    {
+      "login": "danielm-05",
+      "name": "Daniel",
+      "avatar_url": "https://avatars.githubusercontent.com/u/78458132?v=4",
+      "profile": "https://github.com/danielm-05",
+      "contributions": [
+        "code"
+      ]
+    },
+    {
+      "login": "MuriloZF",
+      "name": "Murilo Zimerman Fortaleza",
+      "avatar_url": "https://avatars.githubusercontent.com/u/166302769?v=4",
+      "profile": "https://github.com/MuriloZF",
+      "contributions": [
+        "code"
+      ]
+    }
+  ],
+  "contributorsPerLine": 7,
+  "linkToUsage": true
+}
