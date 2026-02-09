@@ -1,4 +1,7 @@
 # YFinance Service — Stock Market API | yfinance REST API | Yahoo Finance Docker Container
+<!-- ALL-CONTRIBUTORS-BADGE:START - Do not remove or modify this section -->
+[![All Contributors](https://img.shields.io/badge/all_contributors-1-orange.svg?style=flat-square)](#contributors-)
+<!-- ALL-CONTRIBUTORS-BADGE:END -->
 
 [![Build Status](https://img.shields.io/github/actions/workflow/status/Vorckea/yfinance-service/ci.yml?branch=main)](https://github.com/Vorckea/yfinance-service/actions)
 [![Coverage](https://img.shields.io/badge/coverage-83%25-brightgreen)](https://github.com/Vorckea/yfinance-service)
@@ -293,3 +296,24 @@ Aksel Heggland Schrader ([@Vorckea](https://github.com/Vorckea))
 ---
 
 **Keywords**: yfinance docker, yahoo finance api, stock market api, yfinance rest api, yfinance microservice, stock data api, financial data api, python finance api, fastapi stock api
+## Contributors ✨
+
+Thanks goes to these wonderful people ([emoji key](https://allcontributors.org/docs/en/emoji-key)):
+
+<!-- ALL-CONTRIBUTORS-LIST:START - Do not remove or modify this section -->
+<!-- prettier-ignore-start -->
+<!-- markdownlint-disable -->
+<table>
+  <tbody>
+    <tr>
+      <td align="center" valign="top" width="14.28%"><a href="https://achyuth.vercel.app/"><img src="https://avatars.githubusercontent.com/u/67776857?v=4?s=100" width="100px;" alt="Achyuth Jois M"/><br /><sub><b>Achyuth Jois M</b></sub></a><br /><a href="https://github.com/Vorckea/yfinance-service/commits?author=jois-code" title="Documentation">📖</a></td>
+    </tr>
+  </tbody>
+</table>
+
+<!-- markdownlint-restore -->
+<!-- prettier-ignore-end -->
+
+<!-- ALL-CONTRIBUTORS-LIST:END -->
+
+This project follows the [all-contributors](https://github.com/all-contributors/all-contributors) specification. Contributions of any kind welcome!
