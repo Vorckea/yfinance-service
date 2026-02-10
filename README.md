@@ -1,6 +1,6 @@
 # YFinance Service — Stock Market API | yfinance REST API | Yahoo Finance Docker Container
 <!-- ALL-CONTRIBUTORS-BADGE:START - Do not remove or modify this section -->
-[![All Contributors](https://img.shields.io/badge/all_contributors-1-orange.svg?style=flat-square)](#contributors-)
+[![All Contributors](https://img.shields.io/badge/all_contributors-12-orange.svg?style=flat-square)](#contributors-)
 <!-- ALL-CONTRIBUTORS-BADGE:END -->
 
 [![Build Status](https://img.shields.io/github/actions/workflow/status/Vorckea/yfinance-service/ci.yml?branch=main)](https://github.com/Vorckea/yfinance-service/actions)
@@ -29,7 +29,7 @@
 | **Quote API**          | Fetch latest market quotes (OHLCV) for ticker symbols.  |
 | **Historical API**     | Retrieve historical data with flexible intervals (1h, 1d, 1wk, 1mo). |
 | **Info API**           | Get company fundamentals (sector, market cap, etc.).    |
-| **News API**           | Get news about company 
+| **News API**           | Get news about company
 | **Earnings API**       | Retrieve normalized earnings history with EPS, revenue, and surprise data.    |
 | **Snapshot API**       | Combined info + quote in a single request with caching. |
 | **Splits API**         |	Retrieve historical stock split data (dates and ratios) for ticker symbols.  |
@@ -296,7 +296,7 @@ Aksel Heggland Schrader ([@Vorckea](https://github.com/Vorckea))
 ---
 
 **Keywords**: yfinance docker, yahoo finance api, stock market api, yfinance rest api, yfinance microservice, stock data api, financial data api, python finance api, fastapi stock api
-## Contributors ✨
+## Contributors
 
 Thanks goes to these wonderful people ([emoji key](https://allcontributors.org/docs/en/emoji-key)):
 
@@ -306,6 +306,19 @@ Thanks goes to these wonderful people ([emoji key](https://allcontributors.org/d
 <table>
   <tbody>
     <tr>
+      <td align="center" valign="top" width="14.28%"><a href="https://github.com/Vorckea"><img src="https://avatars.githubusercontent.com/u/97853282?v=4?s=75" width="75px;" alt="Aksel Heggland Schrader"/><br /><sub><b>Aksel Heggland Schrader</b></sub></a><br /><a href="https://github.com/Vorckea/yfinance-service/commits?author=Vorckea" title="Code">💻</a></td>
+      <td align="center" valign="top" width="14.28%"><a href="https://github.com/Jarvis2001"><img src="https://avatars.githubusercontent.com/u/40858007?v=4?s=75" width="75px;" alt="Makarand More"/><br /><sub><b>Makarand More</b></sub></a><br /><a href="https://github.com/Vorckea/yfinance-service/commits?author=Jarvis2001" title="Code">💻</a></td>
+      <td align="center" valign="top" width="14.28%"><a href="https://github.com/LaryStef"><img src="https://avatars.githubusercontent.com/u/120743460?v=4?s=75" width="75px;" alt="Tim"/><br /><sub><b>Tim</b></sub></a><br /><a href="https://github.com/Vorckea/yfinance-service/commits?author=LaryStef" title="Code">💻</a></td>
+      <td align="center" valign="top" width="14.28%"><a href="https://github.com/Warkstee"><img src="https://avatars.githubusercontent.com/u/89970432?v=4?s=75" width="75px;" alt="Warkstee"/><br /><sub><b>Warkstee</b></sub></a><br /><a href="https://github.com/Vorckea/yfinance-service/commits?author=Warkstee" title="Code">💻</a></td>
+      <td align="center" valign="top" width="14.28%"><a href="https://github.com/sylvexn"><img src="https://avatars.githubusercontent.com/u/16215967?v=4?s=75" width="75px;" alt="blake b. / syl"/><br /><sub><b>blake b. / syl</b></sub></a><br /><a href="https://github.com/Vorckea/yfinance-service/commits?author=sylvexn" title="Code">💻</a></td>
+      <td align="center" valign="top" width="14.28%"><a href="https://github.com/harsh21234i"><img src="https://avatars.githubusercontent.com/u/151563948?v=4?s=75" width="75px;" alt="HARSH THAKARE"/><br /><sub><b>HARSH THAKARE</b></sub></a><br /><a href="https://github.com/Vorckea/yfinance-service/commits?author=harsh21234i" title="Code">💻</a></td>
+      <td align="center" valign="top" width="14.28%"><a href="https://github.com/Harshinfomaticae"><img src="https://avatars.githubusercontent.com/u/227554349?v=4?s=75" width="75px;" alt="Harshinfomaticae"/><br /><sub><b>Harshinfomaticae</b></sub></a><br /><a href="https://github.com/Vorckea/yfinance-service/commits?author=Harshinfomaticae" title="Code">💻</a></td>
+    </tr>
+    <tr>
+      <td align="center" valign="top" width="14.28%"><a href="https://github.com/Sujatha03092004"><img src="https://avatars.githubusercontent.com/u/172926500?v=4?s=75" width="75px;" alt="Sujatha"/><br /><sub><b>Sujatha</b></sub></a><br /><a href="https://github.com/Vorckea/yfinance-service/commits?author=Sujatha03092004" title="Code">💻</a></td>
+      <td align="center" valign="top" width="14.28%"><a href="https://github.com/cnaples79"><img src="https://avatars.githubusercontent.com/u/28323262?v=4?s=75" width="75px;" alt="Chase Naples"/><br /><sub><b>Chase Naples</b></sub></a><br /><a href="https://github.com/Vorckea/yfinance-service/commits?author=cnaples79" title="Code">💻</a></td>
+      <td align="center" valign="top" width="14.28%"><a href="https://github.com/danielm-05"><img src="https://avatars.githubusercontent.com/u/78458132?v=4?s=75" width="75px;" alt="Daniel"/><br /><sub><b>Daniel</b></sub></a><br /><a href="https://github.com/Vorckea/yfinance-service/commits?author=danielm-05" title="Code">💻</a></td>
+      <td align="center" valign="top" width="14.28%"><a href="https://github.com/MuriloZF"><img src="https://avatars.githubusercontent.com/u/166302769?v=4?s=75" width="75px;" alt="Murilo Zimerman Fortaleza"/><br /><sub><b>Murilo Zimerman Fortaleza</b></sub></a><br /><a href="https://github.com/Vorckea/yfinance-service/commits?author=MuriloZF" title="Code">💻</a></td>
       <td align="center" valign="top" width="14.28%"><a href="https://achyuth.vercel.app/"><img src="https://avatars.githubusercontent.com/u/67776857?v=4?s=100" width="100px;" alt="Achyuth Jois M"/><br /><sub><b>Achyuth Jois M</b></sub></a><br /><a href="https://github.com/Vorckea/yfinance-service/commits?author=jois-code" title="Documentation">📖</a></td>
     </tr>
   </tbody>
@@ -317,3 +330,4 @@ Thanks goes to these wonderful people ([emoji key](https://allcontributors.org/d
 <!-- ALL-CONTRIBUTORS-LIST:END -->
 
 This project follows the [all-contributors](https://github.com/all-contributors/all-contributors) specification. Contributions of any kind welcome!
+
