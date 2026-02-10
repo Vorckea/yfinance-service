@@ -108,8 +108,22 @@
       "contributions": [
         "code"
       ]
-    }
+    },
+    {
+      "login": "jois-code",
+      "name": "Achyuth Jois M",
+      "avatar_url": "https://avatars.githubusercontent.com/u/67776857?v=4",
+      "profile": "https://achyuth.vercel.app/",
+      "contributions": [
+        "doc"
+       ]
+    },
   ],
   "contributorsPerLine": 7,
+  "skipCi": true,
+  "repoType": "github",
+  "repoHost": "https://github.com",
+  "projectName": "yfinance-service",
+  "projectOwner": "Vorckea"
   "linkToUsage": true
 }
