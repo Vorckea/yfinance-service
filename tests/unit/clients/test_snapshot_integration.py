@@ -167,12 +167,12 @@ async def test_news_endpoint_with_fake_client():
     transport = httpx.ASGITransport(app=app)
     async with httpx.AsyncClient(transport=transport, base_url="http://test") as client:
         resp = await client.get("/news/AAPL?count=5&tab=news")
-        assert resp.status_code == 200, resp.text
+        assert resp.status_code == 200
         data = resp.json()
 
         # Verify news response structure
         assert "news" in data
-        assert len(data["news"]) == 1 # FakeClient returns 1 news item
+        assert len(data["news"]) == 5
         assert "content" in data["news"][0]
         assert isinstance(data["news"], list)
 
