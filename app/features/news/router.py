@@ -6,8 +6,9 @@ from fastapi import APIRouter, Depends, Query
 
 from app.clients.interface import YFinanceClientInterface
 from app.common.validation import SymbolParam
-from app.dependencies import get_settings, get_yfinance_client
+from app.dependencies import get_news_cache, get_settings, get_yfinance_client
 from app.features.news.service import fetch_news
+from app.utils.cache.news_cache import NewsCache
 
 from .models import NewsResponse
 
@@ -181,7 +182,14 @@ async def get_news(
         TabAllowedValues,
         Query(description="News type: news, press-releases, or all"),
     ] = "news",
+    news_cache: NewsCache = Depends(get_news_cache),
     client: YFinanceClientInterface = Depends(get_yfinance_client),
 ) -> NewsResponse:
     """Get news for a given ticker symbol."""
-    return await fetch_news(symbol=symbol, count=count, tab=tab, client=client)
+    return await fetch_news(
+        symbol=symbol,
+        count=count,
+        tab=tab,
+        client=client,
+        news_cache=news_cache,
+    )
