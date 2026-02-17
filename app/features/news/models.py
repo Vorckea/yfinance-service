@@ -9,6 +9,7 @@ class BaseNewsModel(BaseModel):
 
     model_config = ConfigDict(
         alias_generator=to_camel,
+        frozen=True,
         extra="ignore",
     )
 

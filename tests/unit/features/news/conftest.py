@@ -1,14 +1,15 @@
 """Fixtures for news feature tests."""
 
 import copy
+from typing import Any, Callable
 
 import pytest
 
 
 @pytest.fixture(scope="function")
-def news_payload_factory():
+def news_payload_factory() -> Callable[..., list[dict[str, Any]]]:
     """Return factory to create news payloads for testing."""
-    base = {
+    base: dict[str, Any] = {
         "id": "aaab1111",
         "content": {
             "id": "c3618287-ab77-4707-9611-2472b0a47a20",
@@ -27,9 +28,14 @@ def news_payload_factory():
         },
     }
 
-    def _factory(count: int = 1, **overrides):
+    def _factory(count: int = 1, **overrides: dict[str, Any]) -> list[dict[str, Any]]:
         base_copy = copy.deepcopy(base)
         base_copy.update(overrides)
-        return [copy.deepcopy(base_copy) for _ in range(count)]
+        news: list[dict[str, Any]] = []
+        for i in range(count):
+            article = copy.deepcopy(base_copy)
+            article["id"] = str(i)
+            news.append(article)
+        return news
 
     return _factory

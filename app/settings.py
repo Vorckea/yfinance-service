@@ -53,6 +53,10 @@ class Settings(BaseSettings):
     splits_cache_ttl: int = Field(3600, ge=0, validation_alias="SPLITS_CACHE_TTL")
     splits_cache_maxsize: int = Field(256, ge=0, validation_alias="SPLITS_CACHE_MAXSIZE")
 
+    # News cache settings
+    news_cache_ttl: int = Field(3600, ge=0, validation_alias="NEWS_CACHE_TTL")
+    news_cache_maxsize: int = Field(256, ge=0, validation_alias="NEWS_CACHE_MAXSIZE")
+
     # News endpoint settings
     news_max_items: int = Field(100, ge=1, validation_alias="NEWS_MAX_ITEMS")
 
