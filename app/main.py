@@ -12,6 +12,7 @@ from app.features.earnings.router import router as earnings_router
 from app.features.health.router import router as health_router
 from app.features.historical.router import router as historical_router
 from app.features.info.router import router as info_router
+from app.features.news.router import router as news_router
 from app.features.quote.router import router as quote_router
 from app.features.snapshot.router import router as snapshot_router
 from app.features.splits.router import router as splits_router
@@ -34,7 +35,7 @@ async def lifespan(app: FastAPI):
         contact_email = app.contact.get("email")
     BUILD_INFO.info(
         {
-            "version": "0.0.23",
+            "version": "0.0.24",
             "python_version": sys.version.split()[0],
             "contact_name": contact_name or "unknown",
             "contact_email": contact_email or "unknown",
@@ -45,7 +46,7 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(
     title="YFinance Proxy Service",
-    version="0.0.23",
+    version="0.0.24",
     description=(
         "A FastAPI proxy for yfinance. Provides endpoints to fetch stock quotes and "
         "historical data."
@@ -88,6 +89,7 @@ app.include_router(historical_router, prefix="/historical", tags=["historical"])
 app.include_router(info_router, prefix="/info", tags=["info"])
 app.include_router(snapshot_router, prefix="/snapshot", tags=["snapshot"])
 app.include_router(earnings_router, prefix="/earnings", tags=["earnings"])
+app.include_router(news_router, prefix="/news", tags=["news"])
 
 # Splits endpoint
 app.include_router(splits_router, prefix="/splits", tags=["splits"])

@@ -2,6 +2,8 @@
 
 from functools import lru_cache
 
+from app.utils.cache.news_cache import NewsCache
+
 from .clients.yfinance_client import YFinanceClient
 from .settings import Settings
 from .utils.cache import SnapshotCache, TTLCache
@@ -47,13 +49,26 @@ def get_settings() -> Settings:
     """Get the application settings (singleton)."""
     return Settings()
 
+
 @lru_cache
 def get_splits_cache() -> TTLCache:
     """Get a shared TTL cache for stock splits (historical data is very stable)."""
     settings = get_settings()
     return TTLCache(
         size=settings.splits_cache_maxsize,
-        ttl=settings.splits_cache_ttl,    
+        ttl=settings.splits_cache_ttl,
         cache_name="ttl_cache",
         resource="splits",
+    )
+
+
+@lru_cache
+def get_news_cache() -> NewsCache:
+    """Get a shared `NewsCache` instance for caching news articles."""
+    settings = get_settings()
+    return NewsCache(
+        size=settings.news_cache_maxsize,
+        ttl=settings.news_cache_ttl,
+        cache_name="news_cache",
+        resource="news",
     )
