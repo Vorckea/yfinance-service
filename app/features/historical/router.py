@@ -9,14 +9,13 @@ from typing import Annotated, Literal, get_args
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.params import Query
 
-from ...auth import check_api_key
 from ...clients.interface import YFinanceClientInterface
 from ...common.validation import SymbolParam
 from ...dependencies import get_yfinance_client
 from .models import HistoricalResponse
 from .service import fetch_historical
 
-router = APIRouter(dependencies=[Depends(check_api_key)])
+router = APIRouter()
 
 ALLOWED_INTERVALS = Literal[
     "1m",
