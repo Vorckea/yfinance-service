@@ -4,9 +4,10 @@ import sys
 import time
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI, Response
+from fastapi import Depends, FastAPI, Response
 from prometheus_client import CONTENT_TYPE_LATEST, generate_latest
 
+from app.auth import check_api_key
 from app.dependencies import get_settings
 from app.features.earnings.router import router as earnings_router
 from app.features.health.router import router as health_router
@@ -60,6 +61,7 @@ app = FastAPI(
         "url": "https://opensource.org/license/MIT",
     },
     lifespan=lifespan,
+    dependencies=[Depends(check_api_key)],
 )
 
 settings = get_settings()
