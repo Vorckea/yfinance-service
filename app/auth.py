@@ -27,9 +27,9 @@ async def check_api_key(
         HTTPException: 401 if authentication is enabled and key is missing/invalid
 
     """
-    # If API key authentication is disabled or endpoint is not protected, allow request
+    # If endpoint is not protected, allow request
     endpoint = request.url.path.split("/")[1] if len(request.url.path.split("/")) > 1 else "root"
-    if not settings.api_key_enabled or endpoint in settings.api_key_unprotected_endpoints:
+    if endpoint in settings.api_key_unprotected_endpoints:
         return
 
     # Check if API key was provided

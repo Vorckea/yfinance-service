@@ -44,6 +44,7 @@ async def lifespan(app: FastAPI):
     )
     yield
 
+settings = get_settings()
 
 app = FastAPI(
     title="YFinance Proxy Service",
@@ -61,10 +62,9 @@ app = FastAPI(
         "url": "https://opensource.org/license/MIT",
     },
     lifespan=lifespan,
-    dependencies=[Depends(check_api_key)],
+    dependencies=[Depends(check_api_key)] if settings.api_key_enabled else None,
 )
 
-settings = get_settings()
 if settings.cors_enabled:
     from fastapi.middleware.cors import CORSMiddleware
 

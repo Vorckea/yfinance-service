@@ -72,6 +72,7 @@ class Settings(BaseSettings):
     api_key: str = Field("", validation_alias="API_KEY")
     # Endpoints that do not require API key authentication
     # Provide endpoint paths without leading slash, e.g. "info", "quote", "historical"
+    # For root endpoint, use "root". Wildcards are not supported.
     api_key_unprotected_endpoints: list[str] = Field(
         default_factory=lambda: ["health"],
         validation_alias="API_KEY_UNPROTECTED_ENDPOINTS",
