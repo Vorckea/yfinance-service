@@ -4,9 +4,10 @@ import sys
 import time
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI, Response
+from fastapi import Depends, FastAPI, Response
 from prometheus_client import CONTENT_TYPE_LATEST, generate_latest
 
+from app.auth import check_api_key
 from app.dependencies import get_settings
 from app.features.earnings.router import router as earnings_router
 from app.features.health.router import router as health_router
@@ -43,6 +44,7 @@ async def lifespan(app: FastAPI):
     )
     yield
 
+settings = get_settings()
 
 app = FastAPI(
     title="YFinance Proxy Service",
@@ -60,9 +62,9 @@ app = FastAPI(
         "url": "https://opensource.org/license/MIT",
     },
     lifespan=lifespan,
+    dependencies=[Depends(check_api_key)] if settings.api_key_enabled else None,
 )
 
-settings = get_settings()
 if settings.cors_enabled:
     from fastapi.middleware.cors import CORSMiddleware
 

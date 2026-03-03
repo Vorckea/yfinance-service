@@ -7,7 +7,6 @@ from typing import Annotated
 
 from fastapi import APIRouter, Depends
 
-from ...auth import check_api_key
 from ...clients.interface import YFinanceClientInterface
 from ...common.validation import SymbolParam
 from ...dependencies import get_info_cache, get_yfinance_client
@@ -15,7 +14,7 @@ from ...utils.cache.interface import CacheInterface
 from .models import InfoResponse
 from .service import fetch_info
 
-router = APIRouter(dependencies=[Depends(check_api_key)])
+router = APIRouter()
 
 
 @router.get(
