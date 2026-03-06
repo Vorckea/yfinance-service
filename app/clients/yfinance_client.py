@@ -11,6 +11,7 @@ Example:
     >>> client = YFinanceClient()
     >>> info = await client.get_info("AAPL")
     >>> history = await client.get_history("AAPL", start=date(2023, 1, 1))
+
 """
 
 import asyncio
@@ -20,7 +21,7 @@ from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import date
 from functools import lru_cache, partial
-from typing import Any, Optional, TypeVar, Dict
+from typing import Any, Dict, Optional, TypeVar
 
 import pandas as pd
 import yfinance as yf
@@ -34,6 +35,8 @@ from ..utils.logger import logger
 
 YFinanceData = dict[str, Any]
 T = TypeVar("T")
+
+
 @dataclass
 class _InflightEntry:
     """Represents an in-flight request with its result future.
@@ -47,7 +50,9 @@ class _InflightEntry:
         ref_count: Number of waiters currently waiting for this request.
         task: Optional background task driving the upstream fetch. Only set
             for the leader request.
+
     """
+
     future: asyncio.Future
     ref_count: int  # Number of waiters for this request
     task: Optional[asyncio.Task] = None  # Background task driving the upstream fetch
@@ -90,10 +95,12 @@ class YFinanceClient(YFinanceClientInterface):
         >>> client = YFinanceClient(timeout=30, ticker_cache_size=512)
         >>> info = await client.get_info("MSFT")
         >>> print(info.get("marketCap"))
+
     """
 
-    def __init__(self, timeout: int = 30, ticker_cache_size: int = 512,
-                 max_upstream_concurrency: int = 10):
+    def __init__(
+        self, timeout: int = 30, ticker_cache_size: int = 512, max_upstream_concurrency: int = 10
+    ):
         """Initialize the YFinanceClient.
 
         Args:
@@ -105,8 +112,10 @@ class YFinanceClient(YFinanceClientInterface):
             max_upstream_concurrency: Max simultaneous upstream calls.
                 Also sizes the dedicated thread pool (2x for retry headroom).
                 Defaults to 10.
+
         """
         import concurrent.futures as _cf
+
         self._timeout = timeout
         self._get_ticker = lru_cache(maxsize=ticker_cache_size)(self._ticker_factory)
         self._inflight: Dict[tuple, _InflightEntry] = {}
@@ -131,6 +140,7 @@ class YFinanceClient(YFinanceClientInterface):
 
         Returns:
             A configured yfinance Ticker instance.
+
         """
         return yf.Ticker(symbol)
 
@@ -148,6 +158,7 @@ class YFinanceClient(YFinanceClientInterface):
 
         Returns:
             The yfinance Ticker instance.
+
         """
         if asyncio.iscoroutinefunction(self._get_ticker):
             return await self._get_ticker(symbol, *args, **kwargs)
@@ -171,6 +182,7 @@ class YFinanceClient(YFinanceClientInterface):
 
         Returns:
             A tuple that uniquely identifies this request for coalescing purposes.
+
         """
         if op == "history":
             if args:
@@ -185,7 +197,13 @@ class YFinanceClient(YFinanceClientInterface):
                 end = kwargs.get("end")
                 interval = kwargs.get("interval", "1d")
             return (op, symbol, str(start), str(end), interval)
-        elif op in ("get_earnings", "earnings_dates", "quarterly_earnings", "income_stmt", "quarterly_income_stmt"):
+        elif op in (
+            "get_earnings",
+            "earnings_dates",
+            "quarterly_earnings",
+            "income_stmt",
+            "quarterly_income_stmt",
+        ):
             # Accept both "freq" (internal forwarding) and "frequency" (public API)
             freq = kwargs.get("freq") or kwargs.get("frequency", "quarterly")
             return (op, symbol, freq)
@@ -199,9 +217,7 @@ class YFinanceClient(YFinanceClientInterface):
         else:
             return (op, symbol)
 
-    async def _fetch_data_coalesced(
-        self, op: str, fetch_func, symbol: str, *args, **kwargs
-    ):
+    async def _fetch_data_coalesced(self, op: str, fetch_func, symbol: str, *args, **kwargs):
         """Fetch data with request coalescing, upstream semaphore, and retry.
 
         The first concurrent caller for a given key is the "leader" and drives
@@ -256,6 +272,7 @@ class YFinanceClient(YFinanceClientInterface):
                 for attempt in range(max_retries + 1):
                     try:
                         async with observe(op):
+
                             async def _invoke_fetch():
                                 # asyncio.to_thread keeps tests patchable via
                                 # monkeypatch.setattr(asyncio, "to_thread", ...).
@@ -264,14 +281,14 @@ class YFinanceClient(YFinanceClientInterface):
                                 call_result = await asyncio.to_thread(
                                     partial(fetch_func, **kwargs), *args
                                 )
-                                if asyncio.iscoroutine(call_result) or asyncio.isfuture(call_result):
+                                if asyncio.iscoroutine(call_result) or asyncio.isfuture(
+                                    call_result
+                                ):
                                     return await call_result
                                 return call_result
 
                             async with self._upstream_sem:
-                                result = await asyncio.wait_for(
-                                    _invoke_fetch(), self._timeout
-                                )
+                                result = await asyncio.wait_for(_invoke_fetch(), self._timeout)
 
                         async with self._inflight_lock:
                             _e = self._inflight.pop(key, None)
@@ -283,14 +300,18 @@ class YFinanceClient(YFinanceClientInterface):
                     except (ConnectionError, asyncio.TimeoutError, socket.timeout) as e:
                         last_error = e
                         if attempt < max_retries:
-                            base_backoff = self._settings.retry_backoff_base * (2 ** attempt)
+                            base_backoff = self._settings.retry_backoff_base * (2**attempt)
                             capped = min(base_backoff, self._settings.retry_backoff_max)
                             jitter = random.uniform(0, self._settings.retry_backoff_base)
                             sleep_time = capped + jitter
                             logger.debug(
                                 "yfinance.client.retry",
-                                extra={"symbol": symbol, "op": op,
-                                       "attempt": attempt + 1, "backoff": sleep_time},
+                                extra={
+                                    "symbol": symbol,
+                                    "op": op,
+                                    "attempt": attempt + 1,
+                                    "backoff": sleep_time,
+                                },
                             )
                             await asyncio.sleep(sleep_time)
                         else:
@@ -377,6 +398,7 @@ class YFinanceClient(YFinanceClientInterface):
         Args:
             key: The cache key identifying the in-flight request.
             error: The HTTPException to resolve the future with.
+
         """
         async with self._inflight_lock:
             entry = self._inflight.pop(key, None)
@@ -400,6 +422,7 @@ class YFinanceClient(YFinanceClientInterface):
 
         Returns:
             The result of the fetch operation.
+
         """
         return await self._fetch_data_coalesced(op, fetch_func, symbol, *args, **kwargs)
 
@@ -412,6 +435,7 @@ class YFinanceClient(YFinanceClientInterface):
         Returns:
             The normalized symbol (uppercase, stripped). Returns empty string
             if symbol is None.
+
         """
         return (symbol or "").upper().strip()
 
@@ -430,6 +454,7 @@ class YFinanceClient(YFinanceClientInterface):
         Raises:
             HTTPException: 404 if no data is found, 502 if the data format
                 is invalid.
+
         """
         symbol = self._normalize(symbol)
         ticker = await self._get_ticker_maybe_async(symbol)
@@ -460,6 +485,7 @@ class YFinanceClient(YFinanceClientInterface):
         Raises:
             HTTPException: 404 if no news is found, 502 if the data format
                 is invalid.
+
         """
         symbol = self._normalize(symbol)
         ticker = await self._get_ticker_maybe_async(symbol, no_cache=True)
@@ -469,7 +495,8 @@ class YFinanceClient(YFinanceClientInterface):
             raise HTTPException(status_code=404, detail=f"No data for {symbol}")
         if not isinstance(news, list):
             logger.warning(
-                "yfinance.client.invalid_info_type", extra={"symbol": symbol, "type": type(news)},
+                "yfinance.client.invalid_info_type",
+                extra={"symbol": symbol, "type": type(news)},
             )
             raise HTTPException(status_code=502, detail="Malformed data form upstream")
         return news
@@ -497,6 +524,7 @@ class YFinanceClient(YFinanceClientInterface):
         Raises:
             HTTPException: 404 if no data is found, 502 if the data format
                 is invalid.
+
         """
         symbol = self._normalize(symbol)
         ticker = await self._get_ticker_maybe_async(symbol)
@@ -536,6 +564,7 @@ class YFinanceClient(YFinanceClientInterface):
 
         Raises:
             HTTPException: If an HTTP error occurs during fetching.
+
         """
         symbol = self._normalize(symbol)
         ticker = await self._get_ticker_maybe_async(symbol)
@@ -609,6 +638,7 @@ class YFinanceClient(YFinanceClientInterface):
 
         Returns:
             DataFrame with income statement data, or None if not available.
+
         """
         return await self.get_earnings(symbol, frequency)
 
@@ -627,15 +657,14 @@ class YFinanceClient(YFinanceClientInterface):
         Raises:
             HTTPException: 404 if no data is found, 502 if the data format
                 is invalid, 500 for other errors.
+
         """
         symbol = self._normalize(symbol)
         ticker = await self._get_ticker_maybe_async(symbol)
 
         try:
             calendar_data = await self._fetch_data(
-                op="calendar",
-                fetch_func=lambda: ticker.calendar,
-                symbol=symbol
+                op="calendar", fetch_func=lambda: ticker.calendar, symbol=symbol
             )
 
             if calendar_data is None:
@@ -667,6 +696,7 @@ class YFinanceClient(YFinanceClientInterface):
 
         Returns:
             True if the API is reachable and responding, False otherwise.
+
         """
         probe_symbol = "AAPL"
         try:
@@ -689,6 +719,7 @@ class YFinanceClient(YFinanceClientInterface):
 
         Raises:
             HTTPException: 404 if no split data is found.
+
         """
         symbol = self._normalize(symbol)
         ticker = await self._get_ticker_maybe_async(symbol)
@@ -697,9 +728,6 @@ class YFinanceClient(YFinanceClientInterface):
 
         if splits is None or splits.empty:
             logger.info("yfinance.client.no_data", extra={"symbol": symbol})
-            raise HTTPException(
-                status_code=404, 
-                detail=f"No split data found for symbol: {symbol}"
-            )
+            raise HTTPException(status_code=404, detail=f"No split data found for symbol: {symbol}")
 
         return splits

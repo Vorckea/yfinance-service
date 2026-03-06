@@ -3,11 +3,12 @@
 import asyncio
 from datetime import date
 from unittest.mock import AsyncMock, MagicMock, patch
-import pytest
+
 import pandas as pd
+import pytest
 from fastapi import HTTPException
 
-from app.clients.yfinance_client import YFinanceClient, _InflightEntry
+from app.clients.yfinance_client import YFinanceClient
 
 
 class TestRequestCoalescing:
@@ -36,8 +37,8 @@ class TestRequestCoalescing:
             await asyncio.sleep(0.1)  # Simulate slow upstream
             return {"symbol": "AAPL", "name": "Apple Inc."}
 
-        with patch.object(client, '_get_ticker', return_value=mock_ticker):
-            with patch.object(mock_ticker, 'get_info', side_effect=slow_fetch):
+        with patch.object(client, "_get_ticker", return_value=mock_ticker):
+            with patch.object(mock_ticker, "get_info", side_effect=slow_fetch):
                 # Launch 10 concurrent requests for the same symbol
                 tasks = [client.get_info("AAPL") for _ in range(10)]
                 results = await asyncio.gather(*tasks)
@@ -60,8 +61,8 @@ class TestRequestCoalescing:
             await asyncio.sleep(0.05)
             return {"symbol": "SYM", "name": f"Company {call_count}"}
 
-        with patch.object(client, '_get_ticker', return_value=mock_ticker):
-            with patch.object(mock_ticker, 'get_info', side_effect=slow_fetch):
+        with patch.object(client, "_get_ticker", return_value=mock_ticker):
+            with patch.object(mock_ticker, "get_info", side_effect=slow_fetch):
                 # Launch concurrent requests for different symbols
                 tasks = [
                     client.get_info("AAPL"),
@@ -96,7 +97,7 @@ class TestRequestCoalescing:
         mock_ticker.get_info = slow_info
         mock_ticker.history = slow_history
 
-        with patch.object(client, '_get_ticker', return_value=mock_ticker):
+        with patch.object(client, "_get_ticker", return_value=mock_ticker):
             tasks = [
                 client.get_info("AAPL"),
                 client.get_history("AAPL", None, None, "1d"),
@@ -117,8 +118,8 @@ class TestRequestCoalescing:
             await asyncio.sleep(0.05)
             raise HTTPException(status_code=503, detail="Upstream error")
 
-        with patch.object(client, '_get_ticker', return_value=mock_ticker):
-            with patch.object(mock_ticker, 'get_info', side_effect=failing_fetch):
+        with patch.object(client, "_get_ticker", return_value=mock_ticker):
+            with patch.object(mock_ticker, "get_info", side_effect=failing_fetch):
                 tasks = [client.get_info("AAPL") for _ in range(5)]
                 results = await asyncio.gather(*tasks, return_exceptions=True)
 
@@ -142,8 +143,8 @@ class TestRequestCoalescing:
             await asyncio.sleep(0.5)  # Long delay to allow cancellation
             return {"symbol": "AAPL"}
 
-        with patch.object(client, '_get_ticker', return_value=mock_ticker):
-            with patch.object(mock_ticker, 'get_info', side_effect=slow_fetch):
+        with patch.object(client, "_get_ticker", return_value=mock_ticker):
+            with patch.object(mock_ticker, "get_info", side_effect=slow_fetch):
                 # Start multiple concurrent requests
                 task1 = asyncio.create_task(client.get_info("AAPL"))
                 task2 = asyncio.create_task(client.get_info("AAPL"))
@@ -178,8 +179,8 @@ class TestRequestCoalescing:
             call_count += 1
             return {"symbol": "AAPL", "call": call_count}
 
-        with patch.object(client, '_get_ticker', return_value=mock_ticker):
-            with patch.object(mock_ticker, 'get_info', side_effect=quick_fetch):
+        with patch.object(client, "_get_ticker", return_value=mock_ticker):
+            with patch.object(mock_ticker, "get_info", side_effect=quick_fetch):
                 # Sequential calls
                 result1 = await client.get_info("AAPL")
                 result2 = await client.get_info("AAPL")
@@ -209,11 +210,8 @@ class TestRequestCoalescing:
         start_date = date(2024, 1, 1)
         end_date = date(2024, 1, 31)
 
-        with patch.object(client, '_get_ticker', return_value=mock_ticker):
-            tasks = [
-                client.get_history("AAPL", start_date, end_date, "1d")
-                for _ in range(5)
-            ]
+        with patch.object(client, "_get_ticker", return_value=mock_ticker):
+            tasks = [client.get_history("AAPL", start_date, end_date, "1d") for _ in range(5)]
             results = await asyncio.gather(*tasks)
 
         assert call_count == 1
@@ -236,7 +234,7 @@ class TestRequestCoalescing:
 
         mock_ticker.history = slow_history
 
-        with patch.object(client, '_get_ticker', return_value=mock_ticker):
+        with patch.object(client, "_get_ticker", return_value=mock_ticker):
             tasks = [
                 client.get_history("AAPL", date(2024, 1, 1), date(2024, 1, 31), "1d"),
                 client.get_history("AAPL", date(2024, 2, 1), date(2024, 2, 28), "1d"),
@@ -252,7 +250,7 @@ class TestRequestCoalescing:
         mock_ticker = MagicMock()
         mock_ticker.get_info = AsyncMock(return_value={"symbol": "AAPL"})
 
-        with patch.object(client, '_get_ticker', return_value=mock_ticker):
+        with patch.object(client, "_get_ticker", return_value=mock_ticker):
             await client.get_info("AAPL")
 
             # In-flight map should be empty after completion
@@ -261,11 +259,12 @@ class TestRequestCoalescing:
     @pytest.mark.asyncio
     async def test_inflight_cleanup_on_error(self, client, mock_ticker):
         """Test that in-flight entries are cleaned up after error."""
+
         async def failing_fetch(*args, **kwargs):
             raise ConnectionError("Network error")
 
-        with patch.object(client, '_get_ticker', return_value=mock_ticker):
-            with patch.object(mock_ticker, 'get_info', side_effect=failing_fetch):
+        with patch.object(client, "_get_ticker", return_value=mock_ticker):
+            with patch.object(mock_ticker, "get_info", side_effect=failing_fetch):
                 with pytest.raises(HTTPException):
                     await client.get_info("AAPL")
 
@@ -283,8 +282,8 @@ class TestRequestCoalescing:
             await asyncio.sleep(0.2)
             return {"symbol": "AAPL", "data": "value"}
 
-        with patch.object(client, '_get_ticker', return_value=mock_ticker):
-            with patch.object(mock_ticker, 'get_info', side_effect=slow_fetch):
+        with patch.object(client, "_get_ticker", return_value=mock_ticker):
+            with patch.object(mock_ticker, "get_info", side_effect=slow_fetch):
                 # Create many concurrent tasks
                 tasks = [asyncio.create_task(client.get_info("AAPL")) for _ in range(10)]
 
