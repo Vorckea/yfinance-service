@@ -10,11 +10,10 @@ from .metrics import YF_LATENCY, YF_REQUESTS
 
 @asynccontextmanager
 async def observe(
-    op: str,
+    op: str, 
     outcome_on_error: str = "error",
-    attempt: Optional[int] = None,
-    max_attempts: Optional[int] = None,
-):
+    attempt: int | None = None,
+    max_attempts: int | None = None):
     """Observe a yfinance operation for metrics.
 
     Args:
@@ -36,9 +35,12 @@ async def observe(
         raise
     except (asyncio.TimeoutError, TimeoutError):
         try:
-            # only supported outcomes are:
-            # success|error|timeout|cancelled (retry would create invalid cardinality)
-            YF_REQUESTS.labels(operation=op, outcome="timeout").inc()
+            # Label as 'retry' if not the last attempt, otherwise 'timeout'
+            if attempt is not None and max_attempts is not None and attempt < max_attempts - 1:
+                outcome = "retry"
+            else:
+                outcome = "timeout"
+            YF_REQUESTS.labels(operation=op, outcome=outcome).inc()
         except Exception:
             pass
         raise

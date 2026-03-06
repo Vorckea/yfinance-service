@@ -1,9 +1,10 @@
 import httpx
 import pytest
 
-from app.dependencies import get_info_cache, get_yfinance_client
+from app.dependencies import get_info_cache, get_news_cache, get_yfinance_client
 from app.main import app
 from app.utils.cache import TTLCache
+from app.utils.cache.news_cache import NewsCache
 from tests.unit.clients.fake_client import FakeYFinanceClient
 
 
@@ -86,6 +87,44 @@ async def test_snapshot_info_caching():
         assert call_counts["get_info"] == 5, "Info should be fetched twice for new symbol"
 
     app.dependency_overrides.clear()
+
+
+@pytest.mark.asyncio
+@pytest.mark.integration
+async def test_news_caching():
+    """Integration test: verify news caching works well."""
+    call_counts = {"get_news": 0}
+
+    class CountingFakeClient(FakeYFinanceClient):
+        async def get_news(self, *args, **kwargs):
+            call_counts["get_news"] += 1
+            return await super().get_news(*args, **kwargs)
+
+    cache = NewsCache(size=10, ttl=60, cache_name="test_news_cache", resource="news")
+    yfinance_client = CountingFakeClient()
+
+    app.dependency_overrides[get_news_cache] = lambda: cache
+    app.dependency_overrides[get_yfinance_client] = lambda: yfinance_client
+
+    async with httpx.AsyncClient(
+        transport=httpx.ASGITransport(app=app),
+        base_url="http://test",
+    ) as client:
+        response = await client.get("/news/APPL?tab=news&count=3")
+        assert response.status_code == 200
+        assert call_counts["get_news"] == 1
+
+        response = await client.get("/news/APPL?tab=news&count=3")
+        assert response.status_code == 200
+        assert call_counts["get_news"] == 1
+
+        response = await client.get("/news/APPL?tab=news&count=5")
+        assert response.status_code == 200
+        assert call_counts["get_news"] == 2
+
+        response = await client.get("/news/TSLA?tab=news&count=5")
+        assert response.status_code == 200
+        assert call_counts["get_news"] == 3
 
 
 @pytest.mark.asyncio

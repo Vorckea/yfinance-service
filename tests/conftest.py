@@ -19,6 +19,7 @@ def mock_yfinance_client(mocker):
     client_instance.get_info = AsyncMock()
     client_instance.get_history = AsyncMock()
     client_instance.get_earnings = AsyncMock()
+    client_instance.get_news = AsyncMock()
     client_instance.ping = AsyncMock()
     return client_instance
 

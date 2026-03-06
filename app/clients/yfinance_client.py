@@ -11,7 +11,7 @@ import yfinance as yf
 from fastapi import HTTPException
 
 from app.clients.interface import YFinanceClientInterface
-from app.settings import get_settings
+from app.settings import Settings
 from app.utils.cache import TTLCache
 
 from ..monitoring.instrumentation import observe
@@ -52,28 +52,24 @@ class YFinanceClient(YFinanceClientInterface):
 
     def _ticker_factory(self, symbol: str) -> yf.Ticker:
         return yf.Ticker(symbol)
-    
-    async def _get_ticker(self, symbol: str) -> yf.Ticker:
-        """Get a ticker instance, using cache for short-term connection pooling.
-        
-        Uses a short-lived cache (default 60s, should be set to 5-10s via env) to:
-        - Reuse TCP connections for concurrent requests to same symbol
-        - Prevent stale data by not caching across request batches
-        
-        The TTL must be SHORT to avoid returning stale market data from yfinance's
-        internal cache within the Ticker object.
-        """
+
+    async def _get_ticker(self, symbol: str, no_cache: bool = False) -> yf.Ticker:
+        """Get a ticker from cache or create a new one."""
+        if no_cache:
+            return self._ticker_factory(symbol)
+
         cached = await self._ticker_cache.get(symbol)
         if cached is not None:
             return cached
-        
+
         ticker = self._ticker_factory(symbol)
         await self._ticker_cache.set(symbol, ticker)
         return ticker
 
     async def _fetch_data(
         self, op: str, fetch_func: Callable[..., T], symbol: str, *args, **kwargs
-    ) -> T:
+    ) -> T:        
+
         """Fetch data from yfinance with exponential backoff retry logic.
         
         Args:
@@ -89,12 +85,12 @@ class YFinanceClient(YFinanceClientInterface):
         Raises:
             HTTPException: If the operation fails after all retries or on non-transient errors
         """
-        max_retries = get_settings().max_retries
-        backoff_base = get_settings().retry_backoff_base
-        backoff_max = get_settings().retry_backoff_max
-        
+        max_retries = Settings().max_retries
+        backoff_base = Settings().retry_backoff_base
+        backoff_max = Settings().retry_backoff_max
+
         last_exception: Exception | None = None
-        
+
         for attempt in range(max_retries + 1):
             try:
                 async with observe(op, attempt=attempt, max_attempts=max_retries + 1):
@@ -150,7 +146,7 @@ class YFinanceClient(YFinanceClientInterface):
                     "yfinance.client.unexpected",
                     extra={"symbol": symbol, "op": op, "error": str(e)}
                 )
-                raise HTTPException(status_code=500, detail="Unexpected error fetching data") from e
+                raise HTTPException(status_code=500, detail="Internal server error") from e
         
         # Should not reach here, but just in case
         if last_exception:
@@ -185,6 +181,35 @@ class YFinanceClient(YFinanceClientInterface):
             )
             raise HTTPException(status_code=502, detail="Malformed data from upstream")
         return info
+
+    async def get_news(self, symbol: str, count: int, tab: str) -> list[YFinanceData]:
+        """Fetch news for a specific stock.
+
+        Args:
+            symbol (str): The stock symbol to fetch news for.
+            count (int): The number of news articles to fetch.
+            tab (str): News type: news, press releases, or all.
+
+        Raises:
+            HTTPException: If the symbol is not found or if there is an error fetching data.
+
+        Returns:
+            Any: The news data for the stock.
+
+        """
+        symbol = self._normalize(symbol)
+        ticker = await self._get_ticker(symbol, no_cache=True)
+        # We don't use cache to avoid caching in yf.Ticker.get_news, which does not check arguments
+        news = await self._fetch_data("news", ticker.get_news, symbol, count=count, tab=tab)
+        if not news:
+            logger.info("yfinance.client.no_data", extra={"symbol": symbol, "op": "news"})
+            raise HTTPException(status_code=404, detail=f"No data for {symbol}")
+        if not isinstance(news, list):
+            logger.warning(
+                "yfinance.client.invalid_info_type", extra={"symbol": symbol, "type": type(news)},
+            )
+            raise HTTPException(status_code=502, detail="Malformed data form upstream")
+        return news
 
     async def get_history(
         self, symbol: str, start: date | None, end: date | None, interval: str = "1d"

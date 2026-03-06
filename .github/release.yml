@@ -1,4 +1,9 @@
 changelog:
+  exclude:
+      authors:
+        - "allcontributors"
+        - "allcontributors[bot]"
+
   categories:
     - title: "🚀 New Features"
       labels:
@@ -21,3 +26,4 @@ changelog:
         - "*"
   contributors:
     - "all"
+  

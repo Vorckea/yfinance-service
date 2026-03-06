@@ -1,5 +1,6 @@
 """A lightweight fake YFinance client for testing purposes."""
 
+import copy
 from collections.abc import Mapping
 from datetime import date
 from typing import Any
@@ -12,7 +13,7 @@ from app.clients.interface import YFinanceClientInterface
 class FakeYFinanceClient(YFinanceClientInterface):
     """Fake client implementing YFinanceClientInterface for stable testing."""
 
-    async def get_info(self, symbol: str) -> Mapping[str, Any] | None:
+    async def get_info(self, symbol: str) -> Mapping[str, Any]:
         """Return deterministic fake stock info.
 
         Returns data in the format expected by yfinance, with all fields
@@ -113,5 +114,33 @@ class FakeYFinanceClient(YFinanceClientInterface):
     async def get_splits(self, symbol: str) -> pd.Series:
         """Deterministic fake implementation of the get_splits method."""
         import pandas as pd
+
         # Providing a default empty series prevents integration tests from crashing
         return pd.Series(dtype=float)
+
+    async def get_news(self, symbol: str, count: int, tab: str) -> list[dict[str, Any]]:
+        """Return deterministic fake news items."""
+        article = {
+            "id": "c3618287-ab77-4707-9611-2472b0a47a20",
+            "content": {
+                "id": "c3618287-ab77-4707-9611-2472b0a47a20",
+                "contentType": "STORY",
+                "title": (
+                    "Warren Buffett is stepping down as Berkshire Hathaway CEO."
+                    "It's one of several big C-suite shake-ups in 2026."
+                ),
+                "description": "",
+                "summary": "These CEOs are taking the helm in 2026.",
+                "pubDate": "2025-12-31T17:56:38Z",
+                "displayTime": "2026-01-03T14:07:21Z",
+                "isHosted": "true",
+                "bypassModal": "false",
+                "previewUrl": "null",
+            },
+        }
+        data = []
+        for _ in range(count):
+            article_copy = copy.deepcopy(article)
+            article_copy["id"] = str(count)
+            data.append(article_copy)
+        return data

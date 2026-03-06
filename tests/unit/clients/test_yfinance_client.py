@@ -1,15 +1,13 @@
 """Tests for YFinanceClient error handling."""
 
 import asyncio
-import pytest
-import pandas as pd
-from unittest.mock import AsyncMock, MagicMock, patch
 
-from httpx import AsyncClient
-from fastapi import HTTPException, status
+import pandas as pd
+import pytest
+from fastapi import HTTPException
 
 from app.clients.yfinance_client import YFinanceClient
-from app.settings import get_settings
+from app.settings import Settings
 
 
 @pytest.mark.asyncio
@@ -86,7 +84,7 @@ async def test_fetch_data_retry_fails_after_max_retries(monkeypatch):
     
     assert excinfo.value.status_code == 503
     # Should have tried max_retries + 1 times
-    assert call_count[0] == get_settings().max_retries + 1
+    assert call_count[0] == Settings().max_retries + 1
 
 
 @pytest.mark.asyncio
@@ -118,8 +116,8 @@ async def test_fetch_data_retry_with_exponential_backoff(monkeypatch):
     
     # Check that sleep times are increasing (exponential backoff)
     # Each should be between backoff_base * 2^attempt and backoff_base * 2^attempt + backoff_base * 2^attempt
-    base = get_settings().retry_backoff_base
-    max_backoff = get_settings().retry_backoff_max
+    base = Settings().retry_backoff_base
+    max_backoff = Settings().retry_backoff_max
     
     # First sleep should be between base and base*2
     assert sleep_times[0] >= base
@@ -214,7 +212,7 @@ async def test_fetch_data_max_backoff_capped(monkeypatch):
     result = await client._fetch_data("info", lambda: None, "AAPL")
     
     assert result == {"data": "success"}
-    max_backoff = get_settings().retry_backoff_max
+    max_backoff = Settings().retry_backoff_max
     
     # All sleep times should be <= max_backoff
     for sleep_time in sleep_times:
@@ -261,6 +259,40 @@ async def test_get_info_empty(monkeypatch):
 
     with pytest.raises(HTTPException) as excinfo:
         await client.get_info("AAPL")
+
+    assert excinfo.value.status_code == 404
+
+
+@pytest.mark.asyncio
+async def test_get_news_non_list(monkeypatch):
+    """Simulate malformed news (not a list) -> should raise HTTP 502."""
+    client = YFinanceClient()
+    ticker_mock = type("TickerMock", (), {"get_news": lambda self, **kw: {"not": "list"}})()
+
+    async def mock_get_ticker(*args, **kwargs):
+        return ticker_mock
+
+    monkeypatch.setattr(client, "_get_ticker", mock_get_ticker)
+
+    with pytest.raises(HTTPException) as excinfo:
+        await client.get_news("AAPL", 5, "news")
+
+    assert excinfo.value.status_code == 502
+
+
+@pytest.mark.asyncio
+async def test_get_news_empty_list(monkeypatch):
+    """Simulate empty news list -> should raise HTTP 404."""
+    client = YFinanceClient()
+    ticker_mock = type("TickerMock", (), {"get_news": lambda self, **kw: []})()
+
+    async def mock_get_ticker(*args, **kwargs):
+        return ticker_mock
+
+    monkeypatch.setattr(client, "_get_ticker", mock_get_ticker)
+
+    with pytest.raises(HTTPException) as excinfo:
+        await client.get_news("AAPL", 5, "news")
 
     assert excinfo.value.status_code == 404
 
