@@ -28,7 +28,7 @@ jobs:
                   buildx-${{ runner.os }}-
             
             - name: Build image (no push)
-              uses: docker/build-push-action@v6
+              uses: docker/build-push-action@v7
               with:
                 context: .
                 push: false
