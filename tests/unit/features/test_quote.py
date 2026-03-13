@@ -8,6 +8,7 @@ from fastapi import HTTPException
 from app.features.quote.service import QuoteResponse, fetch_quote
 
 VALID_SYMBOL = "AAPL"
+INDEX_SYMBOL = "^GSPC"
 INVALID_SYMBOL = "!!!"
 NOT_FOUND_SYMBOL = "ZZZZZZZZZZ"
 
@@ -28,6 +29,23 @@ def test_quote_valid_symbol(client, mock_yfinance_client):
     data = response.json()
     assert data["symbol"] == VALID_SYMBOL
     assert data["current_price"] == 150.0
+
+
+def test_quote_index_symbol_with_caret(client, mock_yfinance_client):
+    """Index symbols with '^' should pass path validation."""
+    mock_yfinance_client.get_info.return_value = {
+        "symbol": INDEX_SYMBOL,
+        "regularMarketPrice": 6000.0,
+        "regularMarketPreviousClose": 5980.0,
+        "regularMarketOpen": 5990.0,
+        "regularMarketDayHigh": 6010.0,
+        "regularMarketDayLow": 5970.0,
+        "regularMarketVolume": 123456,
+    }
+    response = client.get(f"/quote/{INDEX_SYMBOL}")
+    assert response.status_code == 200
+    data = response.json()
+    assert data["symbol"] == INDEX_SYMBOL
 
 
 def test_quote_invalid_symbol(client):
