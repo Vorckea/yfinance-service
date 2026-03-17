@@ -4,15 +4,14 @@ from typing import Annotated, Literal
 
 from fastapi import APIRouter, Depends, Query
 
-from ...auth import check_api_key
 from ...clients.interface import YFinanceClientInterface
 from ...common.validation import SymbolParam
-from ...dependencies import get_yfinance_client, get_earnings_cache
+from ...dependencies import get_earnings_cache, get_yfinance_client
 from ...utils.cache import SnapshotCache
 from .models import EarningsResponse
 from .service import fetch_earnings
 
-router = APIRouter(dependencies=[Depends(check_api_key)])
+router = APIRouter()
 
 
 @router.get(
@@ -69,6 +68,7 @@ async def get_earnings(
 
     Returns:
         EarningsResponse with normalized earnings rows, next_earnings_date, and last_eps summary.
+
     """
     cache_key = f"{symbol.upper()}:{frequency}"
 
@@ -82,4 +82,3 @@ async def get_earnings(
 
     # Fallback if cache is disabled or empty
     return await fetch_earnings(symbol, client, frequency)
-
