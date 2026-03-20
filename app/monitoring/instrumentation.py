@@ -3,8 +3,7 @@
 import asyncio
 import time
 from contextlib import asynccontextmanager
-
-from .metrics import YF_LATENCY, YF_REQUESTS
+from .metrics import YF_LATENCY, YF_REQUESTS, safe_metric_call
 
 
 @asynccontextmanager
@@ -27,37 +26,34 @@ async def observe(
         yield
     except asyncio.CancelledError:
         # cancelled should propagate after recording
-        try:
-            YF_REQUESTS.labels(operation=op, outcome="cancelled").inc()
-        except Exception:
-            pass
+        safe_metric_call(
+            YF_REQUESTS.labels(operation=op, outcome="cancelled").inc
+        )
         raise
     except (asyncio.TimeoutError, TimeoutError):
-        try:
-            # Label as 'retry' if not the last attempt, otherwise 'timeout'
-            if attempt is not None and max_attempts is not None and attempt < max_attempts - 1:
-                outcome = "retry"
-            else:
-                outcome = "timeout"
-            YF_REQUESTS.labels(operation=op, outcome=outcome).inc()
-        except Exception:
-            pass
+        # Label as 'retry' if not the last attempt, otherwise 'timeout'
+        if attempt is not None and max_attempts is not None and attempt < max_attempts - 1:
+            outcome = "retry"
+        else:
+            outcome = "timeout"
+
+        safe_metric_call(
+            YF_REQUESTS.labels(operation=op, outcome=outcome).inc
+        )
         raise
+       
     except Exception:
-        try:
-            YF_REQUESTS.labels(operation=op, outcome=outcome_on_error).inc()
-        except Exception:
-            pass
+        safe_metric_call(
+            YF_REQUESTS.labels(operation=op, outcome=outcome_on_error).inc
+        )
         raise
     else:
-        try:
-            YF_REQUESTS.labels(operation=op, outcome="success").inc()
-        except Exception:
-            pass
+        safe_metric_call(
+            YF_REQUESTS.labels(operation=op, outcome="success").inc
+        )
     finally:
         elapsed = time.monotonic() - start
-        try:
-            YF_LATENCY.labels(operation=op).observe(elapsed)
-        except Exception:
-            # never raise from metrics collection
-            pass
+        safe_metric_call(
+            YF_LATENCY.labels(operation=op).observe,
+            elapsed,
+        )
