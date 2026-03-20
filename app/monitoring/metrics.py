@@ -5,7 +5,7 @@ global and per-route in-progress gauges to observe concurrency.
 """
 
 from prometheus_client import Counter, Gauge, Histogram, Info
-
+from app.utils.logger import logger
 HTTP_REQUESTS = Counter(
     "http_requests_total",
     "Total HTTP requests",
@@ -127,3 +127,16 @@ CACHE_INPROGRESS_LOADS = Gauge(
     "Number of in-progress cache loads",
     ("cache", "resource"),
 )
+METRIC_ERRORS = Counter(
+    "metric_errors_total",
+    "Total number of metric collection errors",
+)
+def safe_metric_call(fn, *args, **kwargs):
+    try:
+        return fn(*args, **kwargs)
+    except Exception as e:
+        logger.debug(f"Metric collection failed: {e}")
+        try:
+            METRIC_ERRORS.inc()
+        except Exception:
+            pass

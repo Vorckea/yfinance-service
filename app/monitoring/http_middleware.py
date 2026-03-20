@@ -9,7 +9,7 @@ Provides:
 import time
 import uuid
 from collections.abc import Callable
-
+from .metrics import safe_metric_call
 from fastapi import Request, Response
 from starlette.routing import Match
 
@@ -80,16 +80,13 @@ async def http_metrics_middleware(request: Request, call_next: Callable) -> Resp
 
     route = _extract_route_best_effort(request)
 
-    try:
-        HTTP_INPROGRESS_TOTAL.inc()
-    except Exception:
-        pass
+    safe_metric_call(HTTP_INPROGRESS_TOTAL.inc)
 
     per_route_inc = False
 
     try:
         try:
-            HTTP_INPROGRESS.labels(route=route, method=method).inc()
+            safe_metric_call(HTTP_INPROGRESS.labels(route=route, method=method).inc)
             per_route_inc = True
         except Exception:
             per_route_inc = False
@@ -97,51 +94,41 @@ async def http_metrics_middleware(request: Request, call_next: Callable) -> Resp
         response = await call_next(request)
     except Exception:
         duration = time.perf_counter() - start
-        try:
-            HTTP_REQUEST_DURATION.labels(route=route, method=method).observe(duration)
-        except Exception:
-            pass
-        try:
-            HTTP_REQUESTS.labels(route=route, method=method, status_class="5xx").inc()
-        except Exception:
-            pass
+        safe_metric_call(
+            HTTP_REQUEST_DURATION.labels(route=route, method=method).observe,
+            duration,
+        )
+        safe_metric_call(
+            HTTP_REQUESTS.labels(route=route, method=method, status_class="5xx").inc
+        )
         logger.exception(
             "Unhandled exception",
             extra={"cid": cid, "route": route, "method": method, "latency": duration},
         )
         raise
     finally:
-        try:
-            if per_route_inc:
-                HTTP_INPROGRESS.labels(route=route, method=method).dec()
-        except Exception:
-            pass
-        try:
-            HTTP_INPROGRESS_TOTAL.dec()
-        except Exception:
-            pass
+        if per_route_inc:
+            safe_metric_call(HTTP_INPROGRESS.labels(route=route, method=method).dec)
+
+        safe_metric_call(HTTP_INPROGRESS_TOTAL.dec)
 
     duration = time.perf_counter() - start
     status_class = _status_class(response.status_code)
     body_size = _get_body_size(response)
 
-    try:
-        HTTP_REQUEST_DURATION.labels(route=route, method=method).observe(duration)
-    except Exception:
-        pass
-    try:
-        HTTP_REQUESTS.labels(route=route, method=method, status_class=status_class).inc()
-    except Exception:
-        pass
-    try:
-        HTTP_RESPONSE_SIZE.labels(route=route, method=method).observe(body_size)
-    except Exception:
-        pass
+    safe_metric_call(
+        HTTP_REQUEST_DURATION.labels(route=route, method=method).observe,
+        duration,
+    )
+    safe_metric_call(
+        HTTP_REQUESTS.labels(route=route, method=method, status_class=status_class).inc
+    )
+    safe_metric_call(
+        HTTP_RESPONSE_SIZE.labels(route=route, method=method).observe,
+        body_size,
+    )
 
-    try:
-        response.headers[CORRELATION_HEADER] = cid
-    except Exception:
-        pass
+    safe_metric_call(response.headers.__setitem__, CORRELATION_HEADER, cid)
 
     if duration >= SLOW_THRESHOLD_SECONDS:
         logger.warning(
