@@ -2,7 +2,7 @@
 
 from typing import Annotated, Literal
 
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, Query, Request
 
 from app.clients.interface import YFinanceClientInterface
 from app.common.validation import SymbolParam
@@ -173,6 +173,7 @@ TabAllowedValues = Literal["news", "press-releases", "all"]
     },
 )
 async def get_news(
+    request: Request,
     symbol: SymbolParam,
     count: Annotated[
         int,
@@ -186,6 +187,16 @@ async def get_news(
     client: YFinanceClientInterface = Depends(get_yfinance_client),
 ) -> NewsResponse:
     """Get news for a given ticker symbol."""
+    no_cache = request.headers.get("Cache-Control") == "no-cache"
+    if no_cache:
+        return await fetch_news(
+            symbol=symbol,
+            count=count,
+            tab=tab,
+            client=client,
+            news_cache=None,
+        )
+
     return await fetch_news(
         symbol=symbol,
         count=count,
