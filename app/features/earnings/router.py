@@ -19,7 +19,10 @@ router = APIRouter()
     response_model=EarningsResponse,
     response_model_exclude_none=True,
     summary="Get earnings history for a symbol",
-    description="Returns normalized earnings history (quarterly or annual) with reported/estimated EPS, revenue, and surprise data.",
+    description=(
+        "Returns normalized earnings history (quarterly or annual) "
+        "with reported/estimated EPS, revenue, and surprise data."
+    ),
     operation_id="getEarningsBySymbol",
     responses={
         200: {
