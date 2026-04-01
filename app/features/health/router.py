@@ -9,7 +9,8 @@ from fastapi import APIRouter, Depends, HTTPException
 
 from ...clients.interface import YFinanceClientInterface
 from ...dependencies import get_yfinance_client
-
+import time
+from app.monitoring.metrics import YF_PROBE_LATENCY
 router = APIRouter()
 
 
@@ -46,10 +47,30 @@ async def get_health():
         },
     },
 )
-async def get_ready(client: Annotated[YFinanceClientInterface, Depends(get_yfinance_client)]):
+async def get_ready(
+    client: Annotated[YFinanceClientInterface, Depends(get_yfinance_client)]
+):
     """Readiness check endpoint to verify yfinance is reachable."""
-    if not await client.ping():
-        raise HTTPException(status_code=503, detail="Not ready")
-    return {"status": "ready"}
+
+    start = time.perf_counter()
+    outcome = "success"
+
+    try:
+        if not await client.ping():
+            outcome = "failure"
+            raise HTTPException(status_code=503, detail="Not ready")
+
+        return {"status": "ready"}
+
+    except Exception:
+        outcome = "failure"
+        raise
+
+    finally:
+        duration = time.perf_counter() - start
+        YF_PROBE_LATENCY.labels(
+            probe_type="readiness",
+            outcome=outcome,
+        ).observe(duration)
     # TODO(readiness): Replace ad-hoc ticker instantiation with lightweight probe
     # and short-lived cached readiness state to reduce load.
