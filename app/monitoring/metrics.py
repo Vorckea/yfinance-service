@@ -5,7 +5,7 @@ global and per-route in-progress gauges to observe concurrency.
 """
 
 from prometheus_client import Counter, Gauge, Histogram, Info
-
+from app.utils.logger import logger
 HTTP_REQUESTS = Counter(
     "http_requests_total",
     "Total HTTP requests",
@@ -66,6 +66,13 @@ YF_LATENCY = Histogram(
     ("operation",),
     buckets=(0.05, 0.1, 0.25, 0.5, 1, 2, 5, 10),
 )
+
+YF_PROBE_LATENCY = Histogram(
+    "yf_probe_latency_seconds",
+    "Latency of readiness/liveness probes",
+    ("probe_type", "outcome"),
+    buckets=(0.001, 0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1),
+)
 # TODO(metrics): Track separate histogram for upstream errors only for SLO burn rate analysis.
 
 
@@ -120,3 +127,16 @@ CACHE_INPROGRESS_LOADS = Gauge(
     "Number of in-progress cache loads",
     ("cache", "resource"),
 )
+METRIC_ERRORS = Counter(
+    "metric_errors_total",
+    "Total number of metric collection errors",
+)
+def safe_metric_call(fn, *args, **kwargs):
+    try:
+        return fn(*args, **kwargs)
+    except Exception as e:
+        logger.debug(f"Metric collection failed: {e}")
+        try:
+            METRIC_ERRORS.inc()
+        except Exception:
+            pass
