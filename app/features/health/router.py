@@ -12,6 +12,8 @@ from ...dependencies import get_yfinance_client
 
 from ...utils.cache import TTLCache
 from ...monitoring.metrics import CACHE_HITS, CACHE_MISSES
+import time
+from app.monitoring.metrics import YF_PROBE_LATENCY
 router = APIRouter()
 
 
@@ -74,5 +76,27 @@ async def get_ready(
     await ready_cache.set("ready", result)
 
     return result
+    """Readiness check endpoint to verify yfinance is reachable."""
+
+    start = time.perf_counter()
+    outcome = "success"
+
+    try:
+        if not await client.ping():
+            outcome = "failure"
+            raise HTTPException(status_code=503, detail="Not ready")
+
+        return {"status": "ready"}
+
+    except Exception:
+        outcome = "failure"
+        raise
+
+    finally:
+        duration = time.perf_counter() - start
+        YF_PROBE_LATENCY.labels(
+            probe_type="readiness",
+            outcome=outcome,
+        ).observe(duration)
     # TODO(readiness): Replace ad-hoc ticker instantiation with lightweight probe
     # and short-lived cached readiness state to reduce load.

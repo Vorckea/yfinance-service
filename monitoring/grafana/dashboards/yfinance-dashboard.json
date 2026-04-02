@@ -318,6 +318,31 @@
                 },
                 "overrides": []
             }
-        }
+        },
+        {
+            "id": 9,
+            "type": "timeseries",
+            "title": "Readiness Probe Latency (s)",
+            "datasource": "Prometheus",
+            "gridPos": {
+              "h": 8,
+              "w": 24,
+              "x": 0,
+              "y": 64
+            },
+            "targets": [
+              {
+                "expr": "sum(rate(yf_probe_latency_seconds_sum[5m])) / sum(rate(yf_probe_latency_seconds_count[5m]))",
+                "legendFormat": "avg latency"
+              }
+            ],
+            "fieldConfig": {
+              "defaults": {
+                "unit": "s",
+                "decimals": 3
+              },
+              "overrides": []
+            }
+          }
     ]
 }
