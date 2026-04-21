@@ -17,9 +17,34 @@ NOT_FOUND_SYMBOL = "ZZZZZZZZZZ"
 
 app_client = TestClient(app)
 
-def test_mutual_fund_quote():
+def test_mutual_fund_quote(monkeypatch):
+    """Test that instruments missing intraday data (like mutual funds) return 200."""
+    # Simulate Yahoo Finance response for a mutual fund - missing open/high/low/volume
+    async def mock_fetch_quote(symbol: str, client):
+        return QuoteResponse(
+            symbol=symbol,
+            current_price=189.03,
+            previous_close=188.66,
+            open_price=None,
+            high=None,
+            low=None,
+            volume=None,
+        )
+
+    monkeypatch.setattr("app.features.quote.router.fetch_quote", mock_fetch_quote)
+
     response = app_client.get("/quote/0P00017XE0.SW")
     assert response.status_code == 200
+    data = response.json()
+    assert data["symbol"] == "0P00017XE0.SW"
+    assert data["current_price"] == 189.03
+    assert data["previous_close"] == 188.66
+    # Optional fields are None and excluded from response
+    assert "open_price" not in data
+    assert "high" not in data
+    assert "low" not in data
+    assert "volume" not in data
+
 
 def test_handles_missing_price_field(monkeypatch):
     async def mock_fetch_quote(symbol: str, client):
@@ -43,9 +68,6 @@ def test_handles_missing_price_field(monkeypatch):
     # open_price is None, so it's excluded from response (response_model_exclude_none=True)
     assert "open_price" not in data
 
-def test_quote_never_500s():
-    response = app_client.get("/quote/0P00017XE0.SW")
-    assert response.status_code != 500
 
 def test_quote_valid_symbol(client, mock_yfinance_client):
     """Test case for a valid symbol."""
