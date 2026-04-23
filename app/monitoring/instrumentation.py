@@ -4,7 +4,7 @@ import asyncio
 import time
 from contextlib import asynccontextmanager
 
-from .metrics import YF_LATENCY, YF_REQUESTS
+from .metrics import YF_LATENCY, YF_REQUESTS, YF_UPSTREAM_ERROR_LATENCY
 
 
 @asynccontextmanager
@@ -33,6 +33,7 @@ async def observe(
             pass
         raise
     except (asyncio.TimeoutError, TimeoutError):
+        elapsed = time.monotonic() - start
         try:
             # Label as 'retry' if not the last attempt, otherwise 'timeout'
             if attempt is not None and max_attempts is not None and attempt < max_attempts - 1:
@@ -40,12 +41,17 @@ async def observe(
             else:
                 outcome = "timeout"
             YF_REQUESTS.labels(operation=op, outcome=outcome).inc()
+            YF_UPSTREAM_ERROR_LATENCY.labels(operation=op, outcome=outcome).observe(elapsed)
         except Exception:
             pass
         raise
     except Exception:
+        elapsed = time.monotonic() - start
         try:
             YF_REQUESTS.labels(operation=op, outcome=outcome_on_error).inc()
+            YF_UPSTREAM_ERROR_LATENCY.labels(
+                operation=op, outcome=outcome_on_error
+            ).observe(elapsed)
         except Exception:
             pass
         raise

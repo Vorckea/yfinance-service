@@ -15,6 +15,8 @@ def test_metric_check_ok(client):
     families = {mf.name: mf for mf in text_string_to_metric_families(body)}
     assert "process_uptime_seconds" in families
     assert "build_info_info" in families
+    assert "yfinance_upstream_error_duration_seconds" in families
 
     assert any(True for _ in families["process_uptime_seconds"].samples)
     assert any(True for _ in families["build_info_info"].samples)
+    assert families["yfinance_upstream_error_duration_seconds"].type == "histogram"

@@ -66,7 +66,13 @@ YF_LATENCY = Histogram(
     ("operation",),
     buckets=(0.05, 0.1, 0.25, 0.5, 1, 2, 5, 10),
 )
-# TODO(metrics): Track separate histogram for upstream errors only for SLO burn rate analysis.
+
+YF_UPSTREAM_ERROR_LATENCY = Histogram(
+    "yfinance_upstream_error_duration_seconds",
+    "Latency of yfinance operations that fail due to upstream errors",
+    ("operation", "outcome"),
+    buckets=(0.05, 0.1, 0.25, 0.5, 1, 2, 5, 10),
+)
 
 
 CACHE_HITS = Counter(

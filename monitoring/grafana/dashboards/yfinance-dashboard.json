@@ -318,6 +318,31 @@
                 },
                 "overrides": []
             }
+        },
+        {
+            "id": 9,
+            "type": "timeseries",
+            "title": "YFinance Upstream Error P95 Latency (s)",
+            "datasource": "Prometheus",
+            "gridPos": {
+                "h": 8,
+                "w": 24,
+                "x": 0,
+                "y": 64
+            },
+            "targets": [
+                {
+                    "expr": "histogram_quantile(0.95, sum(rate(yfinance_upstream_error_duration_seconds_bucket[5m])) by (le, operation, outcome))",
+                    "legendFormat": "{{operation}} {{outcome}}"
+                }
+            ],
+            "fieldConfig": {
+                "defaults": {
+                    "unit": "s",
+                    "decimals": 3
+                },
+                "overrides": []
+            }
         }
     ]
 }
