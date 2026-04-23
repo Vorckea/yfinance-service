@@ -5,7 +5,7 @@ Provides the /snapshot/{symbol} endpoint for fetching combined info and quote da
 
 from typing import Annotated
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Request
 
 from ...clients.interface import YFinanceClientInterface
 from ...common.validation import SymbolParam
@@ -77,9 +77,13 @@ router = APIRouter()
     },
 )
 async def get_snapshot(
+    request: Request, 
     symbol: SymbolParam,
     client: Annotated[YFinanceClientInterface, Depends(get_yfinance_client)],
     info_cache: Annotated[CacheInterface, Depends(get_info_cache)],
 ) -> SnapshotResponse:
     """Get both company information and latest market quote for a ticker symbol."""
+    no_cache = request.headers.get("Cache-Control") == "no-cache"
+    if no_cache:
+        return await fetch_snapshot(symbol, client, None)
     return await fetch_snapshot(symbol, client, info_cache)

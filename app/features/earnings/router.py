@@ -2,7 +2,7 @@
 
 from typing import Annotated, Literal
 
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, Query, Request
 
 from ...clients.interface import YFinanceClientInterface
 from ...common.validation import SymbolParam
@@ -19,7 +19,10 @@ router = APIRouter()
     response_model=EarningsResponse,
     response_model_exclude_none=True,
     summary="Get earnings history for a symbol",
-    description="Returns normalized earnings history (quarterly or annual) with reported/estimated EPS, revenue, and surprise data.",
+    description=(
+        "Returns normalized earnings history (quarterly or annual) "
+        "with reported/estimated EPS, revenue, and surprise data."
+    ),
     operation_id="getEarningsBySymbol",
     responses={
         200: {
@@ -50,6 +53,7 @@ router = APIRouter()
     },
 )
 async def get_earnings(
+    request: Request,
     symbol: SymbolParam,
     client: Annotated[YFinanceClientInterface, Depends(get_yfinance_client)],
     cache: Annotated[SnapshotCache | None, Depends(get_earnings_cache)] = None,
@@ -72,13 +76,22 @@ async def get_earnings(
     """
     cache_key = f"{symbol.upper()}:{frequency}"
 
-    # Use cache with get_or_set if cache is enabled
+    # read header
+    no_cache = request.headers.get("Cache-Control") == "no-cache"
+
+    # If no-cache → skip cache completely
+    if no_cache:
+        return await fetch_earnings(symbol, client, frequency)
+
+    # Normal flow (use cache)
     result = None
     if cache:
-        result = await cache.get_or_set(cache_key, fetch_earnings(symbol, client, frequency))
+        result = await cache.get_or_set(
+            cache_key, fetch_earnings(symbol, client, frequency)
+        )
 
     if result is not None:
         return result
 
-    # Fallback if cache is disabled or empty
+    # fallback
     return await fetch_earnings(symbol, client, frequency)
