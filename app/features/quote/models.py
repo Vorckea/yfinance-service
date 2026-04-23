@@ -38,22 +38,22 @@ class QuoteResponse(BaseModel):
         examples=[148.0, 2790.0],
         validation_alias=AliasChoices("regularMarketPreviousClose", "previousClose"),
     )
-    open_price: float = Field(
-        ...,
+    open_price: float | None = Field(
+        None,
         description="Opening price",
-        examples=[149.0, 2795.0],
+        examples=[149.0, 2795.0, None],
         validation_alias=AliasChoices("regularMarketOpen", "open"),
     )
-    high: float = Field(
-        ...,
+    high: float | None = Field(
+        None,
         description="Highest price of the day",
-        examples=[151.0, 2805.0],
+        examples=[151.0, 2805.0, None],
         validation_alias=AliasChoices("regularMarketDayHigh", "dayHigh"),
     )
-    low: float = Field(
-        ...,
+    low: float | None = Field(
+        None,
         description="Lowest price of the day",
-        examples=[147.5, 2785.0],
+        examples=[147.5, 2785.0, None],
         validation_alias=AliasChoices("regularMarketDayLow", "dayLow"),
     )
     volume: int | None = Field(
@@ -71,9 +71,9 @@ class QuoteResponse(BaseModel):
 
     @field_validator("current_price", "previous_close", "open_price", "high", "low")
     @classmethod
-    def non_negative(cls, v: float) -> float:
+    def non_negative(cls, v: float | None) -> float | None:
         """Ensure price fields are non-negative."""
-        if v < 0:
+        if v is not None and v < 0:
             raise ValueError("must be non-negative")
         return v
 

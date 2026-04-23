@@ -10,9 +10,19 @@ from fastapi import APIRouter, Depends, HTTPException
 from ...clients.interface import YFinanceClientInterface
 from ...dependencies import get_yfinance_client
 
+from ...utils.cache import TTLCache
+from ...monitoring.metrics import CACHE_HITS, CACHE_MISSES
+import time
+from app.monitoring.metrics import YF_PROBE_LATENCY
 router = APIRouter()
 
 
+ready_cache = TTLCache(
+    size=1,
+    ttl=2,  
+    cache_name="ttl_cache",
+    resource="ready",
+)
 @router.get(
     "/health",
     summary="Health Check",
@@ -46,10 +56,47 @@ async def get_health():
         },
     },
 )
-async def get_ready(client: Annotated[YFinanceClientInterface, Depends(get_yfinance_client)]):
-    """Readiness check endpoint to verify yfinance is reachable."""
+async def get_ready(
+    client: Annotated[YFinanceClientInterface, Depends(get_yfinance_client)]
+):
+    """Readiness check endpoint with TTL cache."""
+
+    cached = await ready_cache.get("ready")
+
+    if cached is not None:
+        CACHE_HITS.labels(cache="ttl_cache", resource="ready").inc()
+        return cached
+
+    CACHE_MISSES.labels(cache="ttl_cache", resource="ready").inc()
+
     if not await client.ping():
         raise HTTPException(status_code=503, detail="Not ready")
-    return {"status": "ready"}
+
+    result = {"status": "ready"}
+    await ready_cache.set("ready", result)
+
+    return result
+    """Readiness check endpoint to verify yfinance is reachable."""
+
+    start = time.perf_counter()
+    outcome = "success"
+
+    try:
+        if not await client.ping():
+            outcome = "failure"
+            raise HTTPException(status_code=503, detail="Not ready")
+
+        return {"status": "ready"}
+
+    except Exception:
+        outcome = "failure"
+        raise
+
+    finally:
+        duration = time.perf_counter() - start
+        YF_PROBE_LATENCY.labels(
+            probe_type="readiness",
+            outcome=outcome,
+        ).observe(duration)
     # TODO(readiness): Replace ad-hoc ticker instantiation with lightweight probe
     # and short-lived cached readiness state to reduce load.

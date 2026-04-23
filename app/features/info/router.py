@@ -5,7 +5,7 @@ Inline backlog notes for caching and access control.
 
 from typing import Annotated
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Request
 
 from ...clients.interface import YFinanceClientInterface
 from ...common.validation import SymbolParam
@@ -63,9 +63,14 @@ router = APIRouter()
     },
 )
 async def get_info(
+    request: Request,
     symbol: SymbolParam,
     client: Annotated[YFinanceClientInterface, Depends(get_yfinance_client)],
     info_cache: Annotated[CacheInterface, Depends(get_info_cache)],
 ) -> InfoResponse:
     """Get detailed information about a company for a given ticker symbol."""
+    # read header
+    no_cache = request.headers.get("Cache-Control") == "no-cache"
+    if no_cache:
+        return await fetch_info(symbol, client, None)
     return await fetch_info(symbol, client, info_cache)
