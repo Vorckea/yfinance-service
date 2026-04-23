@@ -13,7 +13,7 @@ from collections.abc import Callable
 from fastapi import Request, Response
 from starlette.routing import Match
 
-from ..utils.logger import logger
+from ..utils.logger import logger, reset_correlation_id, set_correlation_id
 from .metrics import (
     HTTP_INPROGRESS,
     HTTP_INPROGRESS_TOTAL,
@@ -77,8 +77,13 @@ async def http_metrics_middleware(request: Request, call_next: Callable) -> Resp
     # Correlation ID
     cid = request.headers.get(CORRELATION_HEADER, str(uuid.uuid4()))
     request.state.correlation_id = cid
+    correlation_token = set_correlation_id(cid)
 
     route = _extract_route_best_effort(request)
+    logger.info(
+        "Request started",
+        extra={"cid": cid, "route": route, "method": method, "path": request.url.path},
+    )
 
     try:
         HTTP_INPROGRESS_TOTAL.inc()
@@ -121,51 +126,54 @@ async def http_metrics_middleware(request: Request, call_next: Callable) -> Resp
         except Exception:
             pass
 
-    duration = time.perf_counter() - start
-    status_class = _status_class(response.status_code)
-    body_size = _get_body_size(response)
-
     try:
-        HTTP_REQUEST_DURATION.labels(route=route, method=method).observe(duration)
-    except Exception:
-        pass
-    try:
-        HTTP_REQUESTS.labels(route=route, method=method, status_class=status_class).inc()
-    except Exception:
-        pass
-    try:
-        HTTP_RESPONSE_SIZE.labels(route=route, method=method).observe(body_size)
-    except Exception:
-        pass
+        duration = time.perf_counter() - start
+        status_class = _status_class(response.status_code)
+        body_size = _get_body_size(response)
 
-    try:
-        response.headers[CORRELATION_HEADER] = cid
-    except Exception:
-        pass
+        try:
+            HTTP_REQUEST_DURATION.labels(route=route, method=method).observe(duration)
+        except Exception:
+            pass
+        try:
+            HTTP_REQUESTS.labels(route=route, method=method, status_class=status_class).inc()
+        except Exception:
+            pass
+        try:
+            HTTP_RESPONSE_SIZE.labels(route=route, method=method).observe(body_size)
+        except Exception:
+            pass
 
-    if duration >= SLOW_THRESHOLD_SECONDS:
-        logger.warning(
-            "Slow request",
-            extra={
-                "cid": cid,
-                "route": route,
-                "method": method,
-                "status_code": response.status_code,
-                "latency": duration,
-                "threshold": SLOW_THRESHOLD_SECONDS,
-            },
-        )
-    else:
-        logger.info(
-            "Request completed",
-            extra={
-                "cid": cid,
-                "route": route,
-                "method": method,
-                "status_code": response.status_code,
-                "latency": duration,
-                "response_size": body_size,
-            },
-        )
+        try:
+            response.headers[CORRELATION_HEADER] = cid
+        except Exception:
+            pass
 
-    return response
+        if duration >= SLOW_THRESHOLD_SECONDS:
+            logger.warning(
+                "Slow request",
+                extra={
+                    "cid": cid,
+                    "route": route,
+                    "method": method,
+                    "status_code": response.status_code,
+                    "latency": duration,
+                    "threshold": SLOW_THRESHOLD_SECONDS,
+                },
+            )
+        else:
+            logger.info(
+                "Request completed",
+                extra={
+                    "cid": cid,
+                    "route": route,
+                    "method": method,
+                    "status_code": response.status_code,
+                    "latency": duration,
+                    "response_size": body_size,
+                },
+            )
+
+        return response
+    finally:
+        reset_correlation_id(correlation_token)
