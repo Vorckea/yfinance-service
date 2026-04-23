@@ -25,7 +25,7 @@ uvloop = {version = "^0.22.1", markers = "sys_platform == 'linux'"}
 httptools = "^0.7.1"
 
 [tool.poetry.group.dev.dependencies]
-pytest = "^9.0.0"
+pytest = "^9.0.3"
 ruff = "^0.15.11"
 black = "^25.1.0"
 pytest-mock = "^3.15.1"
