@@ -108,7 +108,7 @@ runs:
         path: sbom.cyclonedx.json
 
     - name: Scan image with Trivy (vuln check)
-      uses: aquasecurity/trivy-action@0.33.1
+      uses: aquasecurity/trivy-action@0.36
       with:
         image-ref: ${{ env.IMAGE_NAME }}@${{ steps.push.outputs.digest }}
         format: "table"
