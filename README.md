@@ -92,6 +92,7 @@ Relevant files:
 | Variable | Description | Default | Example |
 |---|---|----|---|
 | `LOG_LEVEL` | Logging level (CRITICAL/ERROR/WARNING/INFO/DEBUG/NOTSET) | `INFO` | `LOG_LEVEL=DEBUG` |
+| `LOG_FORMAT` | Logging output format (`text` or `json`) | `text` | `LOG_FORMAT=json` |
 | `MAX_BULK_CONCURRENCY` | Max concurrent requests for bulk quote endpoint | `10` | `MAX_BULK_CONCURRENCY=20` |
 | `EARNINGS_CACHE_TTL` | Cache TTL for earnings data in seconds (0 = disable caching) | `3600` | `EARNINGS_CACHE_TTL=1800` |
 | `EARNINGS_CACHE_MAXSIZE` | Max entries for earnings cache | `128` | `EARNINGS_CACHE_MAXSIZE=256` |
@@ -129,6 +130,26 @@ curl -H "X-API-Key: your-secret-key-here" http://localhost:8000/quote/AAPL
 - `/health`, `/ready` - Health checks
 - `/metrics` - Prometheus metrics
 - `/docs`, `/redoc` - API documentation
+
+### Logging
+
+The service supports plain text logs by default and structured JSON logs for
+machine-readable ingestion.
+
+```bash
+# Human-readable logs
+LOG_LEVEL=INFO
+LOG_FORMAT=text
+
+# Structured logs for log pipelines
+LOG_LEVEL=INFO
+LOG_FORMAT=json
+```
+
+Request traffic receives an `X-Correlation-ID` value. If the client sends one,
+the service reuses it; otherwise it generates one and returns it in the
+response header. Request, response, and error logs include the correlation ID
+to make cross-service tracing easier.
 
 ### Examples
 
@@ -330,4 +351,3 @@ Thanks goes to these wonderful people ([emoji key](https://allcontributors.org/d
 <!-- ALL-CONTRIBUTORS-LIST:END -->
 
 This project follows the [all-contributors](https://github.com/all-contributors/all-contributors) specification. Contributions of any kind welcome!
-

@@ -9,17 +9,18 @@ Provides:
 import time
 import uuid
 from collections.abc import Callable
-from .metrics import safe_metric_call
+
 from fastapi import Request, Response
 from starlette.routing import Match
 
-from ..utils.logger import logger
+from ..utils.logger import logger, reset_correlation_id, set_correlation_id
 from .metrics import (
     HTTP_INPROGRESS,
     HTTP_INPROGRESS_TOTAL,
     HTTP_REQUEST_DURATION,
     HTTP_REQUESTS,
     HTTP_RESPONSE_SIZE,
+    safe_metric_call,
 )
 
 SLOW_THRESHOLD_SECONDS = 10
@@ -62,26 +63,24 @@ def _get_body_size(response: Response) -> int:
 
 
 async def http_metrics_middleware(request: Request, call_next: Callable) -> Response:
-    """Middleware to collect metrics & structured logs.
-
-    Increments global in-progress immediately so concurrency is visible, then after
-    processing resolves the templated route path for labeled metrics.
-    Skips /metrics and /health endpoints to avoid recursion/noise.
-    """
+    """Middleware to collect metrics and structured logs."""
     if request.url.path in SKIP_PATHS:
         return await call_next(request)
 
     start = time.perf_counter()
     method = request.method
 
-    # Correlation ID
     cid = request.headers.get(CORRELATION_HEADER, str(uuid.uuid4()))
     request.state.correlation_id = cid
+    correlation_token = set_correlation_id(cid)
 
     route = _extract_route_best_effort(request)
+    logger.info(
+        "Request started",
+        extra={"cid": cid, "route": route, "method": method, "path": request.url.path},
+    )
 
     safe_metric_call(HTTP_INPROGRESS_TOTAL.inc)
-
     per_route_inc = False
 
     try:
@@ -109,50 +108,51 @@ async def http_metrics_middleware(request: Request, call_next: Callable) -> Resp
     finally:
         if per_route_inc:
             safe_metric_call(HTTP_INPROGRESS.labels(route=route, method=method).dec)
-
         safe_metric_call(HTTP_INPROGRESS_TOTAL.dec)
 
-    duration = time.perf_counter() - start
-    status_class = _status_class(response.status_code)
-    body_size = _get_body_size(response)
+    try:
+        duration = time.perf_counter() - start
+        status_class = _status_class(response.status_code)
+        body_size = _get_body_size(response)
 
-    safe_metric_call(
-        HTTP_REQUEST_DURATION.labels(route=route, method=method).observe,
-        duration,
-    )
-    safe_metric_call(
-        HTTP_REQUESTS.labels(route=route, method=method, status_class=status_class).inc
-    )
-    safe_metric_call(
-        HTTP_RESPONSE_SIZE.labels(route=route, method=method).observe,
-        body_size,
-    )
-
-    safe_metric_call(response.headers.__setitem__, CORRELATION_HEADER, cid)
-
-    if duration >= SLOW_THRESHOLD_SECONDS:
-        logger.warning(
-            "Slow request",
-            extra={
-                "cid": cid,
-                "route": route,
-                "method": method,
-                "status_code": response.status_code,
-                "latency": duration,
-                "threshold": SLOW_THRESHOLD_SECONDS,
-            },
+        safe_metric_call(
+            HTTP_REQUEST_DURATION.labels(route=route, method=method).observe,
+            duration,
         )
-    else:
-        logger.info(
-            "Request completed",
-            extra={
-                "cid": cid,
-                "route": route,
-                "method": method,
-                "status_code": response.status_code,
-                "latency": duration,
-                "response_size": body_size,
-            },
+        safe_metric_call(
+            HTTP_REQUESTS.labels(route=route, method=method, status_class=status_class).inc
         )
+        safe_metric_call(
+            HTTP_RESPONSE_SIZE.labels(route=route, method=method).observe,
+            body_size,
+        )
+        safe_metric_call(response.headers.__setitem__, CORRELATION_HEADER, cid)
 
-    return response
+        if duration >= SLOW_THRESHOLD_SECONDS:
+            logger.warning(
+                "Slow request",
+                extra={
+                    "cid": cid,
+                    "route": route,
+                    "method": method,
+                    "status_code": response.status_code,
+                    "latency": duration,
+                    "threshold": SLOW_THRESHOLD_SECONDS,
+                },
+            )
+        else:
+            logger.info(
+                "Request completed",
+                extra={
+                    "cid": cid,
+                    "route": route,
+                    "method": method,
+                    "status_code": response.status_code,
+                    "latency": duration,
+                    "response_size": body_size,
+                },
+            )
+
+        return response
+    finally:
+        reset_correlation_id(correlation_token)
