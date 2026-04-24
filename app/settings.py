@@ -17,6 +17,13 @@ class LogLevel(str, Enum):
     NOTSET = "NOTSET"
 
 
+class LogFormat(str, Enum):
+    """Supported log output formats."""
+
+    TEXT = "text"
+    JSON = "json"
+
+
 class Settings(BaseSettings):
     """Application settings loaded from environment variables or a .env file."""
 
@@ -29,6 +36,7 @@ class Settings(BaseSettings):
     )
 
     log_level: LogLevel = Field(LogLevel.INFO, validation_alias="LOG_LEVEL")
+    log_format: LogFormat = Field(LogFormat.TEXT, validation_alias="LOG_FORMAT")
     max_bulk_concurrency: int = Field(10, ge=1, validation_alias="MAX_BULK_CONCURRENCY")
 
     # Request timeout
