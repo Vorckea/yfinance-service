@@ -325,24 +325,49 @@
             "title": "Readiness Probe Latency (s)",
             "datasource": "Prometheus",
             "gridPos": {
-              "h": 8,
-              "w": 24,
-              "x": 0,
-              "y": 64
+                "h": 8,
+                "w": 24,
+                "x": 0,
+                "y": 64
             },
             "targets": [
-              {
-                "expr": "sum(rate(yf_probe_latency_seconds_sum[5m])) / sum(rate(yf_probe_latency_seconds_count[5m]))",
-                "legendFormat": "avg latency"
-              }
+                {
+                    "expr": "sum(rate(yf_probe_latency_seconds_sum[5m])) / sum(rate(yf_probe_latency_seconds_count[5m]))",
+                    "legendFormat": "avg latency"
+                }
             ],
             "fieldConfig": {
-              "defaults": {
-                "unit": "s",
-                "decimals": 3
-              },
-              "overrides": []
+                "defaults": {
+                    "unit": "s",
+                    "decimals": 3
+                },
+                "overrides": []
             }
-          }
+        },
+        {
+            "id": 10,
+            "type": "timeseries",
+            "title": "YFinance Upstream Error P95 Latency (s)",
+            "datasource": "Prometheus",
+            "gridPos": {
+                "h": 8,
+                "w": 24,
+                "x": 0,
+                "y": 72
+            },
+            "targets": [
+                {
+                    "expr": "histogram_quantile(0.95, sum(rate(yfinance_upstream_error_duration_seconds_bucket[5m])) by (le, operation, outcome))",
+                    "legendFormat": "{{operation}} {{outcome}}"
+                }
+            ],
+            "fieldConfig": {
+                "defaults": {
+                    "unit": "s",
+                    "decimals": 3
+                },
+                "overrides": []
+            }
+        }
     ]
 }
