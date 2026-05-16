@@ -13,6 +13,7 @@ on:
 jobs:
     build:
         runs-on: ubuntu-latest
+
         steps:
             - uses: actions/checkout@v6
 
@@ -33,16 +34,17 @@ jobs:
                 context: .
                 push: false
                 tags: yfinance-service:${{ github.sha }}
+
                 cache-from: type=gha
                 cache-to: type=gha,mode=max
 
                 provenance: false
                 sbom: false
-
                 outputs: type=docker
           
             - name: Inspect built image
               run: |
                 echo "Build completed at: $(date -u)"
+                docker image inspect yfinance-service:${{ github.sha }} > /dev/null
                 
 
