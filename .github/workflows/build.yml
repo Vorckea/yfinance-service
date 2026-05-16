@@ -13,30 +13,38 @@ on:
 jobs:
     build:
         runs-on: ubuntu-latest
+
         steps:
             - uses: actions/checkout@v6
 
             - name: Setup Docker Buildx
               uses: docker/setup-buildx-action@v4
 
-            - name: Cache Docker layers
-              uses: actions/cache@v5
-              with:
-                path: .cache/buildx
-                key: buildx-${{ runner.os }}-${{ hashFiles('**/Dockerfile', '**/poetry.lock', '**/pyproject.toml') }}
-                restore-keys: |
-                  buildx-${{ runner.os }}-
-            
+            - name: Build metadata
+              run: |
+                echo "Git SHA: $GITHUB_SHA"
+                echo "Branch: $GITHUB_REF_NAME"
+                echo "Runner: $RUNNER_OS"
+                docker version
+                docker buildx ls
+
             - name: Build image (no push)
               uses: docker/build-push-action@v7
               with:
                 context: .
                 push: false
                 tags: yfinance-service:${{ github.sha }}
-                cache-from: type=local,src=.cache/buildx
-                cache-to: type=local,dest=.cache/buildx-new,mode=max
-            - name: Move new cache
-              if: always()
+
+                cache-from: type=gha
+                cache-to: type=gha,mode=max
+
+                provenance: false
+                sbom: false
+                outputs: type=docker
+          
+            - name: Inspect built image
               run: |
-                rm -rf .cache/buildx
-                mv .cache/buildx-new .cache/buildx
+                echo "Build completed at: $(date -u)"
+                docker image inspect yfinance-service:${{ github.sha }} > /dev/null
+                
+
