@@ -79,10 +79,10 @@ class Settings(BaseSettings):
     api_key_enabled: bool = Field(False, validation_alias="API_KEY_ENABLED")
     api_key: str = Field("", validation_alias="API_KEY")
     # Endpoints that do not require API key authentication
-    # Provide endpoint paths without leading slash, e.g. "info", "quote", "historical"
-    # For root endpoint, use "root". Wildcards are not supported.
+    # Provide the first request path segment without a leading slash, e.g. "info" for
+    # /info/AAPL or "docs" for /docs. For root, use "root". Wildcards are not supported.
     api_key_unprotected_endpoints: list[str] = Field(
-        default_factory=lambda: ["health"],
+        default_factory=lambda: ["health", "ready", "metrics", "docs", "redoc", "openapi.json"],
         validation_alias="API_KEY_UNPROTECTED_ENDPOINTS",
     )
 
