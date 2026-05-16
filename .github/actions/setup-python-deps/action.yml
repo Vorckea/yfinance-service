@@ -36,7 +36,7 @@ runs:
         pip-${{ runner.os }}-py${{ inputs.python_version }}-
 
   - name: Install Poetry
-    run: pip install --no-cache-dir poetry || { echo "Poetry install failed"; exit 1; }
+    run: pip install poetry || { echo "Poetry install failed"; exit 1; }
     shell: bash
 
   - name: Configure Poetry
