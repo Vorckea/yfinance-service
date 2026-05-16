@@ -73,3 +73,31 @@ async def test_fetch_with_cache_ttl_param_unused():
     res = await fetch_with_cache("k2", cache, fetcher, ttl=5)
     assert res == "v"
     assert await cache.get("k2") == "v"
+
+
+@pytest.mark.asyncio
+async def test_fetch_with_cache_uses_set_with_ttl():
+    class TTLCacheStub:
+        def __init__(self):
+            self.store = {}
+            self.called = False
+            self.args = None
+
+        async def get(self, key):
+            return self.store.get(key)
+
+        async def set_with_ttl(self, key, value, ttl):
+            self.called = True
+            self.args = (key, value, ttl)
+            self.store[key] = value
+
+    cache = TTLCacheStub()
+
+    async def fetcher():
+        return "ttl-value"
+
+    res = await fetch_with_cache("kt", cache, fetcher, ttl=123)
+    assert res == "ttl-value"
+    assert cache.called
+    assert cache.args == ("kt", "ttl-value", 123)
+    assert await cache.get("kt") == "ttl-value"
