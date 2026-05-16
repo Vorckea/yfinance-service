@@ -11,6 +11,14 @@ from app.settings import Settings
 logger = getLogger(__name__)
 
 
+def _request_endpoint_key(path: str) -> str:
+    """Map a request path to the config key used by API_KEY_UNPROTECTED_ENDPOINTS."""
+    stripped = path.lstrip("/")
+    if not stripped:
+        return "root"
+    return stripped.split("/", 1)[0]
+
+
 async def check_api_key(
     request: Request,
     settings: Annotated[Settings, Depends(get_settings)],
@@ -28,7 +36,7 @@ async def check_api_key(
 
     """
     # If endpoint is not protected, allow request
-    endpoint = request.url.path.split("/")[1] if len(request.url.path.split("/")) > 1 else "root"
+    endpoint = _request_endpoint_key(request.url.path)
     if endpoint in settings.api_key_unprotected_endpoints:
         return
 
