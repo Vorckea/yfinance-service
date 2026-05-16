@@ -7,6 +7,7 @@ from typing import Any, Mapping
 
 from ...clients.interface import YFinanceClientInterface
 from ...utils.cache.interface import CacheInterface
+from ...utils.helpers import fetch_with_cache, normalize_symbol
 from ...utils.logger import logger
 from .models import InfoResponse
 
@@ -25,25 +26,19 @@ async def fetch_info(
         InfoResponse: The information response for the given symbol.
 
     """
-    symbol = symbol.strip().upper()
+    symbol = normalize_symbol(symbol)
     logger.info("info.fetch.start", extra={"symbol": symbol})
 
-    if info_cache:
-        cached = await info_cache.get(symbol)
-        if cached is not None:
-            logger.info("info.fetch.cache.hit", extra={"symbol": symbol})
-            return cached
-
-    info: Mapping[str, Any] = await client.get_info(symbol)
-
-    logger.info("info.fetch.success", extra={"symbol": symbol})
-
-    result = InfoResponse.model_validate({"symbol": symbol, **info})
+    async def _fetch_and_validate():
+        info: Mapping[str, Any] = await client.get_info(symbol)
+        logger.info("info.fetch.success", extra={"symbol": symbol})
+        return InfoResponse.model_validate({"symbol": symbol, **info})
 
     if info_cache:
-        try:
-            await info_cache.set(symbol, result)
-        except Exception:
-            logger.exception("info.set.cache.failed", extra={"symbol": symbol})
+        result = await fetch_with_cache(
+            symbol, info_cache, _fetch_and_validate, on_set_failed_event="info.set.cache.failed"
+        )
+    else:
+        result = await _fetch_and_validate()
 
     return result
