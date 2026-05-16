@@ -32,6 +32,11 @@ def auth_app() -> FastAPI:
     auth_app.include_router(snapshot_router, prefix="/snapshot", tags=["snapshot"])
     auth_app.include_router(earnings_router, prefix="/earnings", tags=["earnings"])
     auth_app.include_router(health_router, tags=["health"])
+
+    @auth_app.get("/metrics")
+    async def metrics():
+        return {"status": "ok"}
+
     return auth_app
 
 
@@ -198,3 +203,22 @@ async def test_unprotected_endpoints(auth_app: FastAPI):
 
         resp = await client.get("/earnings/AAPL?frequency=quarterly", headers=headers)
         assert resp.status_code == 401
+
+
+@pytest.mark.asyncio
+@pytest.mark.integration
+async def test_default_unprotected_endpoints_match_documentation(auth_app: FastAPI):
+    """Default auth config should allow documented health, metrics, and docs routes."""
+    test_settings = Settings(api_key="valid-test-key")
+
+    auth_app.dependency_overrides[get_yfinance_client] = lambda: FakeYFinanceClient()
+    auth_app.dependency_overrides[get_settings] = lambda: test_settings
+
+    transport = httpx.ASGITransport(app=auth_app)
+    async with httpx.AsyncClient(transport=transport, base_url="http://test") as client:
+        for path in ("/health", "/ready", "/metrics", "/docs", "/redoc", "/openapi.json"):
+            response = await client.get(path)
+            assert response.status_code == 200, path
+
+        protected = await client.get("/quote/AAPL")
+        assert protected.status_code == 401

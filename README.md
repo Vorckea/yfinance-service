@@ -103,6 +103,7 @@ Relevant files:
 | `SPLITS_CACHE_TTL` |Time-to-live (in seconds) for the stock splits cache| `3600` | `SPLITS_CACHE_TTL=1800` |
 | `API_KEY_ENABLED` | Enable API key authentication | `False` | `API_KEY_ENABLED=True` |
 | `API_KEY` | API key for authentication (required if enabled) | `""` | `API_KEY=your-secret-key-here` |
+| `API_KEY_UNPROTECTED_ENDPOINTS` | First path segments that bypass API key auth | `health,ready,metrics,docs,redoc,openapi.json` | `API_KEY_UNPROTECTED_ENDPOINTS="health,metrics"` |
 
 ### API Key Authentication
 
@@ -119,17 +120,21 @@ API_KEY=your-secret-key-here
 # Include API key in X-API-Key header
 curl -H "X-API-Key: your-secret-key-here" http://localhost:8000/quote/AAPL
 ```
-**Protected endpoints:**
-- `/quote/*` - Stock quotes
-- `/historical/*` - Historical data
-- `/info/*` - Company information
-- `/snapshot/*` - Combined snapshots
-- `/earnings/*` - Earnings data
+**Protected endpoints by default:**
+- all application endpoints except the unprotected list below
+- this includes `/quote/*`, `/historical/*`, `/info/*`, `/snapshot/*`, `/earnings/*`, `/news/*`, and `/splits/*`
 
 **Unprotected endpoints:**
 - `/health`, `/ready` - Health checks
 - `/metrics` - Prometheus metrics
-- `/docs`, `/redoc` - API documentation
+- `/docs`, `/redoc`, `/openapi.json` - API documentation routes
+
+`API_KEY_UNPROTECTED_ENDPOINTS` matches the first request path segment without a
+leading slash. Examples:
+- `/quote/AAPL` -> `quote`
+- `/docs` -> `docs`
+- `/openapi.json` -> `openapi.json`
+- `/` -> `root`
 
 ### Logging
 
