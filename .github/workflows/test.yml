@@ -25,7 +25,8 @@ jobs:
 
       - name: Run tests
         run: > 
-          poetry run pytest 
+          poetry run pytest
+          -n auto --dist loadscope
           --maxfail=1 --disable-warnings --tb=short
           --cov=app
           --cov-report=term-missing 
