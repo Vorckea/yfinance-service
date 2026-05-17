@@ -14,8 +14,7 @@ from .interface import CacheInterface, K, V
 
 
 class TTLCache(CacheInterface, Generic[K, V]):
-    """
-    An in-memory cache with time-to-live (TTL) expiration and FIFO eviction policy.
+    """An in-memory cache with time-to-live (TTL) expiration and FIFO eviction policy.
 
     This cache evicts the oldest inserted item when the maximum size is reached,
     following a FIFO (first-in, first-out) policy. It does not implement a
@@ -31,6 +30,7 @@ class TTLCache(CacheInterface, Generic[K, V]):
     for cache hits, misses, evictions, expirations, length, and puts, allowing
     for fine-grained monitoring of cache usage and performance.
     """
+
     def __init__(
         self, size: int, ttl: int, *, cache_name: str = "ttl_cache", resource: str = "generic"
     ) -> None:
@@ -59,6 +59,11 @@ class TTLCache(CacheInterface, Generic[K, V]):
 
     async def get(self, key: K) -> Optional[V]:
         async with self._lock:
+            # If cache disabled (size <= 0) treat as always-miss
+            if self.size <= 0:
+                self._misses.inc()
+                return None
+
             entry = self._cache.get(key)
             if entry is None:
                 self._misses.inc()
@@ -76,6 +81,10 @@ class TTLCache(CacheInterface, Generic[K, V]):
 
     async def set(self, key: K, value: V) -> None:
         async with self._lock:
+            # If cache disabled (size <= 0) do not store anything.
+            if self.size <= 0:
+                return
+
             # enforce max size by evicting oldest entry before inserting new key
             if key not in self._cache and len(self._cache) >= self.size:
                 oldest = next(iter(self._cache))
@@ -88,10 +97,16 @@ class TTLCache(CacheInterface, Generic[K, V]):
 
     async def delete(self, key: K) -> None:
         async with self._lock:
+            # If cache disabled, nothing to delete
+            if self.size <= 0:
+                return
             if self._cache.pop(key, None) is not None:
                 self._length.set(len(self._cache))
 
     async def clear(self) -> None:
         async with self._lock:
+            # If cache disabled, nothing to clear
+            if self.size <= 0:
+                return
             self._cache.clear()
             self._length.set(0)
