@@ -4,6 +4,7 @@ from app.clients.interface import YFinanceClientInterface
 from app.features.news.models import NewsResponse
 from app.utils.cache.news_cache import Key, NewsCache
 
+from ...utils.helpers import normalize_symbol
 from ...utils.logger import logger
 
 
@@ -34,13 +35,15 @@ async def fetch_news(
     if tab == "press-releases":
         tab = "press releases"
 
+    # Normalize symbol for cache and client calls
+    symbol = normalize_symbol(symbol)
+
     if news_cache:
         cached = await news_cache.get(Key(symbol=symbol, news_type=tab), count)
         if cached is not None:
             logger.info("news.fetch.cache.hit", extra={"symbol": symbol, "tab": tab})
             return NewsResponse(news=cached)
 
-    symbol = symbol.strip().upper()
     news = await client.get_news(symbol=symbol, count=count, tab=tab)
     result = NewsResponse.model_validate({"news": news})
 

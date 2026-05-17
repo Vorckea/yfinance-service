@@ -12,6 +12,7 @@ import asyncio
 
 from ...clients.interface import YFinanceClientInterface
 from ...utils.cache.interface import CacheInterface
+from ...utils.helpers import normalize_symbol
 from ...utils.logger import logger
 from ..info.service import fetch_info
 from ..quote.service import fetch_quote
@@ -35,7 +36,7 @@ async def fetch_snapshot(
         HTTPException: 400 for empty symbol, 502 if either info or quote fetch fails.
 
     """
-    symbol = symbol.upper().strip()
+    symbol = normalize_symbol(symbol)
     logger.info("snapshot.fetch.start", extra={"symbol": symbol})
 
     # Fetch info (possibly cached) and quote (always fresh) concurrently.

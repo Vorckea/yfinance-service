@@ -87,3 +87,21 @@ async def test_ttlcache_expiry_and_metrics():
     assert await c.get("x") is None
     # expiration counter incremented
     assert CACHE_EXPIRATIONS.labels(cache="test_cache2", resource="test2")._value.get() >= 1
+
+
+@pytest.mark.asyncio
+async def test_ttlcache_zero_size_behavior():
+    """When cache `size` is 0 the cache is disabled: gets miss and sets are no-ops."""
+    c = TTLCache(0, ttl=60, cache_name="test_cache_zero", resource="test_zero")
+
+    # reads always miss
+    assert await c.get("a") is None
+
+    # sets are no-ops and do not change length or put counters
+    await c.set("a", 1)
+    assert await c.get("a") is None
+    await c.delete("a")  # should be no-op and not raise
+    await c.clear()  # should be no-op and not raise
+
+    assert CACHE_LENGTH.labels(cache="test_cache_zero", resource="test_zero")._value.get() == 0
+    assert CACHE_PUTS.labels(cache="test_cache_zero", resource="test_zero")._value.get() == 0
