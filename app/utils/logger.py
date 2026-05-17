@@ -38,7 +38,7 @@ class JsonFormatter(logging.Formatter):
             "message": message,
             "correlation_id": getattr(record, "correlation_id", "-"),
             "module": record.module,
-            "pathname": record.pathname,
+            "func": record.funcName,
             "lineno": record.lineno,
         }
 
@@ -51,7 +51,10 @@ class JsonFormatter(logging.Formatter):
         if record.stack_info:
             payload["stack"] = self.formatStack(record.stack_info)
 
-        return json.dumps(payload, default=str, ensure_ascii=True)
+        # Do not escape unicode (better readability) and avoid including
+        # absolute filesystem paths (record.pathname) which may leak host
+        # layout; `module` + `lineno` provide sufficient location context.
+        return json.dumps(payload, default=str, ensure_ascii=False)
 
 
 def set_correlation_id(correlation_id: str) -> contextvars.Token:
@@ -81,7 +84,7 @@ def configure_logging(settings: Settings) -> None:
             "default": {
                 "format": (
                     "%(asctime)s %(levelname)s %(name)s %(message)s "
-                    "[cid=%(correlation_id)s] [%(pathname)s:%(lineno)d]"
+                    "[cid=%(correlation_id)s] [%(module)s:%(lineno)d]"
                 ),
             },
             "json": {
