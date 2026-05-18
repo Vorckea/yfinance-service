@@ -32,6 +32,7 @@ from app.settings import Settings
 from app.utils.cache import TTLCache
 
 from ..monitoring.instrumentation import observe
+from ..utils.helpers import normalize_symbol
 from ..utils.logger import logger
 
 YFinanceData = dict[str, Any]
@@ -324,9 +325,7 @@ class YFinanceClient(YFinanceClientInterface):
                                 return call_result
 
                             async with self._upstream_sem:
-                                result = await asyncio.wait_for(
-                                    _invoke_fetch(), self._timeout
-                                )
+                                result = await asyncio.wait_for(_invoke_fetch(), self._timeout)
 
                         async with self._inflight_lock:
                             _e = self._inflight.pop(key, None)
@@ -474,18 +473,6 @@ class YFinanceClient(YFinanceClientInterface):
         """
         return await self._fetch_data_coalesced(op, fetch_func, symbol, *args, **kwargs)
 
-    def _normalize(self, symbol: str) -> str:
-        """Normalize a stock symbol to uppercase and strip whitespace.
-
-        Args:
-            symbol: The raw stock symbol string.
-
-        Returns:
-            Normalized symbol (uppercase, stripped). Empty string if symbol is None.
-
-        """
-        return (symbol or "").upper().strip()
-
     async def get_info(self, symbol: str) -> YFinanceData:
         """Fetch company information for a specific stock.
 
@@ -499,7 +486,7 @@ class YFinanceClient(YFinanceClientInterface):
             HTTPException: 404 if no data found, 502 if data format is invalid.
 
         """
-        symbol = self._normalize(symbol)
+        symbol = normalize_symbol(symbol)
         ticker = await self._get_ticker(symbol)
         info = await self._fetch_data("info", ticker.get_info, symbol)
         if not info:
@@ -528,7 +515,7 @@ class YFinanceClient(YFinanceClientInterface):
             HTTPException: 404 if no news found, 502 if data format is invalid.
 
         """
-        symbol = self._normalize(symbol)
+        symbol = normalize_symbol(symbol)
         # no_cache=True because yf.Ticker.get_news does not re-check its arguments
         # on a cached object — different count/tab values would silently return
         # the same cached result.
@@ -563,7 +550,7 @@ class YFinanceClient(YFinanceClientInterface):
             HTTPException: 404 if no data found, 502 if data format is invalid.
 
         """
-        symbol = self._normalize(symbol)
+        symbol = normalize_symbol(symbol)
         ticker = await self._get_ticker(symbol)
         history = await self._fetch_data(
             "history", ticker.history, symbol, start=start, end=end, interval=interval
@@ -603,7 +590,7 @@ class YFinanceClient(YFinanceClientInterface):
             HTTPException: If an HTTP error occurs during fetching.
 
         """
-        symbol = self._normalize(symbol)
+        symbol = normalize_symbol(symbol)
         ticker = await self._get_ticker(symbol)
 
         try:
@@ -694,7 +681,7 @@ class YFinanceClient(YFinanceClientInterface):
                 500 for other errors.
 
         """
-        symbol = self._normalize(symbol)
+        symbol = normalize_symbol(symbol)
         ticker = await self._get_ticker(symbol)
 
         try:
@@ -756,7 +743,7 @@ class YFinanceClient(YFinanceClientInterface):
             HTTPException: 404 if no split data is found.
 
         """
-        symbol = self._normalize(symbol)
+        symbol = normalize_symbol(symbol)
         ticker = await self._get_ticker(symbol)  # await — _get_ticker is async
 
         splits = await self._fetch_data("splits", lambda: ticker.splits, symbol)
