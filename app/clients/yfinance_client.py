@@ -32,6 +32,7 @@ from app.settings import Settings
 from app.utils.cache import TTLCache
 
 from ..monitoring.instrumentation import observe
+from ..monitoring.metrics import YF_REQUESTS, safe_metric_call
 from ..utils.helpers import normalize_symbol
 from ..utils.logger import logger
 
@@ -289,8 +290,8 @@ class YFinanceClient(YFinanceClientInterface):
             # Follower path
             try:
                 result = await asyncio.shield(follower_future)
-                if hasattr(observe, "record_metric"):
-                    observe.record_metric("YF_REQUESTS", 1, {"outcome": "cached_dedupe"})
+                # Record a dedupe metric for followers (use safe wrapper).
+                safe_metric_call(YF_REQUESTS.labels(operation=op, outcome="cached_dedupe").inc)
                 # Copy so this caller's mutations don't corrupt other waiters.
                 return _safe_copy(result)
             except asyncio.CancelledError:
