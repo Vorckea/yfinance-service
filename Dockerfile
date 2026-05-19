@@ -25,7 +25,7 @@ ENV PYTHONUNBUFFERED=1 \
     SSL_CERT_FILE=/etc/ssl/certs/ca-certificates.crt \
     CURL_CA_BUNDLE=/etc/ssl/certs/ca-certificates.crt
 
-RUN groupadd -r appuser && useradd -r -g appuser -d /home/appuser -s /usr/sbin/nologin -c "App user" appuser \
+RUN groupadd -r appuser && useradd -r -g appuser -d /home/appuser -s /usr/sbin/nologin -c "App user" appuser -m \
     && mkdir -p /app
 
 WORKDIR /app
