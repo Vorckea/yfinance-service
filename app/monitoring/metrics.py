@@ -141,6 +141,7 @@ METRIC_ERRORS = Counter(
 
 
 def safe_metric_call(fn, *args, **kwargs):
+    """Call a metric function safely, catching and logging any exceptions."""
     try:
         return fn(*args, **kwargs)
     except Exception as e:

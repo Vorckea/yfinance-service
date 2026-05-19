@@ -1,7 +1,8 @@
 """Earnings data models."""
 
-from pydantic import BaseModel, ConfigDict, Field
 from datetime import date
+
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class EarningRow(BaseModel):

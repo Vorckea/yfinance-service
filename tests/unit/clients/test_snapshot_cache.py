@@ -1,5 +1,7 @@
-import pytest
 import asyncio
+
+import pytest
+
 from app.utils.cache import SnapshotCache
 
 
