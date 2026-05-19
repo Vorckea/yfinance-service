@@ -99,10 +99,7 @@ async def get_historical(
         examples={"default": {"summary": "Interval", "value": "1d"}},
     ),
 ) -> HistoricalResponse:
-    """Return historical OHLCV data for the symbol in the optional date range.
-
-    TODO(perf): Add optional interval parameter (1d,1h, etc.).
-    """
+    """Return historical OHLCV data for the symbol in the optional date range."""
     if start and end and start > end:
         raise HTTPException(status_code=400, detail="start must be before or equal to end")
 

@@ -77,7 +77,7 @@ router = APIRouter()
     },
 )
 async def get_snapshot(
-    request: Request, 
+    request: Request,
     symbol: SymbolParam,
     client: Annotated[YFinanceClientInterface, Depends(get_yfinance_client)],
     info_cache: Annotated[CacheInterface, Depends(get_info_cache)],

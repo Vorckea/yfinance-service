@@ -3,14 +3,14 @@
 import asyncio
 from datetime import date, datetime, timezone
 from typing import Any, Optional
-from fastapi import HTTPException
-import numpy as np
 
 import pandas as pd
+from fastapi import HTTPException
 
 from ...clients.interface import YFinanceClientInterface
 from ...utils.logger import logger
 from .models import EarningRow, EarningsResponse
+
 
 def safe_date(x: Any) -> Optional[date]:
     if x is None:
@@ -63,15 +63,13 @@ def safe_float(val: Any) -> Optional[float]:
 def _extract_eps_and_revenue_from_row(
     series: pd.Series,
 ) -> tuple[Optional[float], Optional[float]]:
-    """
-    Robust EPS extractor handling multiple yfinance field conventions.
+    """Robust EPS extractor handling multiple yfinance field conventions.
 
     Behavior (intentional):
     - Raises KeyError if NO EPS columns exist at all
     - Raises ValueError for corrupt EPS values
     - Gracefully handles missing revenue
     """
-
     eps_cols = ("Diluted EPS", "Basic EPS", "EPS", "Reported EPS", "EPS Actual")
     revenue_cols = ("Total Revenue", "Revenue", "Operating Revenue")
 
@@ -153,6 +151,7 @@ async def fetch_earnings(
 
     Raises:
         HTTPException: 404 if no data, 502 if malformed, 503 if timeout, etc.
+
     """
     logger.info("earnings.fetch.start", extra={"symbol": symbol, "frequency": frequency})
     symbol = symbol.upper()

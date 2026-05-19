@@ -1,13 +1,14 @@
 """Tests for the /earnings endpoint."""
 
-import pytest
-import pandas as pd
-import pytz
-
-from app.features.earnings.service import fetch_earnings
-from app.features.earnings.models import EarningsResponse
-from fastapi import HTTPException
 from unittest.mock import AsyncMock
+
+import pandas as pd
+import pytest
+import pytz
+from fastapi import HTTPException
+
+from app.features.earnings.models import EarningsResponse
+from app.features.earnings.service import fetch_earnings
 
 VALID_SYMBOL = "AAPL"
 INVALID_SYMBOL = "!!!"
@@ -108,8 +109,7 @@ async def test_fetch_earnings_empty_dataframe():
 
 @pytest.mark.asyncio
 async def test_fetch_earnings_with_missing_values():
-    """Earnings with some missing fields should still map correctly."""    
-
+    """Earnings with some missing fields should still map correctly."""
     client = AsyncMock()
     earnings_df = pd.DataFrame(
         {
@@ -133,8 +133,7 @@ async def test_fetch_earnings_with_missing_values():
 
 @pytest.mark.asyncio
 async def test_fetch_earnings_no_next_earnings_date():
-    """Earnings fetch should handle missing next_earnings_date gracefully."""    
-
+    """Earnings fetch should handle missing next_earnings_date gracefully."""
     client = AsyncMock()
     earnings_df = pd.DataFrame(
         {
@@ -352,7 +351,7 @@ async def test_fetch_earnings_both_upstream_failures():
 
     with pytest.raises(HTTPException) as exc:
         await fetch_earnings("AAPL", client, "quarterly")
-    
+
     assert exc.value.status_code == 503
     assert "Earnings service unavailable" in exc.value.detail
 

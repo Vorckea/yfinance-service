@@ -4,7 +4,12 @@ import json
 import logging
 
 from app.settings import LogFormat, Settings
-from app.utils.logger import JsonFormatter, RequestContextFilter, reset_correlation_id, set_correlation_id
+from app.utils.logger import (
+    JsonFormatter,
+    RequestContextFilter,
+    reset_correlation_id,
+    set_correlation_id,
+)
 
 
 def test_json_formatter_renders_extras():

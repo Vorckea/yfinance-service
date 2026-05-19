@@ -1,24 +1,27 @@
-import pytest
-import pandas as pd
 from unittest.mock import AsyncMock
+
+import pandas as pd
+import pytest
 from fastapi import HTTPException
-from app.main import app  
-from app.dependencies import get_yfinance_client, get_splits_cache
+
+from app.dependencies import get_splits_cache, get_yfinance_client
+from app.main import app
+
 
 # --- 1. SUCCESSFUL CASE ---
 @pytest.mark.asyncio
 async def test_read_splits_success(client):
     mock_data = pd.Series([2.0], index=pd.to_datetime(["2024-01-01"]))
-    
+
     mock_client = AsyncMock()
     mock_client.get_splits.return_value = mock_data
-    
+
     mock_cache = AsyncMock()
     mock_cache.get.return_value = None
 
     app.dependency_overrides[get_yfinance_client] = lambda: mock_client
     app.dependency_overrides[get_splits_cache] = lambda: mock_cache
-    
+
     try:
         response = client.get("/splits/AAPL")
         assert response.status_code == 200
@@ -38,13 +41,13 @@ async def test_read_splits_no_data(client):
     mock_client = AsyncMock()
     # Simulate client raising 404
     mock_client.get_splits.side_effect = HTTPException(status_code=404, detail="No data")
-    
+
     mock_cache = AsyncMock()
     mock_cache.get.return_value = None
 
     app.dependency_overrides[get_yfinance_client] = lambda: mock_client
     app.dependency_overrides[get_splits_cache] = lambda: mock_cache
-    
+
     try:
         response = client.get("/splits/ZZZZ")
         assert response.status_code == 404
@@ -57,16 +60,16 @@ async def test_read_splits_no_data(client):
 async def test_splits_cache_logic():
     from app.features.splits.service import get_splits
     mock_data = pd.Series([2.0], index=pd.to_datetime(["2024-01-01"]))
-    
+
     mock_client = AsyncMock()
     mock_client.get_splits.return_value = mock_data
-    
+
     mock_cache = AsyncMock()
     mock_cache.get.side_effect = [None, [{"ratio": 2.0, "date": "2024-01-01"}]]
-    
+
     symbol = "TSLA"
     await get_splits(symbol, mock_client, mock_cache)
     await get_splits(symbol, mock_client, mock_cache)
-    
+
     assert mock_client.get_splits.call_count == 1
     assert mock_cache.set.call_count == 1

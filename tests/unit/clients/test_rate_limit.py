@@ -1,6 +1,7 @@
-import pytest
 import asyncio
 from asyncio import Semaphore
+
+import pytest
 
 
 @pytest.mark.asyncio

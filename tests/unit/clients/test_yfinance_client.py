@@ -49,7 +49,7 @@ async def test_fetch_data_retry_succeeds_on_second_attempt(monkeypatch):
     """Test that a transient error retries and eventually succeeds."""
     client = YFinanceClient()
     call_count = [0]
-    
+
     async def fake_to_thread(*args, **kwargs):
         call_count[0] += 1
         if call_count[0] < 2:
@@ -57,11 +57,11 @@ async def test_fetch_data_retry_succeeds_on_second_attempt(monkeypatch):
             raise asyncio.TimeoutError("Transient timeout")
         # Second call succeeds
         return {"data": "success"}
-    
+
     monkeypatch.setattr(asyncio, "to_thread", fake_to_thread)
-    
+
     result = await client._fetch_data("info", lambda: None, "AAPL")
-    
+
     assert result == {"data": "success"}
     assert call_count[0] == 2  # Should have been called twice
 
@@ -71,17 +71,17 @@ async def test_fetch_data_retry_fails_after_max_retries(monkeypatch):
     """Test that after max retries, the error is raised."""
     client = YFinanceClient()
     call_count = [0]
-    
+
     async def fake_to_thread(*args, **kwargs):
         call_count[0] += 1
         # Always fail
         raise asyncio.TimeoutError("Transient timeout")
-    
+
     monkeypatch.setattr(asyncio, "to_thread", fake_to_thread)
-    
+
     with pytest.raises(HTTPException) as excinfo:
         await client._fetch_data("info", lambda: None, "AAPL")
-    
+
     assert excinfo.value.status_code == 503
     # Should have tried max_retries + 1 times
     assert call_count[0] == Settings().max_retries + 1
@@ -93,7 +93,7 @@ async def test_fetch_data_retry_with_exponential_backoff(monkeypatch):
     client = YFinanceClient()
     call_count = [0]
     sleep_times = []
-    
+
     async def fake_to_thread(*args, **kwargs):
         call_count[0] += 1
         if call_count[0] <= 2:
@@ -101,28 +101,28 @@ async def test_fetch_data_retry_with_exponential_backoff(monkeypatch):
             raise asyncio.TimeoutError("Transient timeout")
         # Third call succeeds
         return {"data": "success"}
-    
+
     async def fake_sleep(seconds):
         sleep_times.append(seconds)
-    
+
     monkeypatch.setattr(asyncio, "to_thread", fake_to_thread)
     monkeypatch.setattr(asyncio, "sleep", fake_sleep)
-    
+
     result = await client._fetch_data("info", lambda: None, "AAPL")
-    
+
     assert result == {"data": "success"}
     assert call_count[0] == 3  # Should have tried 3 times
     assert len(sleep_times) == 2  # Should have slept 2 times
-    
+
     # Check that sleep times are increasing (exponential backoff)
     # Each should be between backoff_base * 2^attempt and backoff_base * 2^attempt + backoff_base * 2^attempt
     base = Settings().retry_backoff_base
     max_backoff = Settings().retry_backoff_max
-    
+
     # First sleep should be between base and base*2
     assert sleep_times[0] >= base
     assert sleep_times[0] <= base * 2
-    
+
     # Second sleep should be between base*2 and base*4 (with jitter)
     assert sleep_times[1] >= base * 2
     assert sleep_times[1] <= base * 4
@@ -133,7 +133,7 @@ async def test_fetch_data_connection_error_retries(monkeypatch):
     """Test that ConnectionError is treated as transient and retried."""
     client = YFinanceClient()
     call_count = [0]
-    
+
     async def fake_to_thread(*args, **kwargs):
         call_count[0] += 1
         if call_count[0] < 2:
@@ -141,11 +141,11 @@ async def test_fetch_data_connection_error_retries(monkeypatch):
             raise ConnectionError("Network unreachable")
         # Second call succeeds
         return {"data": "success"}
-    
+
     monkeypatch.setattr(asyncio, "to_thread", fake_to_thread)
-    
+
     result = await client._fetch_data("info", lambda: None, "AAPL")
-    
+
     assert result == {"data": "success"}
     assert call_count[0] == 2
 
@@ -155,17 +155,17 @@ async def test_fetch_data_unexpected_error_no_retry(monkeypatch):
     """Test that unexpected errors (non-transient) do not retry."""
     client = YFinanceClient()
     call_count = [0]
-    
+
     async def fake_to_thread(*args, **kwargs):
         call_count[0] += 1
         # Non-transient error
         raise ValueError("Invalid data format")
-    
+
     monkeypatch.setattr(asyncio, "to_thread", fake_to_thread)
-    
+
     with pytest.raises(HTTPException) as excinfo:
         await client._fetch_data("info", lambda: None, "AAPL")
-    
+
     assert excinfo.value.status_code == 500
     assert call_count[0] == 1  # Should only try once for non-transient errors
 
@@ -175,16 +175,16 @@ async def test_fetch_data_http_exception_no_retry(monkeypatch):
     """Test that HTTPExceptions are not retried."""
     client = YFinanceClient()
     call_count = [0]
-    
+
     async def fake_to_thread(*args, **kwargs):
         call_count[0] += 1
         raise HTTPException(status_code=400, detail="Bad request")
-    
+
     monkeypatch.setattr(asyncio, "to_thread", fake_to_thread)
-    
+
     with pytest.raises(HTTPException) as excinfo:
         await client._fetch_data("info", lambda: None, "AAPL")
-    
+
     assert excinfo.value.status_code == 400
     assert call_count[0] == 1  # Should only try once for HTTPExceptions
 
@@ -195,25 +195,25 @@ async def test_fetch_data_max_backoff_capped(monkeypatch):
     client = YFinanceClient()
     call_count = [0]
     sleep_times = []
-    
+
     async def fake_to_thread(*args, **kwargs):
         call_count[0] += 1
         if call_count[0] <= 3:
             # Fail 3 times to test max backoff (with 3 retries, we get 4 attempts total)
             raise asyncio.TimeoutError("Transient timeout")
         return {"data": "success"}
-    
+
     async def fake_sleep(seconds):
         sleep_times.append(seconds)
-    
+
     monkeypatch.setattr(asyncio, "to_thread", fake_to_thread)
     monkeypatch.setattr(asyncio, "sleep", fake_sleep)
-    
+
     result = await client._fetch_data("info", lambda: None, "AAPL")
-    
+
     assert result == {"data": "success"}
     max_backoff = Settings().retry_backoff_max
-    
+
     # All sleep times should be <= max_backoff
     for sleep_time in sleep_times:
         assert sleep_time <= max_backoff
