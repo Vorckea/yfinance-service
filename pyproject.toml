@@ -22,7 +22,7 @@ package-mode = false
 
 [tool.poetry.group.docker.dependencies]
 uvloop = {version = "^0.22.1", markers = "sys_platform == 'linux'"}
-httptools = "^0.7.1"
+httptools = "^0.8.0"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^9.1.1"
