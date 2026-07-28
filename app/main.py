@@ -54,7 +54,7 @@ settings = get_settings()
 
 app = FastAPI(
     title="YFinance Proxy Service",
-    version="0.0.27",
+    version="0.0.28",
     description=(
         "A FastAPI proxy for yfinance. Provides endpoints to fetch stock quotes and "
         "historical data."
