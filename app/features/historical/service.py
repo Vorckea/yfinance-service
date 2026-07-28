@@ -1,7 +1,7 @@
 """Service layer for fetching historical stock data."""
 
 import asyncio
-from datetime import datetime, timezone, date
+from datetime import date, datetime, timezone
 
 import pandas as pd
 
@@ -24,7 +24,7 @@ def _map_history(df: pd.DataFrame) -> list[HistoricalPrice]:
             extra={"missing": list(expected_cols - set(df.columns))},
         )
         return []
-    
+
     if getattr(df.index, "tz", None) is None:
         df.index = df.index.tz_localize("UTC")
     else:

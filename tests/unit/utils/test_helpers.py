@@ -1,10 +1,15 @@
+"""Unit tests for `app.utils.helpers`."""
+
 import pytest
 
 from app.utils.helpers import fetch_with_cache, normalize_symbol
 
 
 class InMemoryCache:
+    """A simple in-memory cache implementation for testing purposes."""
+
     def __init__(self):
+        """Initialize a simple in-memory cache for testing purposes."""
         self.store = {}
 
     async def get(self, key):
@@ -15,6 +20,7 @@ class InMemoryCache:
 
 
 def test_normalize_symbol_basic():
+    """Test that `normalize_symbol` trims whitespace and converts to uppercase."""
     assert normalize_symbol(None) == ""
     assert normalize_symbol("") == ""
     assert normalize_symbol(" aapl ") == "AAPL"
@@ -23,6 +29,7 @@ def test_normalize_symbol_basic():
 
 @pytest.mark.asyncio
 async def test_fetch_with_cache_miss_and_set():
+    """Test that if the cache does not have a value, the fetcher is called, the result is cached, and returned."""
     cache = InMemoryCache()
 
     async def fetcher():
@@ -35,6 +42,7 @@ async def test_fetch_with_cache_miss_and_set():
 
 @pytest.mark.asyncio
 async def test_fetch_with_cache_hit():
+    """Test that if the cache has a value, the fetcher is not called and the cached value is returned."""
     cache = InMemoryCache()
     await cache.set("k", 42)
 
@@ -52,6 +60,7 @@ async def test_fetch_with_cache_hit():
 
 @pytest.mark.asyncio
 async def test_fetch_with_cache_fetcher_exception():
+    """Test that if the fetcher raises an exception, the cache is not updated."""
     cache = InMemoryCache()
 
     async def fetcher():
@@ -65,6 +74,10 @@ async def test_fetch_with_cache_fetcher_exception():
 
 @pytest.mark.asyncio
 async def test_fetch_with_cache_ttl_param_unused():
+    """Test that `fetch_with_cache` does not raise an error if `ttl` is provided.
+
+    The cache implementation used in the test does not support TTL.
+    """
     cache = InMemoryCache()
 
     async def fetcher():
@@ -77,6 +90,8 @@ async def test_fetch_with_cache_ttl_param_unused():
 
 @pytest.mark.asyncio
 async def test_fetch_with_cache_uses_set_with_ttl():
+    """Test that `fetch_with_cache` calls `set_with_ttl` if available on the cache."""
+
     class TTLCacheStub:
         def __init__(self):
             self.store = {}

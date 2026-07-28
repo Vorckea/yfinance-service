@@ -48,8 +48,8 @@ class NewsCache:
         self._index_cache: TTLCache[Key, list[str]] = TTLCache(
             size,
             ttl,
-            cache_name="ttl_cache",
-            resource="news",
+            cache_name=self._cache_name + "_index",
+            resource=self._resource + "_index",
         )
         # Labeled metric children for this cache instance
         self._hits = CACHE_HITS.labels(cache=self._cache_name, resource=self._resource)

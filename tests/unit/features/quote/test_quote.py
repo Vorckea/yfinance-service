@@ -9,7 +9,6 @@ from fastapi.testclient import TestClient
 from app.features.quote.service import QuoteResponse, fetch_quote
 from app.main import app
 
-
 VALID_SYMBOL = "AAPL"
 INDEX_SYMBOL = "^GSPC"
 INVALID_SYMBOL = "!!!"

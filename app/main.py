@@ -28,6 +28,11 @@ async def lifespan(app: FastAPI):
     # Set up logging from settings
     configure_logging(get_settings())
 
+    import yfinance as yf
+
+    if hasattr(yf, "set_tz_cache_location"):
+        yf.set_tz_cache_location(settings.yfinance_tz_cache_location)
+
     app.state.start_time = time.time()
     contact_name = None
     contact_email = None
@@ -36,7 +41,7 @@ async def lifespan(app: FastAPI):
         contact_email = app.contact.get("email")
     BUILD_INFO.info(
         {
-            "version": "0.0.27",
+            "version": app.version,
             "python_version": sys.version.split()[0],
             "contact_name": contact_name or "unknown",
             "contact_email": contact_email or "unknown",
@@ -49,7 +54,7 @@ settings = get_settings()
 
 app = FastAPI(
     title="YFinance Proxy Service",
-    version="0.0.27",
+    version="0.0.28",
     description=(
         "A FastAPI proxy for yfinance. Provides endpoints to fetch stock quotes and "
         "historical data."

@@ -86,6 +86,8 @@ class Settings(BaseSettings):
         validation_alias="API_KEY_UNPROTECTED_ENDPOINTS",
     )
 
+    yfinance_tz_cache_location: str = Field("/tmp", validation_alias="YFINANCE_TZ_CACHE_LOCATION")
+
     @field_validator("log_level", mode="before")
     @classmethod
     def _upper(cls, v: str) -> str:
