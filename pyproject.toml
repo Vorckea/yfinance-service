@@ -9,7 +9,7 @@ readme = "README.md"
 requires-python = ">=3.13"
 dependencies = [
     "fastapi (>=0.139.2,<0.140.0)",
-    "yfinance (>=1.5.1,<2.0.0)",
+    "yfinance (>=1.5.2,<2.0.0)",
     "uvicorn (>=0.51.0,<0.52.0)",
     "pydantic (>=2.13.4,<3.0.0)",
     "pandas (>=3.0.3,<4.0.0)",
