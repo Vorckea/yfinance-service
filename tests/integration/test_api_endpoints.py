@@ -1,8 +1,9 @@
 import httpx
 import pytest
 
-from app.dependencies import get_info_cache, get_news_cache, get_yfinance_client
+from app.dependencies import get_info_cache, get_news_cache, get_settings, get_yfinance_client
 from app.main import app
+from app.settings import Settings
 from app.utils.cache import TTLCache
 from app.utils.cache.news_cache import NewsCache
 from tests.unit.clients.fake_client import FakeYFinanceClient
@@ -213,6 +214,58 @@ async def test_historical_endpoint_with_fake_client():
         assert "symbol" in data
         assert "prices" in data
         assert len(data["prices"]) == 3  # FakeClient returns 3 days
+
+    app.dependency_overrides.clear()
+
+
+@pytest.mark.asyncio
+@pytest.mark.integration
+async def test_historical_endpoint_respects_auto_adjust_query_param():
+    """Integration test: verify auto_adjust query param is forwarded."""
+
+    class AutoAdjustCheckingClient(FakeYFinanceClient):
+        async def get_history(
+            self,
+            symbol: str,
+            start=None,
+            end=None,
+            interval: str = "1d",
+            auto_adjust: bool = True,
+        ):
+            assert auto_adjust is False
+            return await super().get_history(symbol, start=start, end=end, interval=interval, auto_adjust=auto_adjust)
+
+    app.dependency_overrides[get_yfinance_client] = lambda: AutoAdjustCheckingClient()
+
+    transport = httpx.ASGITransport(app=app)
+    async with httpx.AsyncClient(transport=transport, base_url="http://test") as client:
+        resp = await client.get("/historical/AAPL?interval=1d&auto_adjust=false")
+        assert resp.status_code == 200, resp.text
+        data = resp.json()
+
+        assert data["symbol"] == "AAPL"
+        assert "prices" in data
+        assert len(data["prices"]) == 3
+
+    app.dependency_overrides.clear()
+
+
+@pytest.mark.asyncio
+@pytest.mark.integration
+async def test_historical_endpoint_uses_setting_default():
+    """Integration test: verify historical auto_adjust config default is used."""
+    app.dependency_overrides[get_yfinance_client] = lambda: FakeYFinanceClient()
+    app.dependency_overrides[get_settings] = lambda: Settings(historical_auto_adjust=False)
+
+    transport = httpx.ASGITransport(app=app)
+    async with httpx.AsyncClient(transport=transport, base_url="http://test") as client:
+        resp = await client.get("/historical/AAPL?interval=1d")
+        assert resp.status_code == 200, resp.text
+        data = resp.json()
+
+        assert data["symbol"] == "AAPL"
+        assert "prices" in data
+        assert len(data["prices"]) == 3
 
     app.dependency_overrides.clear()
 

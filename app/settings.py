@@ -59,6 +59,12 @@ class Settings(BaseSettings):
     ticker_cache_ttl: int = Field(60, ge=0, validation_alias="TICKER_CACHE_TTL")
     ticker_cache_maxsize: int = Field(512, ge=0, validation_alias="TICKER_CACHE_MAXSIZE")
     splits_cache_ttl: int = Field(3600, ge=0, validation_alias="SPLITS_CACHE_TTL")
+
+    historical_auto_adjust: bool = Field(
+        True,
+        validation_alias="HISTORICAL_AUTO_ADJUST",
+        description="Default value for historical price auto_adjust when no query parameter is provided.",
+    )
     splits_cache_maxsize: int = Field(256, ge=0, validation_alias="SPLITS_CACHE_MAXSIZE")
 
     # News cache settings

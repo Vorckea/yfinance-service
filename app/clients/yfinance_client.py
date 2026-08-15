@@ -206,18 +206,32 @@ class YFinanceClient(YFinanceClientInterface):
 
         """
         if op == "history":
+            # Preserve historical behaviour: include `auto_adjust` in the
+            # dedupe key only when it was explicitly provided by the caller
+            # (either as a 4th positional arg, or in kwargs). When callers
+            # pass only (start, end, interval) positionally, do not append
+            # the implicit default to the key so equivalent calls coalesce.
             if args:
-                if len(args) == 3:
-                    start, end, interval = args
+                if len(args) == 4:
+                    start, end, interval, auto_adjust = args
+                    return (op, symbol, str(start), str(end), interval, auto_adjust)
                 elif len(args) == 1 and isinstance(args[0], tuple):
-                    start, end, interval = args[0]
+                    start, end, interval, auto_adjust = args[0]
+                    return (op, symbol, str(start), str(end), interval, auto_adjust)
+                elif len(args) == 3:
+                    start, end, interval = args
+                    return (op, symbol, str(start), str(end), interval)
                 else:
                     start, end, interval = (None, None, "1d")
+                    return (op, symbol, str(start), str(end), interval)
             else:
                 start = kwargs.get("start")
                 end = kwargs.get("end")
                 interval = kwargs.get("interval", "1d")
-            return (op, symbol, str(start), str(end), interval)
+                if "auto_adjust" in kwargs:
+                    auto_adjust = kwargs.get("auto_adjust")
+                    return (op, symbol, str(start), str(end), interval, auto_adjust)
+                return (op, symbol, str(start), str(end), interval)
         elif op in (
             "get_earnings",
             "earnings_dates",
@@ -534,7 +548,12 @@ class YFinanceClient(YFinanceClientInterface):
         return news
 
     async def get_history(
-        self, symbol: str, start: date | None, end: date | None, interval: str = "1d"
+        self,
+        symbol: str,
+        start: date | None,
+        end: date | None,
+        interval: str = "1d",
+        auto_adjust: bool = True,
     ) -> pd.DataFrame:
         """Fetch historical market data for a specific stock.
 
@@ -543,6 +562,8 @@ class YFinanceClient(YFinanceClientInterface):
             start: Start date for historical data. None fetches from earliest available.
             end: End date for historical data. None fetches up to most recent.
             interval: Data interval ("1d", "1wk", "1mo" etc.). Defaults to "1d".
+            auto_adjust: Whether to auto-adjust historical prices for dividends and splits.
+                Defaults to True.
 
         Returns:
             DataFrame with OHLCV historical price data.
@@ -554,7 +575,13 @@ class YFinanceClient(YFinanceClientInterface):
         symbol = normalize_symbol(symbol)
         ticker = await self._get_ticker(symbol)
         history = await self._fetch_data(
-            "history", ticker.history, symbol, start=start, end=end, interval=interval
+            "history",
+            ticker.history,
+            symbol,
+            start=start,
+            end=end,
+            interval=interval,
+            auto_adjust=auto_adjust,
         )
         if history is None:
             logger.info("yfinance.client.no_data", extra={"symbol": symbol, "op": "history"})

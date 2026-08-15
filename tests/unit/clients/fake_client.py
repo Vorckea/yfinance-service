@@ -39,7 +39,12 @@ class FakeYFinanceClient(YFinanceClientInterface):
         }
 
     async def get_history(
-        self, symbol: str, start: date | None = None, end: date | None = None, interval: str = "1d"
+        self,
+        symbol: str,
+        start: date | None = None,
+        end: date | None = None,
+        interval: str = "1d",
+        auto_adjust: bool = True,
     ) -> pd.DataFrame | None:
         """Return a fake DataFrame with deterministic rows."""
         dates = pd.date_range(start or "2024-01-01", periods=3, freq="D")

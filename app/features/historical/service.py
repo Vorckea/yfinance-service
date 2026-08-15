@@ -51,14 +51,26 @@ async def fetch_historical(
     end: date | None,
     client: YFinanceClientInterface,
     interval: str = "1d",
+    auto_adjust: bool = True,
 ) -> HistoricalResponse:
     """Fetch historical stock data for a given symbol and interval."""
     logger.info(
         "historical.fetch.request",
-        extra={"symbol": symbol, "start": start, "end": end, "interval": interval},
+        extra={
+            "symbol": symbol,
+            "start": start,
+            "end": end,
+            "interval": interval,
+            "auto_adjust": auto_adjust,
+        },
     )
 
-    history_call = client.get_history(symbol, start, end, interval)
+    start_ts = pd.Timestamp(start) if start is not None else None
+    end_ts = pd.Timestamp(end) if end is not None else None
+
+    history_call = client.get_history(
+        symbol, start=start_ts, end=end_ts, interval=interval, auto_adjust=auto_adjust
+    )
 
     if asyncio.iscoroutine(history_call):
         df = await history_call
