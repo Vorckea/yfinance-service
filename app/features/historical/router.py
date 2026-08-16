@@ -111,6 +111,14 @@ async def get_historical(
             "raw": {"summary": "Raw prices without adjustments", "value": False},
         },
     ),
+    prepost: bool = Query(
+        False,
+        description="Include pre-market and post-market data.",
+        examples={
+            "regular": {"summary": "Regular trading hours only", "value": False},
+            "extended": {"summary": "Include extended hours", "value": True},
+        },
+    ),
 ) -> HistoricalResponse:
     """Return historical OHLCV data for the symbol in the optional date range."""
     if start and end and start > end:
@@ -128,4 +136,5 @@ async def get_historical(
         client,
         interval=interval,
         auto_adjust=effective_auto_adjust,
+        prepost=prepost,
     )

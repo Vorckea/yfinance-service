@@ -554,6 +554,7 @@ class YFinanceClient(YFinanceClientInterface):
         end: date | None,
         interval: str = "1d",
         auto_adjust: bool = True,
+        prepost: bool = False,
     ) -> pd.DataFrame:
         """Fetch historical market data for a specific stock.
 
@@ -564,6 +565,7 @@ class YFinanceClient(YFinanceClientInterface):
             interval: Data interval ("1d", "1wk", "1mo" etc.). Defaults to "1d".
             auto_adjust: Whether to auto-adjust historical prices for dividends and splits.
                 Defaults to True.
+            prepost: Whether to include pre-market and post-market data. Defaults to False.
 
         Returns:
             DataFrame with OHLCV historical price data.
@@ -582,6 +584,7 @@ class YFinanceClient(YFinanceClientInterface):
             end=end,
             interval=interval,
             auto_adjust=auto_adjust,
+            prepost=prepost,
         )
         if history is None:
             logger.info("yfinance.client.no_data", extra={"symbol": symbol, "op": "history"})

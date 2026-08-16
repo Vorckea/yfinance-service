@@ -231,9 +231,17 @@ async def test_historical_endpoint_respects_auto_adjust_query_param():
             end=None,
             interval: str = "1d",
             auto_adjust: bool = True,
+            prepost: bool = False,
         ):
             assert auto_adjust is False
-            return await super().get_history(symbol, start=start, end=end, interval=interval, auto_adjust=auto_adjust)
+            return await super().get_history(
+                symbol,
+                start=start,
+                end=end,
+                interval=interval,
+                auto_adjust=auto_adjust,
+                prepost=prepost,
+            )
 
     app.dependency_overrides[get_yfinance_client] = lambda: AutoAdjustCheckingClient()
 

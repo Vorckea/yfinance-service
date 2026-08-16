@@ -29,6 +29,7 @@ class YFinanceClientInterface(ABC):
         end: date | None,
         interval: str = "1d",
         auto_adjust: bool = True,
+        prepost: bool = False,
     ) -> pd.DataFrame | None:
         """Fetch historical market data for a specific stock."""
         pass

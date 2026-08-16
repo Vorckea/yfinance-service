@@ -42,7 +42,7 @@
 | ---------------------------------------------------------- | ------------------------- | -------------------------------------------------- |
 | `GET /quote/{symbol}`                                      | Latest quote for a symbol | `/quote/AAPL`                                      |
 | `GET /quote?symbols=SYM1,SYM2`                             | Bulk quotes (CSV)         | `/quote?symbols=AAPL,MSFT`                         |
-| `GET /historical/{symbol}?start=&end=&interval=`           | Historical OHLCV data     | `/historical/AAPL?start=2024-01-01&end=2024-02-01&interval=1d` |
+| `GET /historical/{symbol}?start=&end=&interval=&auto_adjust=&prepost=`           | Historical OHLCV data     | `/historical/AAPL?start=2024-01-01&end=2024-02-01&interval=1d&prepost=true` |
 | `GET /info/{symbol}`                                       | Company details           | `/info/TSLA`                                       |
 | `GET /news/{symbol}?count={count}&tab={tab}` | Company news (Allowed tab values are `news` (default), `press-releases` and `all`) | `/news/TSLA?count=5&tab=news` |
 | `GET /health`                                              | Health check              | `/health`                                          |

@@ -82,6 +82,7 @@ def test_historical_auto_adjust_flag(client, mock_yfinance_client):
         end=pd.Timestamp("2024-08-01"),
         interval="1d",
         auto_adjust=False,
+        prepost=False,
     )
 
 
@@ -108,6 +109,7 @@ def test_historical_auto_adjust_true_flag(client, mock_yfinance_client):
         end=pd.Timestamp("2024-08-01"),
         interval="1d",
         auto_adjust=True,
+        prepost=False,
     )
 
 
@@ -134,9 +136,64 @@ def test_historical_auto_adjust_uses_setting_default(client, mock_yfinance_clien
         end=pd.Timestamp("2024-08-01"),
         interval="1d",
         auto_adjust=False,
+        prepost=False,
     )
 
     app.dependency_overrides.pop(get_settings, None)
+
+
+def test_historical_prepost_true(client, mock_yfinance_client):
+    """Test that prepost=true is propagated to the client."""
+    mock_yfinance_client.get_history.return_value = pd.DataFrame(
+        {
+            "Open": [150.0],
+            "High": [152.0],
+            "Low": [149.0],
+            "Close": [151.0],
+            "Volume": [1000000],
+        },
+        index=pd.to_datetime(["2024-08-01"]).tz_localize("UTC"),
+    )
+
+    response = client.get(
+        f"/historical/{VALID_SYMBOLS}?start=2024-08-01&end=2024-08-01&prepost=true"
+    )
+
+    assert response.status_code == 200
+    mock_yfinance_client.get_history.assert_awaited_once_with(
+        VALID_SYMBOLS,
+        start=pd.Timestamp("2024-08-01"),
+        end=pd.Timestamp("2024-08-01"),
+        interval="1d",
+        auto_adjust=True,
+        prepost=True,
+    )
+
+
+def test_historical_prepost_defaults_false(client, mock_yfinance_client):
+    """Test that prepost defaults to false when omitted."""
+    mock_yfinance_client.get_history.return_value = pd.DataFrame(
+        {
+            "Open": [150.0],
+            "High": [152.0],
+            "Low": [149.0],
+            "Close": [151.0],
+            "Volume": [1000000],
+        },
+        index=pd.to_datetime(["2024-08-01"]).tz_localize("UTC"),
+    )
+
+    response = client.get(f"/historical/{VALID_SYMBOLS}?start=2024-08-01&end=2024-08-01")
+
+    assert response.status_code == 200
+    mock_yfinance_client.get_history.assert_awaited_once_with(
+        VALID_SYMBOLS,
+        start=pd.Timestamp("2024-08-01"),
+        end=pd.Timestamp("2024-08-01"),
+        interval="1d",
+        auto_adjust=True,
+        prepost=False,
+    )
 
 
 @pytest.mark.asyncio
