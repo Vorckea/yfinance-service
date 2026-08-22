@@ -39,7 +39,7 @@ def _map_history(df: pd.DataFrame) -> list[HistoricalPrice]:
             low=float(low_),
             close=float(close_),
             volume=int(volume_) if pd.notna(volume_) else None,
-            timestamp=datetime.fromtimestamp(ts.timestamp(), timezone.utc).replace(microsecond=0)
+            timestamp=datetime.fromtimestamp(ts.timestamp(), timezone.utc).replace(microsecond=0),
         )
         for ts, open_, high_, low_, close_, volume_ in df_selected.itertuples(index=True, name=None)
     ]
@@ -51,14 +51,33 @@ async def fetch_historical(
     end: date | None,
     client: YFinanceClientInterface,
     interval: str = "1d",
+    auto_adjust: bool = True,
+    prepost: bool = False,
 ) -> HistoricalResponse:
     """Fetch historical stock data for a given symbol and interval."""
     logger.info(
         "historical.fetch.request",
-        extra={"symbol": symbol, "start": start, "end": end, "interval": interval},
+        extra={
+            "symbol": symbol,
+            "start": start,
+            "end": end,
+            "interval": interval,
+            "auto_adjust": auto_adjust,
+            "prepost": prepost,
+        },
     )
 
-    history_call = client.get_history(symbol, start, end, interval)
+    start_ts = pd.Timestamp(start) if start is not None else None
+    end_ts = pd.Timestamp(end) if end is not None else None
+
+    history_call = client.get_history(
+        symbol,
+        start=start_ts,
+        end=end_ts,
+        interval=interval,
+        auto_adjust=auto_adjust,
+        prepost=prepost,
+    )
 
     if asyncio.iscoroutine(history_call):
         df = await history_call

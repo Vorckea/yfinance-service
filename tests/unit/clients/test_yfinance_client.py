@@ -352,3 +352,41 @@ async def test_historical_fake_client(client_fake):
     assert data["symbol"] == "AAPL"
     assert len(data["prices"]) == 3
     assert data["prices"][0]["open"] == 100.0
+
+
+@pytest.mark.asyncio
+async def test_get_history_prepost_forwarded(monkeypatch):
+    """Verify prepost is forwarded to yfinance Ticker.history."""
+    client = YFinanceClient()
+    ticker_mock = type("TickerMock", (), {"history": lambda self, **kw: None})()
+
+    async def mock_get_ticker(symbol):
+        return ticker_mock
+
+    captured_kwargs = {}
+
+    async def mock_fetch_data(operation, func, symbol, **kwargs):
+        captured_kwargs.update(kwargs)
+        return pd.DataFrame(
+            {
+                "Open": [150.0],
+                "High": [152.0],
+                "Low": [149.0],
+                "Close": [151.0],
+                "Volume": [1000000],
+            },
+            index=pd.to_datetime(["2024-08-01"]).tz_localize("UTC"),
+        )
+
+    monkeypatch.setattr(client, "_get_ticker", mock_get_ticker)
+    monkeypatch.setattr(client, "_fetch_data", mock_fetch_data)
+
+    await client.get_history(
+        "AAPL",
+        None,
+        None,
+        interval="5m",
+        prepost=True,
+    )
+
+    assert captured_kwargs["prepost"] is True
