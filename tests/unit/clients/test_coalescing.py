@@ -69,7 +69,7 @@ class TestRequestCoalescing:
                     client.get_info("GOOGL"),
                     client.get_info("MSFT"),
                 ]
-                results = await asyncio.gather(*tasks)
+                await asyncio.gather(*tasks)
 
         # Each symbol should get its own upstream call
         assert call_count == 3, f"Expected 3 upstream calls, got {call_count}"

@@ -13,33 +13,14 @@ from ...utils.logger import logger
 from .models import EarningRow, EarningsResponse
 
 
-def safe_date(x: Any) -> Optional[date]:
-    if x is None:
+def _to_date(value: Any) -> Optional[date]:
+    if value is None:
         return None
-    if isinstance(x, datetime):
-        return x.date()
-    if isinstance(x, date):
-        return x
-    if isinstance(x, str):
-        try:
-            # Try ISO 8601 first
-            return datetime.fromisoformat(x.replace("Z", "")).date()
-        except Exception:
-            return None
-    return None
 
-
-def _index_to_date(idx) -> Optional[date]:
-    if idx is None:
+    parsed = pd.to_datetime(value, errors="coerce", utc=True)
+    if pd.isna(parsed):
         return None
-    if isinstance(idx, (pd.Timestamp, datetime)):
-        return idx.date()
-    if isinstance(idx, str):
-        try:
-            return pd.to_datetime(idx).date()
-        except Exception:
-            return None
-    return idx
+    return parsed.date()
 
 
 def safe_float(val: Any) -> Optional[float]:
@@ -171,7 +152,7 @@ async def fetch_earnings(
     def map_df_to_rows(local_df: pd.DataFrame):
         rows = []
         for idx, row in local_df.iterrows():
-            d = _index_to_date(idx)
+            d = _to_date(idx)
             reported_eps, revenue = _extract_eps_and_revenue_from_row(row)
             # estimated / surprise fields if present
             est = None
@@ -217,7 +198,7 @@ async def fetch_earnings(
             if isinstance(cal_date, (list, tuple)):
                 cal_date = cal_date[0]
 
-            next_earnings_date = safe_date(cal_date)
+            next_earnings_date = _to_date(cal_date)
 
     except Exception:
         logger.warning("earnings.fetch.calendar_failed", extra={"symbol": symbol})
@@ -228,9 +209,7 @@ async def fetch_earnings(
             info = await client.get_info(symbol)
             ts = info.get("nextEarningsDate") if isinstance(info, dict) else None
             if ts:
-                next_earnings_date = safe_date(
-                    datetime.fromtimestamp(ts, tz=timezone.utc).strftime("%Y-%m-%d")
-                )
+                next_earnings_date = _to_date(datetime.fromtimestamp(ts, tz=timezone.utc))
         except Exception:
             logger.warning("earnings.fetch.info_failed", extra={"symbol": symbol})
             next_earnings_date = None
