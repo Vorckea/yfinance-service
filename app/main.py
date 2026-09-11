@@ -33,7 +33,7 @@ async def lifespan(app: FastAPI):
     if hasattr(yf, "set_tz_cache_location"):
         yf.set_tz_cache_location(settings.yfinance_tz_cache_location)
 
-    app.state.start_time = time.time()
+    app.state.start_time = time.monotonic()
     contact_name = None
     contact_email = None
     if isinstance(app.contact, dict):  # FastAPI stores contact metadata
@@ -88,7 +88,7 @@ app.middleware("http")(http_metrics_middleware)
 @app.get("/metrics")
 def metrics():
     """Endpoint to expose Prometheus metrics."""
-    SERVICE_UPTIME.set(time.time() - app.state.start_time)
+    SERVICE_UPTIME.set(time.monotonic() - app.state.start_time)
     return Response(generate_latest(), media_type=CONTENT_TYPE_LATEST)
 
 

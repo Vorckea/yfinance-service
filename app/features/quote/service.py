@@ -6,6 +6,7 @@ from fastapi import HTTPException
 from pydantic import ValidationError
 
 from ...clients.interface import YFinanceClientInterface
+from ...utils.helpers import normalize_symbol
 from ...utils.logger import logger
 from .models import QuoteResponse
 
@@ -26,7 +27,7 @@ async def fetch_quote(symbol: str, client: YFinanceClientInterface) -> QuoteResp
         HTTPException: 400 for empty symbol, 502 for upstream issues.
 
     """
-    symbol = symbol.upper().strip()
+    symbol = normalize_symbol(symbol)
     if not symbol:
         raise HTTPException(status_code=400, detail="Empty symbol")
 

@@ -13,6 +13,7 @@ from ...clients.interface import YFinanceClientInterface
 from ...common.validation import SymbolParam
 from ...dependencies import get_settings, get_yfinance_client
 from ...settings import Settings
+from ...utils.helpers import normalize_symbol
 from .models import QuoteResponse, SymbolErrorModel
 from .service import fetch_quote
 
@@ -88,7 +89,7 @@ async def get_quotes(
         raise HTTPException(status_code=400, detail="Empty symbols list")
 
     # Parse CSV and normalize
-    requested = [s.strip().upper() for s in symbols.split(",") if s.strip()]
+    requested = [normalize_symbol(s) for s in symbols.split(",") if s.strip()]
     if not requested:
         # catches inputs like ",,," or entries that are all whitespace
         raise HTTPException(status_code=400, detail="Empty symbols list")

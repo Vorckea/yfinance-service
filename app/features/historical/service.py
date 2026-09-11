@@ -18,7 +18,7 @@ def _map_history(df: pd.DataFrame) -> list[HistoricalPrice]:
         return []
 
     expected_cols = {"Open", "High", "Low", "Close", "Volume"}
-    if not expected_cols.issubset(set(df.columns)):
+    if not expected_cols.issubset(df.columns):
         logger.warning(
             "historical.map.missing_columns",
             extra={"missing": list(expected_cols - set(df.columns))},
