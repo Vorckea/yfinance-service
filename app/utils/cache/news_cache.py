@@ -69,7 +69,7 @@ class NewsCache:
             else:
                 indexes = await self._index_cache.get(key) or []
 
-            if len(indexes) == 0:
+            if not indexes:
                 self._misses.inc()
                 return None
 

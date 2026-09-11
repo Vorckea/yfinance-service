@@ -8,6 +8,7 @@ import pandas as pd
 from fastapi import HTTPException
 
 from ...clients.interface import YFinanceClientInterface
+from ...utils.helpers import normalize_symbol
 from ...utils.logger import logger
 from .models import EarningRow, EarningsResponse
 
@@ -15,10 +16,10 @@ from .models import EarningRow, EarningsResponse
 def safe_date(x: Any) -> Optional[date]:
     if x is None:
         return None
-    if isinstance(x, date):
-        return x
     if isinstance(x, datetime):
         return x.date()
+    if isinstance(x, date):
+        return x
     if isinstance(x, str):
         try:
             # Try ISO 8601 first
@@ -26,14 +27,6 @@ def safe_date(x: Any) -> Optional[date]:
         except Exception:
             return None
     return None
-
-def safe_int(x: Any) -> Optional[int]:
-    if x is None:
-        return None
-    try:
-        return int(x)
-    except Exception:
-        return None
 
 
 def _index_to_date(idx) -> Optional[date]:
@@ -136,6 +129,7 @@ def _extract_eps_and_revenue_from_row(
 
     return None, None
 
+
 async def fetch_earnings(
     symbol: str, client: YFinanceClientInterface, frequency: str = "quarterly"
 ) -> EarningsResponse:
@@ -154,7 +148,7 @@ async def fetch_earnings(
 
     """
     logger.info("earnings.fetch.start", extra={"symbol": symbol, "frequency": frequency})
-    symbol = symbol.upper()
+    symbol = normalize_symbol(symbol)
 
     # fetch raw earnings-like DataFrame
     earnings_df = await client.get_earnings(symbol, frequency)
@@ -240,10 +234,6 @@ async def fetch_earnings(
         except Exception:
             logger.warning("earnings.fetch.info_failed", extra={"symbol": symbol})
             next_earnings_date = None
-
-    # 3. Final fallback
-    if next_earnings_date is None:
-        next_earnings_date = None
 
     # top-level summary fields
     last_eps = None

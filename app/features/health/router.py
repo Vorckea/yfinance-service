@@ -10,7 +10,7 @@ from fastapi import APIRouter, Depends, HTTPException
 
 from ...clients.interface import YFinanceClientInterface
 from ...dependencies import get_yfinance_client
-from ...monitoring.metrics import CACHE_HITS, CACHE_MISSES, YF_PROBE_LATENCY
+from ...monitoring.metrics import YF_PROBE_LATENCY
 from ...utils.cache import TTLCache
 
 router = APIRouter()
@@ -57,9 +57,7 @@ async def get_health():
         },
     },
 )
-async def get_ready(
-    client: Annotated[YFinanceClientInterface, Depends(get_yfinance_client)]
-):
+async def get_ready(client: Annotated[YFinanceClientInterface, Depends(get_yfinance_client)]):
     """Readiness check endpoint with TTL cache."""
     start = time.perf_counter()
     outcome = "success"
@@ -68,10 +66,7 @@ async def get_ready(
         cached = await ready_cache.get("ready")
 
         if cached is not None:
-            CACHE_HITS.labels(cache="ttl_cache", resource="ready").inc()
             return cached
-
-        CACHE_MISSES.labels(cache="ttl_cache", resource="ready").inc()
 
         if not await client.ping():
             outcome = "failure"
@@ -89,6 +84,3 @@ async def get_ready(
             probe_type="readiness",
             outcome=outcome,
         ).observe(duration)
-
-    # TODO(readiness): Replace ad-hoc ticker instantiation with lightweight probe
-    # and short-lived cached readiness state to reduce load.
