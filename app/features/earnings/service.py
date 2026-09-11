@@ -18,6 +18,8 @@ def safe_date(x: Any) -> Optional[date]:
         return None
     if isinstance(x, datetime):
         return x.date()
+    if isinstance(x, date):
+        return x
     if isinstance(x, str):
         try:
             # Try ISO 8601 first
