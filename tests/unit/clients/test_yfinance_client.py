@@ -117,7 +117,6 @@ async def test_fetch_data_retry_with_exponential_backoff(monkeypatch):
     # Check that sleep times are increasing (exponential backoff)
     # Each should be between backoff_base * 2^attempt and backoff_base * 2^attempt + backoff_base * 2^attempt
     base = Settings().retry_backoff_base
-    max_backoff = Settings().retry_backoff_max
 
     # First sleep should be between base and base*2
     assert sleep_times[0] >= base

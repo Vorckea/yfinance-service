@@ -62,7 +62,7 @@ class YFinanceClientInterface(ABC):
     @abstractmethod
     async def get_calendar(self, symbol: str) -> Any:
         """Return ticker.calendar (may include Earnings Date)."""
-        return {}
+        pass
 
     @abstractmethod
     async def ping(self) -> bool:

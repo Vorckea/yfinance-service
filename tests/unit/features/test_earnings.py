@@ -289,6 +289,7 @@ async def test_fetch_earnings_string_eps():
     # Coerce string to float
     assert result.rows[0].reported_eps == 1.95
 
+
 @pytest.mark.asyncio
 async def test_fetch_earnings_nan_vs_none():
     client = AsyncMock()
@@ -327,9 +328,7 @@ async def test_fetch_earnings_with_timezone():
     )
 
     client.get_earnings.return_value = earnings_df
-    client.get_calendar = AsyncMock(
-        return_value={"Earnings Date": ["2025-01-01"]}
-    )
+    client.get_calendar = AsyncMock(return_value={"Earnings Date": ["2025-01-01"]})
     client.get_info = AsyncMock(return_value={})
 
     result = await fetch_earnings("AAPL", client, "quarterly")
@@ -342,11 +341,12 @@ async def test_fetch_earnings_with_timezone():
     assert result.next_earnings_date.isoformat() == "2025-01-01"
 
 
-
 @pytest.mark.asyncio
 async def test_fetch_earnings_both_upstream_failures():
     client = AsyncMock()
-    client.get_earnings.side_effect = HTTPException(status_code=503, detail="Earnings service unavailable")
+    client.get_earnings.side_effect = HTTPException(
+        status_code=503, detail="Earnings service unavailable"
+    )
     client.get_info.side_effect = HTTPException(status_code=503, detail="Info service unavailable")
 
     with pytest.raises(HTTPException) as exc:
@@ -361,9 +361,6 @@ async def test_fetch_earnings_unusual_indices():
     client = AsyncMock()
 
     # Mixed timezones
-    tz_est = pytz.timezone("US/Eastern")
-    tz_utc = pytz.UTC
-
     dates = [
         pd.Timestamp("2024-01-25 10:00", tz=pytz.UTC),
         pd.Timestamp("2024-04-25 15:00", tz=pytz.UTC),
@@ -377,7 +374,7 @@ async def test_fetch_earnings_unusual_indices():
             "Surprise": [0.05, 0.05, 0.05],
             "Surprise %": [2.7, 2.6, 2.8],
         },
-        index=pd.DatetimeIndex(dates)
+        index=pd.DatetimeIndex(dates),
     )
 
     client.get_earnings.return_value = earnings_df
@@ -408,6 +405,7 @@ async def test_fetch_earnings_corrupt_data_types():
     with pytest.raises((TypeError, ValueError)):
         await fetch_earnings("AAPL", client, "quarterly")
 
+
 @pytest.mark.integration
 @pytest.mark.skip(reason="requires real upstream API")
 def test_earnings_integration_real_service():
@@ -420,4 +418,3 @@ def test_earnings_integration_real_service():
     assert "rows" in data
     assert len(data["rows"]) > 0
     assert data["last_eps"] is not None
-
