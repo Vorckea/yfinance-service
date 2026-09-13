@@ -210,9 +210,7 @@ class TestRequestCoalescing:
                 client.get_history(
                     "AAPL", date(2024, 1, 1), date(2024, 1, 31), "1d", prepost=False
                 ),
-                client.get_history(
-                    "AAPL", date(2024, 1, 1), date(2024, 1, 31), "1d", prepost=True
-                ),
+                client.get_history("AAPL", date(2024, 1, 1), date(2024, 1, 31), "1d", prepost=True),
             )
 
         assert call_count == 2
