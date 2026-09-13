@@ -195,53 +195,47 @@ class YFinanceClient(YFinanceClientInterface):
             A tuple that uniquely identifies this request for coalescing purposes.
 
         """
-        if op == "history":
-            # Preserve historical behaviour: include `auto_adjust` in the
-            # dedupe key only when it was explicitly provided by the caller
-            # (either as a 4th positional arg, or in kwargs). When callers
-            # pass only (start, end, interval) positionally, do not append
-            # the implicit default to the key so equivalent calls coalesce.
-            if args:
-                if len(args) == 4:
-                    start, end, interval, auto_adjust = args
-                    prepost = kwargs.get("prepost", False)
-                    return (op, symbol, str(start), str(end), interval, auto_adjust, prepost)
-                elif len(args) == 1 and isinstance(args[0], tuple):
-                    start, end, interval, auto_adjust = args[0]
-                    prepost = kwargs.get("prepost", False)
-                    return (op, symbol, str(start), str(end), interval, auto_adjust, prepost)
-                elif len(args) == 3:
-                    start, end, interval = args
-                    return (op, symbol, str(start), str(end), interval, False, False)
-                else:
-                    start, end, interval = (None, None, "1d")
-                    return (op, symbol, str(start), str(end), interval, False, False)
-            else:
-                start = kwargs.get("start")
-                end = kwargs.get("end")
-                interval = kwargs.get("interval", "1d")
-                auto_adjust = kwargs.get("auto_adjust", True)
-                prepost = kwargs.get("prepost", False)
-                return (op, symbol, str(start), str(end), interval, auto_adjust, prepost)
-        elif op in (
+        if len(args) == 1 and isinstance(args[0], tuple):
+            args = args[0]
+
+        schemas = {
+            "history": (
+                ("start", None),
+                ("end", None),
+                ("interval", "1d"),
+                ("auto_adjust", True),
+                ("prepost", False),
+            ),
+            "news": (("count", None), ("tab", None)),
+            "get_earnings": (("frequency", "quarterly"),),
+            "earnings_dates": (),
+            "quarterly_earnings": (),
+            "income_stmt": (),
+            "quarterly_income_stmt": (),
+        }
+
+        schema = schemas.get(op)
+        if schema is None:
+            return (op, symbol)
+
+        values = {name: default for name, default in schema}
+        values.update(zip((name for name, _ in schema), args))
+        values.update(kwargs)
+
+        if op in {
             "get_earnings",
             "earnings_dates",
             "quarterly_earnings",
             "income_stmt",
             "quarterly_income_stmt",
-        ):
-            # Accept both "freq" (internal forwarding) and "frequency" (public API)
-            freq = kwargs.get("freq") or kwargs.get("frequency", "quarterly")
-            return (op, symbol, freq)
-        elif op == "news":
-            # count and tab alter the result; include them so differing requests don't coalesce
-            count = kwargs.get("count", args[0] if args else None)
-            tab = kwargs.get("tab", args[1] if len(args) > 1 else None)
-            return (op, symbol, count, tab)
-        elif op == "calendar":
-            return (op, symbol)
-        else:
-            return (op, symbol)
+        }:
+            values["frequency"] = values.get("freq", values.get("frequency", "quarterly"))
+
+        key_values = []
+        for name, _ in schema:
+            value = values[name]
+            key_values.append(str(value) if name in {"start", "end"} else value)
+        return (op, symbol, *key_values)
 
     async def _fetch_data_coalesced(
         self, op: str, fetch_func: Callable[..., T], symbol: str, *args, **kwargs

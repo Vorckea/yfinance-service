@@ -362,7 +362,7 @@ class TestInflightKeyGeneration:
         start = date(2024, 1, 1)
         end = date(2024, 1, 31)
         key = client._make_key("history", "AAPL", start, end, "1d")
-        assert key == ("history", "AAPL", "2024-01-01", "2024-01-31", "1d", False, False)
+        assert key == ("history", "AAPL", "2024-01-01", "2024-01-31", "1d", True, False)
 
     def test_history_key_includes_explicit_auto_adjust(self, client):
         """Test that explicit auto_adjust is included in the dedupe key."""
@@ -378,6 +378,24 @@ class TestInflightKeyGeneration:
             False,
             False,
         )
+
+    def test_history_key_normalizes_positional_and_keyword_calls(self, client):
+        """Equivalent history calls should produce the same canonical key."""
+        start = date(2024, 1, 1)
+        end = date(2024, 1, 31)
+
+        positional = client._make_key("history", "AAPL", start, end, "1d")
+        keyword = client._make_key(
+            "history",
+            "AAPL",
+            start=start,
+            end=end,
+            interval="1d",
+            auto_adjust=True,
+            prepost=False,
+        )
+
+        assert positional == keyword
 
     def test_history_key_different_intervals(self, client):
         """Test that different intervals produce different keys."""
