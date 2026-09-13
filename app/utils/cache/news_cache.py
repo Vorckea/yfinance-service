@@ -44,7 +44,12 @@ class NewsCache:
         self._cache_name = cache_name
         self._resource = resource
         self._lock = asyncio.Lock()
-        self._articles_cache: dict[str, NewsRow] = {}
+        self._articles_cache: TTLCache[str, NewsRow] = TTLCache(
+            size,
+            ttl,
+            cache_name=self._cache_name + "_articles",
+            resource=self._resource + "_articles",
+        )
         self._index_cache: TTLCache[Key, list[str]] = TTLCache(
             size,
             ttl,
@@ -75,9 +80,8 @@ class NewsCache:
 
             articles: list[NewsRow] = []
             for index in indexes:
-                article = self._articles_cache.get(index)
+                article = await self._articles_cache.get(index)
                 if article is None:
-                    self._articles_cache.pop(index, None)
                     continue
 
                 articles.append(article)
@@ -98,7 +102,7 @@ class NewsCache:
 
             await self._index_cache.set(key, [article.id for article in articles])
             for article in articles:
-                self._articles_cache[article.id] = article
+                await self._articles_cache.set(article.id, article)
             self._puts.inc()
 
     async def delete(self, key: Key) -> None:
@@ -111,11 +115,10 @@ class NewsCache:
                 return
 
             for article_id in indexes:
-                if article_id in self._articles_cache:
-                    self._articles_cache.pop(article_id, None)
+                await self._articles_cache.delete(article_id)
 
     async def clear(self) -> None:
         """Clear the cache."""
         async with self._lock:
             await self._index_cache.clear()
-            self._articles_cache.clear()
+            await self._articles_cache.clear()

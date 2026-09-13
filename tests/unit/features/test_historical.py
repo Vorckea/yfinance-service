@@ -198,8 +198,11 @@ def test_historical_prepost_defaults_false(client, mock_yfinance_client):
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize("interval", ["1h", "1d", "1wk", "1mo"])
-async def test_historical_interval_valid(client: AsyncClient, interval: str):
+async def test_historical_interval_valid(
+    client: AsyncClient, mock_yfinance_client, interval: str
+):
     """Test valid aggregation intervals for /historical endpoint."""
+    mock_yfinance_client.get_history.return_value = pd.DataFrame()
     resp = client.get("/historical/AAPL", params={"interval": interval})
     assert resp.status_code == status.HTTP_200_OK, f"Failed for interval: {interval}"
     data = resp.json()

@@ -100,7 +100,6 @@ class YFinanceClient(YFinanceClientInterface):
         _inflight_lock: Async lock for thread-safe access to _inflight.
         _settings: Application settings including retry configuration.
         _upstream_sem: Semaphore capping simultaneous upstream calls.
-        _executor: Dedicated thread pool isolating yfinance threads.
 
     Example:
         >>> client = YFinanceClient(timeout=30, ticker_cache_size=512)
@@ -127,12 +126,9 @@ class YFinanceClient(YFinanceClientInterface):
                 and recreated. Prevents accumulated session state from serving
                 stale data indefinitely. Defaults to 60.
             max_upstream_concurrency: Maximum simultaneous upstream calls.
-                Also sizes the dedicated thread pool (2x for retry headroom).
                 Defaults to 10.
 
         """
-        import concurrent.futures as _cf
-
         self._timeout = timeout
         self._settings = Settings()
         self._ticker_cache = TTLCache(
@@ -144,12 +140,6 @@ class YFinanceClient(YFinanceClientInterface):
         self._inflight: Dict[tuple, _InflightEntry] = {}
         self._inflight_lock = asyncio.Lock()
         self._upstream_sem = asyncio.Semaphore(max_upstream_concurrency)
-        # Dedicated pool isolates yfinance threads from the rest of the process.
-        # 2x concurrency gives retries headroom without stalling new callers.
-        self._executor = _cf.ThreadPoolExecutor(
-            max_workers=max_upstream_concurrency * 2,
-            thread_name_prefix="yfinance",
-        )
 
     def _ticker_factory(self, symbol: str) -> yf.Ticker:
         """Create a new yfinance Ticker instance for the given symbol.
@@ -214,24 +204,25 @@ class YFinanceClient(YFinanceClientInterface):
             if args:
                 if len(args) == 4:
                     start, end, interval, auto_adjust = args
-                    return (op, symbol, str(start), str(end), interval, auto_adjust)
+                    prepost = kwargs.get("prepost", False)
+                    return (op, symbol, str(start), str(end), interval, auto_adjust, prepost)
                 elif len(args) == 1 and isinstance(args[0], tuple):
                     start, end, interval, auto_adjust = args[0]
-                    return (op, symbol, str(start), str(end), interval, auto_adjust)
+                    prepost = kwargs.get("prepost", False)
+                    return (op, symbol, str(start), str(end), interval, auto_adjust, prepost)
                 elif len(args) == 3:
                     start, end, interval = args
-                    return (op, symbol, str(start), str(end), interval)
+                    return (op, symbol, str(start), str(end), interval, False, False)
                 else:
                     start, end, interval = (None, None, "1d")
-                    return (op, symbol, str(start), str(end), interval)
+                    return (op, symbol, str(start), str(end), interval, False, False)
             else:
                 start = kwargs.get("start")
                 end = kwargs.get("end")
                 interval = kwargs.get("interval", "1d")
-                if "auto_adjust" in kwargs:
-                    auto_adjust = kwargs.get("auto_adjust")
-                    return (op, symbol, str(start), str(end), interval, auto_adjust)
-                return (op, symbol, str(start), str(end), interval)
+                auto_adjust = kwargs.get("auto_adjust", True)
+                prepost = kwargs.get("prepost", False)
+                return (op, symbol, str(start), str(end), interval, auto_adjust, prepost)
         elif op in (
             "get_earnings",
             "earnings_dates",
