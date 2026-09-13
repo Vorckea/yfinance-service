@@ -193,6 +193,29 @@ class TestRequestCoalescing:
         assert result3["call"] == 3
 
     @pytest.mark.asyncio
+    async def test_history_not_deduplicated_with_different_prepost(self, client):
+        """History requests with different extended-hours settings stay separate."""
+        call_count = 0
+        mock_ticker = MagicMock()
+
+        async def fetch_history(*args, **kwargs):
+            nonlocal call_count
+            call_count += 1
+            await asyncio.sleep(0.05)
+            return pd.DataFrame({"Close": [150.0]})
+
+        mock_ticker.history = fetch_history
+        with patch.object(client, "_get_ticker", return_value=mock_ticker):
+            await asyncio.gather(
+                client.get_history(
+                    "AAPL", date(2024, 1, 1), date(2024, 1, 31), "1d", prepost=False
+                ),
+                client.get_history("AAPL", date(2024, 1, 1), date(2024, 1, 31), "1d", prepost=True),
+            )
+
+        assert call_count == 2
+
+    @pytest.mark.asyncio
     async def test_history_deduplication_with_same_params(self, client):
         """Test that history requests with same params are coalesced."""
         call_count = 0
@@ -326,6 +349,7 @@ class TestInflightKeyGeneration:
 
     @pytest.fixture
     def client(self):
+        """Create a client for key-generation tests."""
         return YFinanceClient()
 
     def test_info_key(self, client):
@@ -338,7 +362,7 @@ class TestInflightKeyGeneration:
         start = date(2024, 1, 1)
         end = date(2024, 1, 31)
         key = client._make_key("history", "AAPL", start, end, "1d")
-        assert key == ("history", "AAPL", "2024-01-01", "2024-01-31", "1d")
+        assert key == ("history", "AAPL", "2024-01-01", "2024-01-31", "1d", True, False)
 
     def test_history_key_includes_explicit_auto_adjust(self, client):
         """Test that explicit auto_adjust is included in the dedupe key."""
@@ -352,7 +376,26 @@ class TestInflightKeyGeneration:
             "2024-01-31",
             "1d",
             False,
+            False,
         )
+
+    def test_history_key_normalizes_positional_and_keyword_calls(self, client):
+        """Equivalent history calls should produce the same canonical key."""
+        start = date(2024, 1, 1)
+        end = date(2024, 1, 31)
+
+        positional = client._make_key("history", "AAPL", start, end, "1d")
+        keyword = client._make_key(
+            "history",
+            "AAPL",
+            start=start,
+            end=end,
+            interval="1d",
+            auto_adjust=True,
+            prepost=False,
+        )
+
+        assert positional == keyword
 
     def test_history_key_different_intervals(self, client):
         """Test that different intervals produce different keys."""

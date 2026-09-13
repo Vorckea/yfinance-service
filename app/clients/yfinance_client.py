@@ -100,7 +100,6 @@ class YFinanceClient(YFinanceClientInterface):
         _inflight_lock: Async lock for thread-safe access to _inflight.
         _settings: Application settings including retry configuration.
         _upstream_sem: Semaphore capping simultaneous upstream calls.
-        _executor: Dedicated thread pool isolating yfinance threads.
 
     Example:
         >>> client = YFinanceClient(timeout=30, ticker_cache_size=512)
@@ -127,12 +126,9 @@ class YFinanceClient(YFinanceClientInterface):
                 and recreated. Prevents accumulated session state from serving
                 stale data indefinitely. Defaults to 60.
             max_upstream_concurrency: Maximum simultaneous upstream calls.
-                Also sizes the dedicated thread pool (2x for retry headroom).
                 Defaults to 10.
 
         """
-        import concurrent.futures as _cf
-
         self._timeout = timeout
         self._settings = Settings()
         self._ticker_cache = TTLCache(
@@ -144,12 +140,6 @@ class YFinanceClient(YFinanceClientInterface):
         self._inflight: Dict[tuple, _InflightEntry] = {}
         self._inflight_lock = asyncio.Lock()
         self._upstream_sem = asyncio.Semaphore(max_upstream_concurrency)
-        # Dedicated pool isolates yfinance threads from the rest of the process.
-        # 2x concurrency gives retries headroom without stalling new callers.
-        self._executor = _cf.ThreadPoolExecutor(
-            max_workers=max_upstream_concurrency * 2,
-            thread_name_prefix="yfinance",
-        )
 
     def _ticker_factory(self, symbol: str) -> yf.Ticker:
         """Create a new yfinance Ticker instance for the given symbol.
@@ -205,52 +195,47 @@ class YFinanceClient(YFinanceClientInterface):
             A tuple that uniquely identifies this request for coalescing purposes.
 
         """
-        if op == "history":
-            # Preserve historical behaviour: include `auto_adjust` in the
-            # dedupe key only when it was explicitly provided by the caller
-            # (either as a 4th positional arg, or in kwargs). When callers
-            # pass only (start, end, interval) positionally, do not append
-            # the implicit default to the key so equivalent calls coalesce.
-            if args:
-                if len(args) == 4:
-                    start, end, interval, auto_adjust = args
-                    return (op, symbol, str(start), str(end), interval, auto_adjust)
-                elif len(args) == 1 and isinstance(args[0], tuple):
-                    start, end, interval, auto_adjust = args[0]
-                    return (op, symbol, str(start), str(end), interval, auto_adjust)
-                elif len(args) == 3:
-                    start, end, interval = args
-                    return (op, symbol, str(start), str(end), interval)
-                else:
-                    start, end, interval = (None, None, "1d")
-                    return (op, symbol, str(start), str(end), interval)
-            else:
-                start = kwargs.get("start")
-                end = kwargs.get("end")
-                interval = kwargs.get("interval", "1d")
-                if "auto_adjust" in kwargs:
-                    auto_adjust = kwargs.get("auto_adjust")
-                    return (op, symbol, str(start), str(end), interval, auto_adjust)
-                return (op, symbol, str(start), str(end), interval)
-        elif op in (
+        if len(args) == 1 and isinstance(args[0], tuple):
+            args = args[0]
+
+        schemas = {
+            "history": (
+                ("start", None),
+                ("end", None),
+                ("interval", "1d"),
+                ("auto_adjust", True),
+                ("prepost", False),
+            ),
+            "news": (("count", None), ("tab", None)),
+            "get_earnings": (("frequency", "quarterly"),),
+            "earnings_dates": (),
+            "quarterly_earnings": (),
+            "income_stmt": (),
+            "quarterly_income_stmt": (),
+        }
+
+        schema = schemas.get(op)
+        if schema is None:
+            return (op, symbol)
+
+        values = {name: default for name, default in schema}
+        values.update(zip((name for name, _ in schema), args))
+        values.update(kwargs)
+
+        if op in {
             "get_earnings",
             "earnings_dates",
             "quarterly_earnings",
             "income_stmt",
             "quarterly_income_stmt",
-        ):
-            # Accept both "freq" (internal forwarding) and "frequency" (public API)
-            freq = kwargs.get("freq") or kwargs.get("frequency", "quarterly")
-            return (op, symbol, freq)
-        elif op == "news":
-            # count and tab alter the result; include them so differing requests don't coalesce
-            count = kwargs.get("count", args[0] if args else None)
-            tab = kwargs.get("tab", args[1] if len(args) > 1 else None)
-            return (op, symbol, count, tab)
-        elif op == "calendar":
-            return (op, symbol)
-        else:
-            return (op, symbol)
+        }:
+            values["frequency"] = values.get("freq", values.get("frequency", "quarterly"))
+
+        key_values = []
+        for name, _ in schema:
+            value = values[name]
+            key_values.append(str(value) if name in {"start", "end"} else value)
+        return (op, symbol, *key_values)
 
     async def _fetch_data_coalesced(
         self, op: str, fetch_func: Callable[..., T], symbol: str, *args, **kwargs

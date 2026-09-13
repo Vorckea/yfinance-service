@@ -39,6 +39,20 @@ async def test_news(client, mock_yfinance_client, news_payload_factory):
 
 
 @pytest.mark.asyncio
+async def test_news_cache_bounds_article_storage(news_payload_factory):
+    """Article objects respect the cache size instead of accumulating indefinitely."""
+    cache = NewsCache(size=1, ttl=60)
+    first = NewsResponse.model_validate({"news": news_payload_factory(count=1)}).news[0]
+    second = NewsResponse.model_validate({"news": news_payload_factory(count=1)}).news[0]
+    second = second.model_copy(update={"id": "second"})
+
+    await cache.set(Key(symbol="AAPL", news_type="news"), [first])
+    await cache.set(Key(symbol="AAPL", news_type="news"), [second])
+
+    assert len(cache._articles_cache._cache) == 1
+
+
+@pytest.mark.asyncio
 async def test_news_fetch_info_raises_on_none_from_client():
     """If the client returns None or a non-mapping, the service should raise an error.
 

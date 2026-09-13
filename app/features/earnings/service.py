@@ -17,7 +17,7 @@ def _to_date(value: Any) -> Optional[date]:
     if value is None:
         return None
 
-    parsed = pd.to_datetime(value, errors="coerce")
+    parsed = pd.to_datetime(value, errors="coerce", utc=True)
     if pd.isna(parsed):
         return None
     return parsed.date()
